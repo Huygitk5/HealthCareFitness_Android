@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home.model;
 
 public class User {
     private String username;
@@ -7,14 +7,18 @@ public class User {
     private String dob;
     private String gender;
     private String address;
+    private double height;
+    private double weight;
 
-    public User(String username, String password, String fullName, String dob, String gender, String address) {
+    public User(String username, String password, String fullName, String dob, String gender, String address, double height, double weight) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
         this.dob = dob;
         this.gender = gender;
         this.address = address;
+        this.height = height;
+        this.weight = weight;
     }
 
     // Getter methods
@@ -24,4 +28,6 @@ public class User {
     public String getDob() { return dob; }
     public String getGender() { return gender; }
     public String getAddress() { return address; }
+    public double getHeight() { return height; }
+    public double getWeight() { return weight; }
 }

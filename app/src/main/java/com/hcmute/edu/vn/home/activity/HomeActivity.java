@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +12,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.home.adapter.ActivityAdapter;
+import com.hcmute.edu.vn.home.model.ActivityItem;
+import com.hcmute.edu.vn.home.model.News;
+import com.hcmute.edu.vn.home.adapter.NewsAdapter;
+import com.hcmute.edu.vn.home.model.User;
 
 import java.util.ArrayList;
 
@@ -19,13 +25,16 @@ public class HomeActivity extends AppCompatActivity {
 
     TextView tvGreeting;
     ImageView btnNotification;
-    RecyclerView rvActivities;
-    RecyclerView rvNews;
+    RecyclerView rvActivities, rvNews;
+    TextView tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue;
+    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.home_view);
+
+        dbHelper = new DatabaseHelper(this);
 
         // 2. Ánh xạ các View từ XML
         tvGreeting = findViewById(R.id.tvGreeting);
@@ -33,13 +42,39 @@ public class HomeActivity extends AppCompatActivity {
         rvActivities = findViewById(R.id.rvActivities);
         rvNews = findViewById(R.id.rvNews);
 
+        tvCurrentWeight = findViewById(R.id.tvCurrentWeight);
+        tvCurrentHeight = findViewById(R.id.tvCurrentHeight);
+        tvCurrentAge = findViewById(R.id.tvCurrentAge);
+        tvBMIValue = findViewById(R.id.tvBMIValue);
+
         // 3. Nhận dữ liệu User từ màn hình Login
         Intent intent = getIntent();
         String username = intent.getStringExtra("KEY_USER");
         String password = intent.getStringExtra("KEY_PASS");
 
+
+
         if (username != null && !username.isEmpty()) {
-            tvGreeting.setText(username);
+            User currentUser = dbHelper.getUserDetails(username);
+            tvGreeting.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
+
+            // Lấy thông tin số thực
+            double heightCm = currentUser.getHeight();
+            double weightKg = currentUser.getWeight();
+
+            if (heightCm > 0 && weightKg > 0) {
+                tvCurrentHeight.setText(heightCm + " cm");
+                tvCurrentWeight.setText(weightKg + " kg");
+
+                // Tính toán trực tiếp không cần Parse
+                double heightM = heightCm / 100.0;
+                double bmi = weightKg / (heightM * heightM);
+                tvBMIValue.setText(String.format("%.1f", bmi));
+            } else {
+                tvCurrentHeight.setText("-- cm");
+                tvCurrentWeight.setText("-- kg");
+                tvBMIValue.setText("--");
+            }
         }
 
         // 4. Sự kiện Click Chuông Thông báo

@@ -22,7 +22,7 @@
         </activity>
 
         <activity
-            android:name="com.hcmute.edu.vn.homeview.HomeActivity"
+            android:name="com.hcmute.edu.vn.home.activity.HomeActivity"
             android:exported="false" />
 
         <activity

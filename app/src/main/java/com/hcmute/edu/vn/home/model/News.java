@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home.model;
 
 public class News {
     private String title;

@@ -11,12 +11,12 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.homeview.DatabaseHelper;
-import com.hcmute.edu.vn.homeview.HomeActivity;
+import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.home.activity.HomeActivity;
 
 public class ProfileSetupActivity extends AppCompatActivity {
 
-    EditText edtFullName, edtDOB, edtAddress;
+    EditText edtFullName, edtDOB, edtAddress, edtHeight, edtWeight;
     RadioGroup rgGender;
     Button btnComplete;
     DatabaseHelper dbHelper;
@@ -32,6 +32,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
         edtAddress = findViewById(R.id.edtAddress);
+        edtHeight = findViewById(R.id.edtHeight);
+        edtWeight = findViewById(R.id.edtWeight);
         rgGender = findViewById(R.id.rgGender);
         btnComplete = findViewById(R.id.btnComplete);
 
@@ -44,25 +46,35 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 String fullName = edtFullName.getText().toString();
                 String dob = edtDOB.getText().toString();
                 String address = edtAddress.getText().toString();
+                String heightStr = edtHeight.getText().toString().trim();
+                String weightStr = edtWeight.getText().toString().trim();
 
                 String gender = "Other";
                 int selectedId = rgGender.getCheckedRadioButtonId();
                 if (selectedId == R.id.rbMale) gender = "Male";
                 else if (selectedId == R.id.rbFemale) gender = "Female";
 
-                if (fullName.isEmpty() || dob.isEmpty() || address.isEmpty()) {
-                    Toast.makeText(ProfileSetupActivity.this, "Please fill in all the information,", Toast.LENGTH_SHORT).show();
+                if (fullName.isEmpty() || dob.isEmpty() || address.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
+                    Toast.makeText(ProfileSetupActivity.this, "Please fill in all the information", Toast.LENGTH_SHORT).show();
                 } else {
-                    boolean checkUpdate = dbHelper.updateUserProfile(receivedUsername, fullName, dob, gender, address);
+                    try {
+                        // Ép kiểu chuỗi thành số thực an toàn
+                        double height = Double.parseDouble(heightStr);
+                        double weight = Double.parseDouble(weightStr);
 
-                    if(checkUpdate) {
-                        Toast.makeText(ProfileSetupActivity.this, "Success!", Toast.LENGTH_LONG).show();
-                        Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
-                        i.putExtra("KEY_USER", receivedUsername);
-                        startActivity(i);
-                        finish();
-                    } else {
-                        Toast.makeText(ProfileSetupActivity.this, "Error!", Toast.LENGTH_SHORT).show();
+                        boolean checkUpdate = dbHelper.updateUserProfile(receivedUsername, fullName, dob, gender, address, height, weight);
+
+                        if(checkUpdate) {
+                            Toast.makeText(ProfileSetupActivity.this, "Setup Success!", Toast.LENGTH_LONG).show();
+                            Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
+                            i.putExtra("KEY_USER", receivedUsername);
+                            startActivity(i);
+                            finish();
+                        } else {
+                            Toast.makeText(ProfileSetupActivity.this, "Error updating profile!", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(ProfileSetupActivity.this, "Invalid Height or Weight format!", Toast.LENGTH_SHORT).show();
                     }
                 }
             }

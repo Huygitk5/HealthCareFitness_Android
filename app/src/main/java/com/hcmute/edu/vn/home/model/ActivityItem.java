@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home.model;
 
 public class ActivityItem {
     private String name;

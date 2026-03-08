@@ -1,10 +1,12 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import com.hcmute.edu.vn.home.model.User;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -19,6 +21,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_DOB = "dob";
     private static final String COLUMN_GENDER = "gender";
     private static final String COLUMN_ADDRESS = "address";
+    private static final String COLUMN_HEIGHT = "height";
+    private static final String COLUMN_WEIGHT = "weight";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -32,7 +36,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_FULLNAME + " TEXT, " +
                 COLUMN_DOB + " TEXT, " +
                 COLUMN_GENDER + " TEXT, " +
-                COLUMN_ADDRESS + " TEXT)";
+                COLUMN_ADDRESS + " TEXT, " +
+                COLUMN_HEIGHT + " REAL, " +
+                COLUMN_WEIGHT + " REAL)";
         db.execSQL(createUserTable);
     }
 
@@ -51,13 +57,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_DOB, user.getDob());
         values.put(COLUMN_GENDER, user.getGender());
         values.put(COLUMN_ADDRESS, user.getAddress());
+        values.put(COLUMN_HEIGHT, user.getHeight());
+        values.put(COLUMN_WEIGHT, user.getWeight());
 
         long result = db.insert(TABLE_USER, null, values);
         db.close();
         return result != -1;
     }
 
-    public boolean updateUserProfile(String username, String fullname, String dob, String gender, String address) {
+    public boolean updateUserProfile(String username, String fullname, String dob, String gender, String address, double height, double weight) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
 
@@ -65,6 +73,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_DOB, dob);
         values.put(COLUMN_GENDER, gender);
         values.put(COLUMN_ADDRESS, address);
+        values.put(COLUMN_HEIGHT, height);
+        values.put(COLUMN_WEIGHT, weight);
+
 
         long result = db.update(TABLE_USER, values, COLUMN_USERNAME + " = ?", new String[]{username});
         db.close();
@@ -91,7 +102,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             String dob = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DOB));
             String gen = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GENDER));
             String addr = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ADDRESS));
-            user = new User(username, pass, full, dob, gen, addr);
+            double height = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_HEIGHT));
+            double weight = cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_WEIGHT));
+            user = new User(username, pass, full, dob, gen, addr, height, weight);
         }
         cursor.close();
         return user;

@@ -11,8 +11,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.homeview.DatabaseHelper;
-import com.hcmute.edu.vn.homeview.User;
+import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.home.model.User;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -115,7 +115,7 @@ public class RegisterActivity extends AppCompatActivity {
                     return;
                 }
 
-                User newUser = new User(user, pass, "", "", "", "");
+                User newUser = new User(user, pass, "", "", "", "", 0.0, 0.0 );
                 boolean success = dbHelper.addUser(newUser);
                 if (success) {
                     Toast.makeText(RegisterActivity.this, "Create Success!", Toast.LENGTH_SHORT).show();

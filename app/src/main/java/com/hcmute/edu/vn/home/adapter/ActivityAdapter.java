@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.homeview;
+package com.hcmute.edu.vn.home.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.home.model.ActivityItem;
 
 import java.util.ArrayList;
 

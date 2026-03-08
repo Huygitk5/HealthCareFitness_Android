@@ -12,9 +12,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.homeview.DatabaseHelper;
-import com.hcmute.edu.vn.homeview.HomeActivity;
-import com.hcmute.edu.vn.homeview.User;
+import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.home.activity.HomeActivity;
+import com.hcmute.edu.vn.home.model.User;
 import com.hcmute.edu.vn.profile.ProfileSetupActivity;
 
 public class LoginActivity extends AppCompatActivity {
