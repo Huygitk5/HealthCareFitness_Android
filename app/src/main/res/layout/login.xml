@@ -156,7 +156,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:text="Sign Up"
-                android:textColor="#FF8D6A"
+                android:textColor="#3BA880"
                 android:textStyle="bold"
                 android:textSize="16sp"/>
         </LinearLayout>
@@ -167,7 +167,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:text="Forgot Password?"
-            android:textColor="#FF8D6A"
+            android:textColor="#3BA880"
             android:textStyle="bold" />
 
     </LinearLayout>
