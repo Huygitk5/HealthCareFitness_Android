@@ -6,7 +6,12 @@
         <item name="android:textColor">#888888</item>
         <item name="android:textSize">13sp</item>
     </style>
-
+    <style name="FoodImage">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:scaleType">centerCrop</item>
+    </style>
     <style name="ProfileValue">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
@@ -15,7 +20,12 @@
         <item name="android:textStyle">bold</item>
         <item name="android:layout_marginBottom">5dp</item>
     </style>
-
+    <style name="FoodImageSmall">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:scaleType">centerCrop</item>
+    </style>
     <style name="Divider">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
