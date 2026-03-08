@@ -11,7 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.DatabaseHelper;
 import com.hcmute.edu.vn.home.model.User;
 
 public class RegisterActivity extends AppCompatActivity {

@@ -4,15 +4,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.DatabaseHelper;
 import com.hcmute.edu.vn.home.adapter.ActivityAdapter;
 import com.hcmute.edu.vn.home.model.ActivityItem;
 import com.hcmute.edu.vn.home.model.News;
@@ -32,7 +37,13 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         setContentView(R.layout.home_view);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.home), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         dbHelper = new DatabaseHelper(this);
 
@@ -89,9 +100,9 @@ public class HomeActivity extends AppCompatActivity {
         // SETUP RECYCLER VIEW CHO ACTIVITIES (Bài tập)
         // =========================================================
         ArrayList<ActivityItem> activityList = new ArrayList<>();
-        activityList.add(new ActivityItem("Giảm Mỡ Thừa ⚡⚡", R.drawable.bt1));
-        activityList.add(new ActivityItem("Tăng Cơ 💪", R.drawable.bt2));
-        activityList.add(new ActivityItem("Yoga Buổi Sáng 🧘", R.drawable.bt3));
+        activityList.add(new ActivityItem("Giảm Mỡ Thừa ⚡⚡", R.drawable.workout_1));
+        activityList.add(new ActivityItem("Tăng Cơ 💪", R.drawable.workout_2));
+        activityList.add(new ActivityItem("Yoga Buổi Sáng 🧘", R.drawable.workout_3));
 
         // DÙNG ActivityAdapter MỚI ĐỂ GIAO DIỆN TO RA
         ActivityAdapter activityAdapter = new ActivityAdapter(this, activityList);
@@ -128,5 +139,23 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayoutManager newsLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvNews.setLayoutManager(newsLayoutManager);
         rvNews.setAdapter(newsAdapter);
+
+        // =========================================================
+        // XỬ LÝ CLICK BOTTOM NAVIGATION
+        // =========================================================
+
+        LinearLayout navWorkout = findViewById(R.id.nav_workout);
+        navWorkout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.workout.activity.WorkoutActivity.class);
+                // Giúp app không tạo ra nhiều trang Workout chồng lên nhau
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
+
+                // Tắt hoàn toàn hiệu ứng chuyển cảnh
+                overridePendingTransition(0, 0);
+            }
+        });
     }
 }
