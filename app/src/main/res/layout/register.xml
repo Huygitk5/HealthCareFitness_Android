@@ -171,7 +171,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="5dp"
                 android:text="Sign In"
-                android:textColor="#FF8D6A"
+                android:textColor="#3BA880"
                 android:textStyle="bold"
                 android:textSize="16sp"/>
         </LinearLayout>
