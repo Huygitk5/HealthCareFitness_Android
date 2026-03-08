@@ -34,6 +34,15 @@
         <activity android:name="com.hcmute.edu.vn.profile.ProfileSetupActivity"
             android:exported="false" />
 
+        <activity android:name="com.hcmute.edu.vn.profile.ProfileActivity"
+            android:exported="false" />
+
+        <activity android:name="com.hcmute.edu.vn.nutrition.activity.NutritionActivity"
+            android:exported="false" />
+
+        <activity android:name="com.hcmute.edu.vn.nutrition.activity.BreakfastNutritionActivity"
+            android:exported="false" />
+
         <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutDetailActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseListActivity" android:exported="false" />
