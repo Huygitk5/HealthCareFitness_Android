@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.home;
+package com.hcmute.edu.vn;
 
 import android.content.ContentValues;
 import android.content.Context;

@@ -34,6 +34,11 @@
         <activity android:name="com.hcmute.edu.vn.profile.ProfileSetupActivity"
             android:exported="false" />
 
+        <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutDetailActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseListActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutActivity" android:exported="false" />
+
     </application>
 
 </manifest>

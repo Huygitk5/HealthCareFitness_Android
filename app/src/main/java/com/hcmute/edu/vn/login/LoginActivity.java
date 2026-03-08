@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.home.DatabaseHelper;
+import com.hcmute.edu.vn.DatabaseHelper;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.home.model.User;
 import com.hcmute.edu.vn.profile.ProfileSetupActivity;
