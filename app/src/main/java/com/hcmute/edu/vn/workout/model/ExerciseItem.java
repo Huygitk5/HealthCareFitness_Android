@@ -1,6 +1,8 @@
 package com.hcmute.edu.vn.workout.model;
 
-public class ExerciseItem {
+import java.io.Serializable;
+
+public class ExerciseItem implements Serializable {
     private String name;
     private String duration;
     private int imageResId;
