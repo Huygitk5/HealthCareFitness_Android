@@ -257,7 +257,7 @@
             android:background="@drawable/bg_nav_active"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingHorizontal="12dp">
+            android:paddingHorizontal="-12dp">
 
             <ImageView
                 android:layout_width="30dp"
@@ -319,5 +319,6 @@
                 android:src="@drawable/ic_profile"
                 app:tint="#009688" />
         </LinearLayout>
+
     </LinearLayout>
 </RelativeLayout>
