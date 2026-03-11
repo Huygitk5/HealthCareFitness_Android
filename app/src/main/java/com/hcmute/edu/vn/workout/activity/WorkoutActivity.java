@@ -17,7 +17,7 @@ import com.hcmute.edu.vn.nutrition.activity.NutritionActivity;
 import com.hcmute.edu.vn.profile.ProfileActivity;
 
 public class WorkoutActivity extends AppCompatActivity {
-
+    String username;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,6 +28,9 @@ public class WorkoutActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
         // Thêm đoạn này vào cuối onCreate của WorkoutActivity
         findViewById(R.id.cardWorkoutPlan).setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
@@ -70,5 +73,13 @@ public class WorkoutActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
             }
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
     }
 }

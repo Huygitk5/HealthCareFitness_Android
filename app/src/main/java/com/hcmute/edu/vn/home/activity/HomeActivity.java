@@ -23,16 +23,23 @@ import com.hcmute.edu.vn.home.model.ActivityItem;
 import com.hcmute.edu.vn.home.model.News;
 import com.hcmute.edu.vn.home.adapter.NewsAdapter;
 import com.hcmute.edu.vn.home.model.User;
+import com.hcmute.edu.vn.nutrition.activity.NutritionActivity;
+import com.hcmute.edu.vn.profile.ProfileActivity;
+import com.hcmute.edu.vn.workout.activity.WorkoutActivity;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
-    TextView tvGreeting;
+    TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
     RecyclerView rvActivities, rvNews;
-    TextView tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue;
     DatabaseHelper dbHelper;
+    String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,49 +51,20 @@ public class HomeActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
         dbHelper = new DatabaseHelper(this);
 
         // 2. Ánh xạ các View từ XML
         tvGreeting = findViewById(R.id.tvGreeting);
-        btnNotification = findViewById(R.id.btnNotification);
-        rvActivities = findViewById(R.id.rvActivities);
-        rvNews = findViewById(R.id.rvNews);
-
         tvCurrentWeight = findViewById(R.id.tvCurrentWeight);
         tvCurrentHeight = findViewById(R.id.tvCurrentHeight);
         tvCurrentAge = findViewById(R.id.tvCurrentAge);
         tvBMIValue = findViewById(R.id.tvBMIValue);
-
-        // 3. Nhận dữ liệu User từ màn hình Login
-        Intent intent = getIntent();
-        String username = intent.getStringExtra("KEY_USER");
-        String password = intent.getStringExtra("KEY_PASS");
-
-
-
-        if (username != null && !username.isEmpty()) {
-            User currentUser = dbHelper.getUserDetails(username);
-            tvGreeting.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
-
-            // Lấy thông tin số thực
-            double heightCm = currentUser.getHeight();
-            double weightKg = currentUser.getWeight();
-
-            if (heightCm > 0 && weightKg > 0) {
-                tvCurrentHeight.setText(heightCm + " cm");
-                tvCurrentWeight.setText(weightKg + " kg");
-
-                // Tính toán trực tiếp không cần Parse
-                double heightM = heightCm / 100.0;
-                double bmi = weightKg / (heightM * heightM);
-                tvBMIValue.setText(String.format("%.1f", bmi));
-            } else {
-                tvCurrentHeight.setText("-- cm");
-                tvCurrentWeight.setText("-- kg");
-                tvBMIValue.setText("--");
-            }
-        }
+        tvBMIStatus = findViewById(R.id.tvBMIStatus);
+        btnNotification = findViewById(R.id.btnNotification);
+        rvActivities = findViewById(R.id.rvActivities);
+        rvNews = findViewById(R.id.rvNews);
 
         // 4. Sự kiện Click Chuông Thông báo
         btnNotification.setOnClickListener(new View.OnClickListener() {
@@ -110,7 +88,6 @@ public class HomeActivity extends AppCompatActivity {
         LinearLayoutManager activityLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvActivities.setLayoutManager(activityLayoutManager);
         rvActivities.setAdapter(activityAdapter);
-
 
         // =========================================================
         // SETUP RECYCLER VIEW CHO NEWS (Tin tức)
@@ -148,19 +125,16 @@ public class HomeActivity extends AppCompatActivity {
         navWorkout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.workout.activity.WorkoutActivity.class);
-                // Giúp app không tạo ra nhiều trang Workout chồng lên nhau
+                Intent intent = new Intent(HomeActivity.this, WorkoutActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
-
-                // Tắt hoàn toàn hiệu ứng chuyển cảnh
                 overridePendingTransition(0, 0);
             }
         });
         LinearLayout navProfile = findViewById(R.id.nav_profile);
         navProfile.setOnClickListener(new View.OnClickListener() {@Override
         public void onClick(View v) {
-            Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.profile.ProfileActivity.class);
+            Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
@@ -170,12 +144,87 @@ public class HomeActivity extends AppCompatActivity {
         navNutrition.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.nutrition.activity.NutritionActivity.class);
-                intent.putExtra("KEY_USER", username);
+                Intent intent = new Intent(HomeActivity.this, NutritionActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // LẤY USERNAME TỪ SHAREDPREFS
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
+
+        // NẾU CÓ USERNAME THÌ LOAD DATA
+        if (username != null && !username.isEmpty()) {
+            loadUserData();
+        }
+    }
+
+    private void loadUserData() {
+        User currentUser = dbHelper.getUserDetails(username);
+        if (currentUser == null) return;
+
+        tvGreeting.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
+
+        double heightCm = currentUser.getHeight();
+        double weightKg = currentUser.getWeight();
+        int age = calculateAge(currentUser.getDob());
+
+        if (heightCm > 0 && weightKg > 0) {
+            tvCurrentHeight.setText(heightCm + " cm");
+            tvCurrentWeight.setText(weightKg + " kg");
+
+            double heightM = heightCm / 100.0;
+            double bmi = weightKg / (heightM * heightM);
+            tvBMIValue.setText(String.format("%.1f", bmi));
+
+            // Code set màu sắc BMI Status... (copy từ code cũ của bạn)
+            if (bmi < 18.5) {
+                tvBMIStatus.setText("Thiếu cân");
+                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+            } else if (bmi >= 18.5 && bmi < 23) {
+                tvBMIStatus.setText("Bình thường");
+                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+            } else {
+                tvBMIStatus.setText("Béo phì");
+                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+            }
+        } else {
+            // Hiển thị mặc định khi chưa có data...
+            tvCurrentHeight.setText("-- cm");
+            tvCurrentWeight.setText("-- kg");
+            tvBMIValue.setText("--");
+            tvBMIStatus.setText("Chưa có");
+        }
+
+        if (age > 0) tvCurrentAge.setText(String.valueOf(age));
+        else tvCurrentAge.setText("--");
+    }
+
+    private int calculateAge(String dobString) {
+        if (dobString == null || dobString.isEmpty()) return 0;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Date birthDate = sdf.parse(dobString);
+            if (birthDate == null) return 0;
+
+            Calendar dob = Calendar.getInstance();
+            dob.setTime(birthDate);
+            Calendar today = Calendar.getInstance();
+
+            int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+            if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+                age--;
+            }
+            return age;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }
