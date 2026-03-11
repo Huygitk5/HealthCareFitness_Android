@@ -45,7 +45,7 @@
             android:layout_height="match_parent"
             android:background="#FFFFFF"
             android:scaleType="centerInside"
-            android:src="@drawable/person_crunch" />
+            android:src="@drawable/img_crunch_man" />
     </androidx.cardview.widget.CardView>
 
     <TextView
