@@ -1,5 +1,6 @@
 package com.hcmute.edu.vn.workout.activity;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,7 +12,6 @@ import com.hcmute.edu.vn.workout.adapter.ExerciseAdapter;
 import com.hcmute.edu.vn.workout.model.ExerciseItem;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class ExerciseListActivity extends AppCompatActivity {
     @Override
@@ -20,7 +20,7 @@ public class ExerciseListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_workout_exercise_list);
 
         RecyclerView rv = findViewById(R.id.rvExercises);
-        List<ExerciseItem> exercises = new ArrayList<>();
+        ArrayList<ExerciseItem> exercises = new ArrayList<>();
 
         // Seed dữ liệu 11 bài tập mẫu
         exercises.add(new ExerciseItem("Crunches", "00:30", R.drawable.workout_2));
@@ -34,5 +34,13 @@ public class ExerciseListActivity extends AppCompatActivity {
         rv.setAdapter(new ExerciseAdapter(exercises));
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
+
+        findViewById(R.id.btnStartWorkout).setOnClickListener(v -> {
+            // Intent chứa action mang theo data để chuyển sang ExerciseActivity
+            Intent intent = new Intent(ExerciseListActivity.this, ExerciseActivity.class);
+            // Truyền mảng exercises qua Intent với một key định danh
+            intent.putExtra("EXTRA_EXERCISE_LIST", exercises);
+            startActivity(intent);
+        });
     }
 }
