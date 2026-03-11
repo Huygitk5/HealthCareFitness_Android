@@ -157,5 +157,24 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
             }
         });
+        LinearLayout navProfile = findViewById(R.id.nav_profile);
+        navProfile.setOnClickListener(new View.OnClickListener() {@Override
+        public void onClick(View v) {
+            Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.profile.ProfileActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
+        }
+        });
+        LinearLayout navNutrition = findViewById(R.id.nav_nutrition);
+        navNutrition.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.nutrition.activity.NutritionActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            }
+        });
     }
 }
