@@ -32,4 +32,9 @@
         <item name="android:background">#EEEEEE</item>
         <item name="android:layout_marginBottom">10dp</item>
     </style>
+
+    <style name="RoundedImage" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
 </resources>

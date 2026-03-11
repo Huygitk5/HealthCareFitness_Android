@@ -30,7 +30,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="8dp"
-                android:src="@drawable/person_crunch" />
+                android:src="@drawable/img_crunch_man" />
         </androidx.cardview.widget.CardView>
         <TextView
             android:id="@+id/tvExNameItem"
