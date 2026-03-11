@@ -32,7 +32,7 @@ public class NutritionActivity extends AppCompatActivity {
         tvBreakfastDetail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NutritionActivity.this, BreakfastNutritionActivity.class);
+                Intent intent = new Intent(NutritionActivity.this, DetailMealActivity.class);
                 startActivity(intent);
             }
         });

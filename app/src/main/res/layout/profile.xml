@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/profile"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFB">
@@ -42,7 +43,7 @@
                 android:layout_marginTop="120dp"
                 android:padding="4dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/avatar_profile"
+                android:src="@mipmap/ic_launcher"
                 app:strokeColor="@color/white"
                 app:strokeWidth="4dp"
                 app:shapeAppearanceOverlay="@style/CircleImage"
