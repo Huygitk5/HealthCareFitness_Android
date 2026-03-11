@@ -171,6 +171,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.nutrition.activity.NutritionActivity.class);
+                intent.putExtra("KEY_USER", username);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
