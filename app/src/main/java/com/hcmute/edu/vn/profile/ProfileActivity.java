@@ -30,7 +30,7 @@ public class ProfileActivity extends AppCompatActivity {
     TextView txtName, txtLocation, tvProfileAge, tvProfileWeight, tvProfileHeight;
     MaterialButton btnLogout;
     DatabaseHelper dbHelper;
-    String username; // Biến lưu trữ username
+    String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +42,9 @@ public class ProfileActivity extends AppCompatActivity {
             return insets;
         });
 
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
+
         dbHelper = new DatabaseHelper(this);
 
         // 1. Ánh xạ các View
@@ -51,10 +54,6 @@ public class ProfileActivity extends AppCompatActivity {
         tvProfileWeight = findViewById(R.id.tvProfileWeight);
         tvProfileHeight = findViewById(R.id.tvProfileHeight);
         btnLogout = findViewById(R.id.btnLogout);
-
-        // 2. Lấy username từ Intent ngay khi khởi tạo
-        Intent intent = getIntent();
-        username = intent.getStringExtra("KEY_USER");
 
         btnLogout.setOnClickListener(v -> {
             // Chuyển hướng về trang Login (Bạn nhớ đổi đúng tên Class LoginActivity của bạn)
@@ -77,30 +76,38 @@ public class ProfileActivity extends AppCompatActivity {
 
         navHome.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, HomeActivity.class);
-            i.putExtra("KEY_USER", username);
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navWorkout.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
-            i.putExtra("KEY_USER", username);
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navNutrition.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, NutritionActivity.class);
-            i.putExtra("KEY_USER", username);
             startActivity(i);
             overridePendingTransition(0, 0);
         });
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
     }
 
     // Đưa việc lấy dữ liệu vào onResume để luôn refresh thông tin mới nhất
     @Override
     protected void onResume() {
         super.onResume();
+
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
 
         // 3. Truy xuất DB và hiển thị (Giống hệt cách của HomeActivity)
         if (username != null && !username.isEmpty()) {

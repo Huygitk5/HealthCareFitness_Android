@@ -53,6 +53,10 @@ public class LoginActivity extends AppCompatActivity {
                 } else {
                     if (dbHelper.checkLogin(username, password)) {
                         User currentUser = dbHelper.getUserDetails(username);
+                        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                        android.content.SharedPreferences.Editor editor = pref.edit();
+                        editor.putString("KEY_USER", username); // LƯU username vào máy
+                        editor.apply();
                         Intent intent;
                         if (currentUser.getFullName().isEmpty()) {
                             intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
