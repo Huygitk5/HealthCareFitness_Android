@@ -12,6 +12,9 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.home.activity.HomeActivity;
+import com.hcmute.edu.vn.nutrition.activity.NutritionActivity;
+import com.hcmute.edu.vn.profile.ProfileActivity;
 
 public class WorkoutActivity extends AppCompatActivity {
 
@@ -39,9 +42,31 @@ public class WorkoutActivity extends AppCompatActivity {
         navHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish(); // Đóng trang Workout để lòi trang Home ở dưới ra
+                Intent intent = new Intent(WorkoutActivity.this, HomeActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            }
+        });
 
-                // Tắt hoàn toàn hiệu ứng chuyển cảnh
+        LinearLayout navNutrition = findViewById(R.id.nav_nutrition);
+        navNutrition.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(WorkoutActivity.this, NutritionActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
+                overridePendingTransition(0, 0);
+            }
+        });
+
+        LinearLayout navProfile = findViewById(R.id.nav_profile);
+        navProfile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(WorkoutActivity.this, ProfileActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                startActivity(intent);
                 overridePendingTransition(0, 0);
             }
         });
