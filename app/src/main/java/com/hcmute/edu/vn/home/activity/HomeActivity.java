@@ -24,7 +24,11 @@ import com.hcmute.edu.vn.home.model.News;
 import com.hcmute.edu.vn.home.adapter.NewsAdapter;
 import com.hcmute.edu.vn.home.model.User;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -63,8 +67,6 @@ public class HomeActivity extends AppCompatActivity {
         String username = intent.getStringExtra("KEY_USER");
         String password = intent.getStringExtra("KEY_PASS");
 
-
-
         if (username != null && !username.isEmpty()) {
             User currentUser = dbHelper.getUserDetails(username);
             tvGreeting.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
@@ -72,7 +74,7 @@ public class HomeActivity extends AppCompatActivity {
             // Lấy thông tin số thực
             double heightCm = currentUser.getHeight();
             double weightKg = currentUser.getWeight();
-
+            int age = calculateAge(currentUser.getDob());
             if (heightCm > 0 && weightKg > 0) {
                 tvCurrentHeight.setText(heightCm + " cm");
                 tvCurrentWeight.setText(weightKg + " kg");
@@ -86,6 +88,13 @@ public class HomeActivity extends AppCompatActivity {
                 tvCurrentWeight.setText("-- kg");
                 tvBMIValue.setText("--");
             }
+            if (age > 0) {
+                tvCurrentAge.setText(String.valueOf(age));
+            } else {
+                tvCurrentAge.setText("--");
+            }
+
+
         }
 
         // 4. Sự kiện Click Chuông Thông báo
@@ -161,6 +170,7 @@ public class HomeActivity extends AppCompatActivity {
         navProfile.setOnClickListener(new View.OnClickListener() {@Override
         public void onClick(View v) {
             Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.profile.ProfileActivity.class);
+            intent.putExtra("KEY_USER", username);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
@@ -171,10 +181,33 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(HomeActivity.this, com.hcmute.edu.vn.nutrition.activity.NutritionActivity.class);
+                intent.putExtra("KEY_USER", username);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
             }
         });
+    }
+
+    private int calculateAge(String dobString) {
+        if (dobString == null || dobString.isEmpty()) return 0;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            Date birthDate = sdf.parse(dobString);
+            if (birthDate == null) return 0;
+
+            Calendar dob = Calendar.getInstance();
+            dob.setTime(birthDate);
+            Calendar today = Calendar.getInstance();
+
+            int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+            if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+                age--;
+            }
+            return age;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
     }
 }
