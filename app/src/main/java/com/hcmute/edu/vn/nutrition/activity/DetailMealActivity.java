@@ -16,12 +16,12 @@ import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.profile.ProfileActivity;
 import com.hcmute.edu.vn.workout.activity.WorkoutActivity;
 
-public class BreakfastNutritionActivity extends AppCompatActivity {
+public class DetailMealActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.breakfast_nutrition);
+        setContentView(R.layout.detail_meal);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.detailMeal), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -43,28 +43,28 @@ public class BreakfastNutritionActivity extends AppCompatActivity {
         LinearLayout navProfile = findViewById(R.id.nav_profile);
 
         navHome.setOnClickListener(v -> {
-            Intent intent = new Intent(BreakfastNutritionActivity.this, HomeActivity.class);
+            Intent intent = new Intent(DetailMealActivity.this, HomeActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
 
         navNutrition.setOnClickListener(v -> {
-            Intent intent = new Intent(BreakfastNutritionActivity.this, NutritionActivity.class);
+            Intent intent = new Intent(DetailMealActivity.this, NutritionActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
 
         navWorkout.setOnClickListener(v -> {
-            Intent intent = new Intent(BreakfastNutritionActivity.this, WorkoutActivity.class);
+            Intent intent = new Intent(DetailMealActivity.this, WorkoutActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
         });
 
         navProfile.setOnClickListener(v -> {
-            Intent intent = new Intent(BreakfastNutritionActivity.this, ProfileActivity.class);
+            Intent intent = new Intent(DetailMealActivity.this, ProfileActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
