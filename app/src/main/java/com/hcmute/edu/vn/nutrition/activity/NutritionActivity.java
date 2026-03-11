@@ -7,6 +7,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
@@ -19,7 +22,11 @@ public class NutritionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.nutrition);
-
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.nutrition), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         // Chuyển hướng sang chi tiết bữa sáng
         TextView tvBreakfastDetail = findViewById(R.id.tvBreakfastDetail);
         tvBreakfastDetail.setOnClickListener(new View.OnClickListener() {
