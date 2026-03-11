@@ -58,7 +58,7 @@
             <ImageView
                 android:layout_width="200dp"
                 android:layout_height="wrap_content"
-                android:src="@drawable/person_crunch"
+                android:src="@drawable/img_crunch_man"
                 android:scaleType="fitCenter"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"

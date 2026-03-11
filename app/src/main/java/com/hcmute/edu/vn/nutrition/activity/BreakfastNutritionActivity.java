@@ -7,6 +7,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
@@ -19,6 +22,11 @@ public class BreakfastNutritionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.breakfast_nutrition);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.detailMeal), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         ImageView ivBack = findViewById(R.id.ivBack);
         ivBack.setOnClickListener(new View.OnClickListener() {

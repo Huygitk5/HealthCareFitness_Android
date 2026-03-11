@@ -24,7 +24,8 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_workout_exercise_detail, parent, false);
+        // 1. Đã đổi thành layout mới chuẩn Figma của bạn
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_workout_exercise, parent, false);
         return new ViewHolder(view);
     }
 
@@ -38,6 +39,13 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         if (holder.ivThumb != null) {
             holder.ivThumb.setImageResource(item.getImageResId());
         }
+
+        // 2. Logic làm đẹp: Ẩn đường kẻ xám ở bài tập cuối cùng trong danh sách
+        if (position == exerciseList.size() - 1) {
+            holder.lineSeparator.setVisibility(View.GONE);
+        } else {
+            holder.lineSeparator.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -46,14 +54,16 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivThumb;
         TextView tvName, tvDuration;
+        View lineSeparator; // Thêm biến cho đường kẻ xám
+
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
 
-            // XÁC NHẬN ID Ở ĐÂY PHẢI KHỚP VỚI XML
-            // Trong file item_exercise_detail.xml, thẻ <ImageView> phải có android:id="@+id/ivExImage"
-            ivThumb = itemView.findViewById(R.id.ivExImage);
-            tvName = itemView.findViewById(R.id.tvExNameItem);
-            tvDuration = itemView.findViewById(R.id.tvExDuration);
+            // 3. Đã cập nhật toàn bộ ID khớp 100% với file item_workout_exercise.xml
+            ivThumb = itemView.findViewById(R.id.imgExercise);
+            tvName = itemView.findViewById(R.id.tvExerciseName);
+            tvDuration = itemView.findViewById(R.id.tvDuration);
+            lineSeparator = itemView.findViewById(R.id.lineSeparator);
         }
     }
 }
