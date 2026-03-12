@@ -3,8 +3,11 @@ package com.hcmute.edu.vn.workout.activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -48,7 +51,24 @@ public class WorkoutActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.workout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            float density = getResources().getDisplayMetrics().density;
+
+            // 1. Xử lý Padding cho ScrollView
+            ScrollView mainScrollView = findViewById(R.id.mainScrollView);
+            if (mainScrollView != null) {
+                int topPadding = systemBars.top + (int)(24 * density);
+                int bottomPadding = systemBars.bottom + (int)(86 * density);
+                mainScrollView.setPadding(0, topPadding, 0, bottomPadding);
+            }
+
+            // 2. Đẩy thanh Bottom Navigation lên trên thanh hệ thống
+            View bottomNav = findViewById(R.id.bottomNav);
+            if (bottomNav != null) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
+                params.bottomMargin = systemBars.bottom + (int)(16 * density);
+                bottomNav.setLayoutParams(params);
+            }
+
             return insets;
         });
 
@@ -157,22 +177,22 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void selectLevel(String level) {
-        resetLevelButtons(); // Tắt highlight các nút trước
+        resetLevelButtons();
         switch (level) {
             case "BEGINNER":
-                tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvBeginner.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvBeginner.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Khởi động & Làm quen");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv1);
                 break;
             case "INTERMEDIATE":
-                tvIntermediate.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvIntermediate.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvIntermediate.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Tăng cơ & Giảm mỡ");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv2);
                 break;
             case "ADVANCED":
-                tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvAdvanced.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvAdvanced.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Đốt mỡ cường độ cao");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv3);
@@ -181,14 +201,14 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void resetLevelButtons() {
-        tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_inactive);
-        tvBeginner.setTextColor(Color.parseColor("#888888"));
+        tvBeginner.setBackgroundResource(R.drawable.bg_workout_chip_inactive);
+        tvBeginner.setTextColor(Color.parseColor("#757575"));
 
-        tvIntermediate.setBackgroundResource(R.drawable.bg_workout_level_inactive);
-        tvIntermediate.setTextColor(Color.parseColor("#888888"));
+        tvIntermediate.setBackgroundResource(R.drawable.bg_workout_chip_inactive);
+        tvIntermediate.setTextColor(Color.parseColor("#757575"));
 
-        tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_inactive);
-        tvAdvanced.setTextColor(Color.parseColor("#888888"));
+        tvAdvanced.setBackgroundResource(R.drawable.bg_workout_chip_inactive);
+        tvAdvanced.setTextColor(Color.parseColor("#757575"));
     }
 
     // =========================================================
