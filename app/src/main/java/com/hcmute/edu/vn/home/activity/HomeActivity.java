@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.SupabaseApiService;
+import com.hcmute.edu.vn.SupabaseClient;
 import com.hcmute.edu.vn.home.adapter.ActivityAdapter;
 import com.hcmute.edu.vn.home.model.ActivityItem;
 import com.hcmute.edu.vn.home.model.News;
@@ -30,7 +32,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -163,44 +170,74 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        User currentUser = dbHelper.getUserDetails(username);
-        if (currentUser == null) return;
+        if (username == null || username.isEmpty()) return;
 
-        tvGreeting.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        double heightCm = currentUser.getHeight();
-        double weightKg = currentUser.getWeight();
-        int age = calculateAge(currentUser.getDob());
+        apiService.getUserByUsername("eq." + username, "*").enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
 
-        if (heightCm > 0 && weightKg > 0) {
-            tvCurrentHeight.setText(heightCm + " cm");
-            tvCurrentWeight.setText(weightKg + " kg");
+                // Nếu API gọi thành công và có dữ liệu trả về
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
 
-            double heightM = heightCm / 100.0;
-            double bmi = weightKg / (heightM * heightM);
-            tvBMIValue.setText(String.format("%.1f", bmi));
+                    // Lấy User đầu tiên trong danh sách trả về
+                    User currentUser = response.body().get(0);
 
-            // Code set màu sắc BMI Status... (copy từ code cũ của bạn)
-            if (bmi < 18.5) {
-                tvBMIStatus.setText("Thiếu cân");
-                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
-            } else if (bmi >= 18.5 && bmi < 23) {
-                tvBMIStatus.setText("Bình thường");
-                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
-            } else {
-                tvBMIStatus.setText("Béo phì");
-                tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                    // Cập nhật tên hiển thị (Đổi getFullName() thành getName())
+                    tvGreeting.setText(currentUser.getName() != null ? currentUser.getName() : username);
+
+                    // Lấy Chiều cao & Cân nặng (Xử lý an toàn vì Double có thể null trên DB)
+                    double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                    double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+
+                    // Tính tuổi (Đổi getDob() thành getDateOfBirth())
+                    int age = calculateAge(currentUser.getDateOfBirth());
+
+                    // Tính toán và hiển thị BMI
+                    if (heightCm > 0 && weightKg > 0) {
+                        tvCurrentHeight.setText(heightCm + " cm");
+                        tvCurrentWeight.setText(weightKg + " kg");
+
+                        double heightM = heightCm / 100.0;
+                        double bmi = weightKg / (heightM * heightM);
+                        tvBMIValue.setText(String.format("%.1f", bmi));
+
+                        // Code set màu sắc BMI Status
+                        if (bmi < 18.5) {
+                            tvBMIStatus.setText("Thiếu cân");
+                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                        } else if (bmi >= 18.5 && bmi < 23) {
+                            tvBMIStatus.setText("Bình thường");
+                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                        } else {
+                            tvBMIStatus.setText("Béo phì");
+                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                        }
+                    } else {
+                        // Hiển thị mặc định khi chưa có data
+                        tvCurrentHeight.setText("-- cm");
+                        tvCurrentWeight.setText("-- kg");
+                        tvBMIValue.setText("--");
+                        tvBMIStatus.setText("Chưa có");
+                        // Trả về màu xám nếu chưa có data cho đỡ bị giữ màu cũ
+                        tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9E9E9E")));
+                    }
+
+                    // Hiển thị tuổi
+                    if (age > 0) tvCurrentAge.setText(String.valueOf(age));
+                    else tvCurrentAge.setText("--");
+
+                } else {
+                    Toast.makeText(HomeActivity.this, "Không tìm thấy dữ liệu người dùng!", Toast.LENGTH_SHORT).show();
+                }
             }
-        } else {
-            // Hiển thị mặc định khi chưa có data...
-            tvCurrentHeight.setText("-- cm");
-            tvCurrentWeight.setText("-- kg");
-            tvBMIValue.setText("--");
-            tvBMIStatus.setText("Chưa có");
-        }
 
-        if (age > 0) tvCurrentAge.setText(String.valueOf(age));
-        else tvCurrentAge.setText("--");
+            @Override
+            public void onFailure(Call<List<User>> call, Throwable t) {
+                Toast.makeText(HomeActivity.this, "Lỗi mạng: Không thể tải dữ liệu!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private int calculateAge(String dobString) {

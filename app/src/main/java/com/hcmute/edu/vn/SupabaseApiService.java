@@ -1,6 +1,8 @@
 package com.hcmute.edu.vn;
 
 import com.hcmute.edu.vn.home.model.User;
+import com.hcmute.edu.vn.login.SignInRequest;
+import com.hcmute.edu.vn.login.SignInResponse;
 import com.hcmute.edu.vn.login.SignUpRequest;
 import com.hcmute.edu.vn.login.SignUpResponse;
 
@@ -13,6 +15,17 @@ import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface SupabaseApiService {
+
+    // Dùng để tìm user dựa theo username (Lấy email ra để đăng nhập, hoặc check trùng lúc đăng ký)
+    @GET("users")
+    Call<List<User>> getUserByUsername(
+            @Query("username") String eqUsername,
+            @Query("select") String selectAll
+    );
+
+    // API Đăng nhập bảo mật qua Supabase Auth
+    @POST("/auth/v1/token?grant_type=password")
+    Call<SignInResponse> signInAuth(@Body SignInRequest request);
 
     // API Đăng ký tài khoản bảo mật (Chọc vào hệ thống Auth)
     @POST("/auth/v1/signup")

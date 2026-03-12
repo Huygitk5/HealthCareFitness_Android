@@ -42,57 +42,64 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
-        // Xóa khai báo dbHelper, thêm đoạn mã sau vào sự kiện btnSignIn.setOnClickListener:
-
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String username = edtUser.getText().toString().trim();
                 String password = edtPass.getText().toString().trim();
 
-                tilPassword.setError(null);
-
                 if (username.isEmpty() || password.isEmpty()) {
                     Toast.makeText(LoginActivity.this, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Vô hiệu hóa nút để tránh bấm nhiều lần
                 btnSignIn.setEnabled(false);
                 btnSignIn.setText("Đang đăng nhập...");
 
                 SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-                // Gọi API: Tìm username bằng và password bằng...
-                apiService.loginUser("eq." + username, "eq." + password, "*").enqueue(new retrofit2.Callback<List<User>>() {
+                // LẤY EMAIL BẰNG USERNAME
+                apiService.getUserByUsername("eq." + username, "*").enqueue(new retrofit2.Callback<List<User>>() {
                     @Override
                     public void onResponse(Call<List<User>> call, retrofit2.Response<List<User>> response) {
-                        btnSignIn.setEnabled(true);
-                        btnSignIn.setText("Sign In");
-
                         if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            // CÓ DATA TRẢ VỀ -> ĐĂNG NHẬP THÀNH CÔNG
-                            User currentUser = response.body().get(0);
 
-                            android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                            pref.edit().putString("KEY_USER", username).apply();
+                            // Lấy email thành công
+                            String userEmail = response.body().get(0).getEmail();
 
-                            Intent intent;
-                            // Kiểm tra xem đã cập nhật profile chưa (kiểm tra name)
-                            if (currentUser.getName() == null || currentUser.getName().isEmpty()) {
-                                intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
-                                intent.putExtra("KEY_REGISTER_USER", username);
-                                Toast.makeText(LoginActivity.this, "Hãy điền thông tin của bạn!", Toast.LENGTH_SHORT).show();
-                            } else {
-                                intent = new Intent(LoginActivity.this, HomeActivity.class);
-                                intent.putExtra("KEY_USER", username);
-                                Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-                            }
-                            startActivity(intent);
-                            finish();
+                            // TIẾN HÀNH ĐĂNG NHẬP AUTH BẰNG EMAIL + PASSWORD
+                            SignInRequest loginRequest = new SignInRequest(userEmail, password);
+                            apiService.signInAuth(loginRequest).enqueue(new retrofit2.Callback<SignInResponse>() {
+                                @Override
+                                public void onResponse(Call<SignInResponse> call, retrofit2.Response<SignInResponse> loginResponse) {
+                                    btnSignIn.setEnabled(true);
+                                    btnSignIn.setText("Sign In");
+
+                                    if (loginResponse.isSuccessful() && loginResponse.body() != null) {
+                                        // Đăng nhập thành công!
+                                        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                                        pref.edit().putString("KEY_USER", username).apply();
+
+                                        Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                                        startActivity(intent);
+                                        finish();
+                                    } else {
+                                        tilPassword.setError("Sai tài khoản hoặc mật khẩu!");
+                                    }
+                                }
+                                @Override
+                                public void onFailure(Call<SignInResponse> call, Throwable t) {
+                                    btnSignIn.setEnabled(true);
+                                    btnSignIn.setText("Sign In");
+                                }
+                            });
+
                         } else {
-                            // TRẢ VỀ RỖNG -> SAI TÀI KHOẢN HOẶC MẬT KHẨU
-                            tilPassword.setError("Sai tài khoản hoặc mật khẩu!");
+                            // Không tìm thấy username trong database
+                            btnSignIn.setEnabled(true);
+                            btnSignIn.setText("Sign In");
+                            tilPassword.setError("Tài khoản không tồn tại!");
                         }
                     }
 

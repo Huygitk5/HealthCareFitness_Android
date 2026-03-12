@@ -13,6 +13,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.SupabaseApiService;
+import com.hcmute.edu.vn.SupabaseClient;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.home.model.User;
 import com.hcmute.edu.vn.nutrition.activity.NutritionActivity;
@@ -21,7 +23,12 @@ import com.hcmute.edu.vn.workout.activity.WorkoutActivity;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -105,37 +112,59 @@ public class ProfileActivity extends AppCompatActivity {
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
-        // 3. Truy xuất DB và hiển thị (Giống hệt cách của HomeActivity)
         if (username != null && !username.isEmpty()) {
-            User currentUser = dbHelper.getUserDetails(username);
 
-            if (currentUser != null) {
-                // Hiển thị Tên và Địa chỉ
-                txtName.setText(currentUser.getFullName() != null ? currentUser.getFullName() : username);
-                txtLocation.setText(currentUser.getAddress() != null ? currentUser.getAddress() : "Chưa cập nhật địa chỉ");
+            // Khởi tạo Retrofit gọi API
+            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-                // Hiển thị chiều cao, cân nặng
-                double heightCm = currentUser.getHeight();
-                double weightKg = currentUser.getWeight();
+            // Gọi API lấy thông tin Profile từ Supabase
+            apiService.getUserByUsername("eq." + username, "*").enqueue(new Callback<List<User>>() {
+                @Override
+                public void onResponse(Call<List<User>> call, Response<List<User>> response) {
 
-                if (heightCm > 0 && weightKg > 0) {
-                    tvProfileHeight.setText(heightCm + " cm");
-                    tvProfileWeight.setText(weightKg + " kg");
-                } else {
-                    tvProfileHeight.setText("-- cm");
-                    tvProfileWeight.setText("-- kg");
+                    // Nếu lấy dữ liệu thành công
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        User currentUser = response.body().get(0);
+
+                        // 1. Hiển thị Tên (Đổi getFullName() thành getName())
+                        txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty()
+                                ? currentUser.getName() : username);
+
+                        // 2. Hiển thị "Địa chỉ" (Do DB không còn address, ta dùng tạm ô này để hiện Email nhé)
+                        txtLocation.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
+
+                        // 3. Hiển thị chiều cao, cân nặng (Xử lý an toàn vì Double có thể null)
+                        double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                        double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+
+                        if (heightCm > 0 && weightKg > 0) {
+                            tvProfileHeight.setText(heightCm + " cm");
+                            tvProfileWeight.setText(weightKg + " kg");
+                        } else {
+                            tvProfileHeight.setText("-- cm");
+                            tvProfileWeight.setText("-- kg");
+                        }
+
+                        // 4. Tính toán và hiển thị tuổi (Đổi getDob() thành getDateOfBirth())
+                        int age = calculateAge(currentUser.getDateOfBirth());
+                        if(age > 0) {
+                            tvProfileAge.setText(String.valueOf(age));
+                        } else {
+                            tvProfileAge.setText("--");
+                        }
+                    } else {
+                        Toast.makeText(ProfileActivity.this, "Không tìm thấy thông tin người dùng trên Cloud", Toast.LENGTH_SHORT).show();
+                    }
                 }
 
-                // Tính toán và hiển thị tuổi
-                int age = calculateAge(currentUser.getDob());
-                if(age > 0) {
-                    tvProfileAge.setText(String.valueOf(age));
-                } else {
-                    tvProfileAge.setText("--");
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi mạng: Không thể tải dữ liệu Profile!", Toast.LENGTH_SHORT).show();
                 }
-            }
+            });
+
         } else {
-            Toast.makeText(this, "Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tìm thấy thông tin đăng nhập trong máy", Toast.LENGTH_SHORT).show();
         }
     }
 

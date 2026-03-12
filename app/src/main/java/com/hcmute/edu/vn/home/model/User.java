@@ -9,6 +9,9 @@ public class User {
     @SerializedName("username")
     private String username;
 
+    @SerializedName("email")
+    private String email;
+
     @SerializedName("name")
     private String name;
 
@@ -54,6 +57,14 @@ public class User {
         this.name = name;
     }
 
+    // Constructor dùng lúc đăng ký
+    public User(String id, String username, String email, String name) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.name = name;
+    }
+
     // --- GETTER & SETTER ---
     public String getId() { return id; }
     public String getUsername() { return username; }
@@ -73,4 +84,6 @@ public class User {
 
     public Double getWeight() { return weight; }
     public void setWeight(Double weight) { this.weight = weight; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }
