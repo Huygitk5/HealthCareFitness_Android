@@ -43,6 +43,10 @@
         <activity android:name="com.hcmute.edu.vn.nutrition.activity.DetailMealActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".workout.activity.FreeWorkoutFilterActivity"
+            android:exported="false"  />
+
         <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutDetailActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseListActivity" android:exported="false" />

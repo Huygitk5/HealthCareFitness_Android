@@ -194,20 +194,19 @@
     </androidx.cardview.widget.CardView>
 
     <TextView
-        android:id="@+id/tvEquipment_base"
+        android:id="@+id/tvFreeWorkoutSection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Equipment-based"
+        android:text="Tập Tự Do (Free Workout)"
         android:textStyle="bold"
         android:textSize="18sp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="12dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cardWorkoutPlan"
-        />
+        app:layout_constraintTop_toBottomOf="@id/cardWorkoutPlan" />
 
     <androidx.cardview.widget.CardView
-        android:id="@+id/cardEquipment"
+        android:id="@+id/cardFreeWorkout"
         android:layout_width="0dp"
         android:layout_height="200dp"
         app:cardCornerRadius="24dp"
@@ -215,19 +214,50 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="5dp"
+        android:foreground="?attr/selectableItemBackground"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvEquipment_base">
+        app:layout_constraintTop_toBottomOf="@id/tvFreeWorkoutSection">
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:src="@drawable/workout_3"
                 android:scaleType="centerCrop"/>
-        </FrameLayout>
 
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#66000000" />
+            <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_gravity="center"
+            android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TỰ THIẾT KẾ BÀI TẬP"
+                    android:textColor="@android:color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Lọc theo dụng cụ &amp; Nhóm cơ"
+                    android:textColor="#E0E0E0"
+                    android:textSize="14sp" />
+        </LinearLayout>
+
+        </FrameLayout>
     </androidx.cardview.widget.CardView>
 
     <LinearLayout

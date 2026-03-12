@@ -7,6 +7,7 @@ import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -72,6 +73,14 @@ public class WorkoutActivity extends AppCompatActivity {
                 startActivity(intent);
                 overridePendingTransition(0, 0);
             }
+        });
+
+        CardView cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
+
+        cardFreeWorkout.setOnClickListener(v -> {
+            // Chuyển sang màn hình Lọc bài tập tự do
+            Intent intent = new Intent(WorkoutActivity.this, FreeWorkoutFilterActivity.class);
+            startActivity(intent);
         });
     }
 
