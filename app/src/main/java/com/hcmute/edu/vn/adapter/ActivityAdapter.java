@@ -37,7 +37,15 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
         Exercise activity = activityList.get(position);
 
         holder.tvActivityName.setText(activity.getName());
-        holder.imgActivity.setImageResource(activity.getImage());
+
+        if (activity.getImageUrl() != null && !activity.getImageUrl().isEmpty()) {
+            try {
+                int imageResId = Integer.parseInt(activity.getImageUrl());
+                holder.imgActivity.setImageResource(imageResId);
+            } catch (NumberFormatException e) {
+                holder.imgActivity.setImageResource(R.mipmap.ic_launcher);
+            }
+        }
     }
 
     @Override
