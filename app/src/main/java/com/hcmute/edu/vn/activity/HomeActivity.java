@@ -3,6 +3,7 @@ package com.hcmute.edu.vn.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -31,7 +32,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID; // Dùng để tạo ID ngẫu nhiên cho Bài tập
 
-public class HomeActivity extends AppCompatActivity {
+public class  HomeActivity extends AppCompatActivity {
 
     TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
@@ -44,9 +45,28 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.home_view);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.home), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            float density = getResources().getDisplayMetrics().density; // Lấy tỷ lệ màn hình để convert dp -> px
+
+            // 1. Padding cho ScrollView để nội dung trượt mượt mà dưới Status Bar
+            View scrollContent = findViewById(R.id.scrollContent);
+            if (scrollContent != null) {
+                int topPadding = systemBars.top + (int)(24 * density);    // Né Status Bar + 24dp khoảng cách Header
+                int bottomPadding = systemBars.bottom + (int)(86 * density); // Né Nav Bar + 110dp bù hao cho thanh BottomNav
+                scrollContent.setPadding(0, topPadding, 0, bottomPadding);
+            }
+
+            // 2. Đẩy cụm Bottom Navigation nổi lên trên vạch Home Indicator của điện thoại
+            View bottomNav = findViewById(R.id.bottomNav);
+            if (bottomNav != null) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
+                params.bottomMargin = systemBars.bottom + (int)(16 * density); // Né Nav Bar + 16dp lề cũ
+                bottomNav.setLayoutParams(params);
+            }
+
+            // TRỌNG TÂM: Trả về insets nguyên bản, không setPadding cho toàn màn hình (v) nữa!
             return insets;
         });
 
