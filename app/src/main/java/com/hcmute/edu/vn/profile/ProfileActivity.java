@@ -2,7 +2,6 @@ package com.hcmute.edu.vn.profile;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,7 +12,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
-import com.hcmute.edu.vn.DatabaseHelper;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.home.model.User;
@@ -29,7 +27,6 @@ public class ProfileActivity extends AppCompatActivity {
 
     TextView txtName, txtLocation, tvProfileAge, tvProfileWeight, tvProfileHeight;
     MaterialButton btnLogout;
-    DatabaseHelper dbHelper;
     String username;
 
     @Override
@@ -45,7 +42,6 @@ public class ProfileActivity extends AppCompatActivity {
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
-        dbHelper = new DatabaseHelper(this);
 
         // 1. Ánh xạ các View
         txtName = findViewById(R.id.txtName);

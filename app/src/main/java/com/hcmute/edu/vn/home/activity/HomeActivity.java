@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.DatabaseHelper;
 import com.hcmute.edu.vn.home.adapter.ActivityAdapter;
 import com.hcmute.edu.vn.home.model.ActivityItem;
 import com.hcmute.edu.vn.home.model.News;
@@ -38,7 +37,6 @@ public class HomeActivity extends AppCompatActivity {
     TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
     RecyclerView rvActivities, rvNews;
-    DatabaseHelper dbHelper;
     String username;
 
     @Override
@@ -53,7 +51,6 @@ public class HomeActivity extends AppCompatActivity {
         });
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
-        dbHelper = new DatabaseHelper(this);
 
         // 2. Ánh xạ các View từ XML
         tvGreeting = findViewById(R.id.tvGreeting);

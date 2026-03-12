@@ -11,8 +11,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.DatabaseHelper;
+import com.hcmute.edu.vn.SupabaseApiService;
+import com.hcmute.edu.vn.SupabaseClient;
 import com.hcmute.edu.vn.home.model.User;
+
+import retrofit2.Call;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -20,14 +23,12 @@ public class RegisterActivity extends AppCompatActivity {
     TextView tvPasswordMsg, tvConfirmMsg;
     Button btnRegister;
     TextView tvSignInLink;
-    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register);
 
-        dbHelper = new DatabaseHelper(this);
 
         edtUser = findViewById(R.id.edtUsername);
         edtPass = findViewById(R.id.edtPassword);
@@ -114,16 +115,33 @@ public class RegisterActivity extends AppCompatActivity {
                     tvConfirmMsg.setText("Passwords do not match!");
                     return;
                 }
+                btnRegister.setEnabled(false);
 
-                User newUser = new User(user, pass, "", "", "", "", 0.0, 0.0 );
-                boolean success = dbHelper.addUser(newUser);
-                if (success) {
-                    Toast.makeText(RegisterActivity.this, "Create Success!", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    Toast.makeText(RegisterActivity.this, "Account already exists!", Toast.LENGTH_SHORT).show();
-                }
+                User newUser = new User(user, "User Mới");
+                SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
+                // Gọi API Đăng ký
+                apiService.registerUser(newUser).enqueue(new retrofit2.Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, retrofit2.Response<Void> response) {
+                        btnRegister.setEnabled(true);
+
+                        // Nếu HTTP CODE là 200~299 (Thành công)
+                        if (response.isSuccessful()) {
+                            Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            // Supabase sẽ báo lỗi 409 Conflict nếu username (đặt UNIQUE) bị trùng
+                            Toast.makeText(RegisterActivity.this, "Tài khoản đã tồn tại!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        btnRegister.setEnabled(true);
+                        Toast.makeText(RegisterActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
 
