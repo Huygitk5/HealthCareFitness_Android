@@ -20,7 +20,10 @@ import java.util.List;
 
 public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHolder> {
     private List<WorkoutDay> mList;
-    public WorkoutAdapter(List<WorkoutDay> list) { this.mList = list; }
+
+    public WorkoutAdapter(List<WorkoutDay> list) {
+        this.mList = list;
+    }
 
     @NonNull
     @Override
@@ -32,37 +35,61 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WorkoutDay item = mList.get(position);
-        holder.tvTitle.setText(item.getDayName());
-        holder.tvSub.setText(item.getSubTitle());
 
-        if (position == 0) { // Ngày 1
+        // 1. Dùng getName() thay vì getDayName()
+        holder.tvTitle.setText(item.getName());
+
+        // 2. LOGIC TỰ ĐỘNG TÍNH NGÀY NGHỈ
+        boolean isRestDay = item.getExercises() == null || item.getExercises().isEmpty();
+
+        // Tự động set SubTitle dựa vào List
+        if (isRestDay) {
+            holder.tvSub.setText("Nghỉ ngơi");
+        } else {
+            holder.tvSub.setText(item.getExercises().size() + " Bài tập");
+        }
+
+        if (position == 0) { // Ngày 1 (Hoặc ngày đang active)
             holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
-            holder.btnStart.setVisibility(View.VISIBLE);
-            holder.ivRest.setVisibility(View.GONE);
 
-            // XỬ LÝ CLICK ĐẾN ĐÚNG ACTIVITY DANH SÁCH BÀI TẬP
-            holder.btnStart.setOnClickListener(v -> {
-                Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
-                v.getContext().startActivity(intent);
-            });
+            // Nếu là ngày nghỉ thì ẩn luôn nút Start
+            holder.btnStart.setVisibility(isRestDay ? View.GONE : View.VISIBLE);
+            holder.ivRest.setVisibility(isRestDay ? View.VISIBLE : View.GONE);
+
+            // XỬ LÝ CLICK ĐẾN ACTIVITY DANH SÁCH BÀI TẬP
+            if (!isRestDay) {
+                holder.btnStart.setOnClickListener(v -> {
+                    Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
+                    // Ở các bước sau, bạn có thể truyền ID của ngày tập qua Intent ở đây
+                    v.getContext().startActivity(intent);
+                });
+            } else {
+                holder.btnStart.setOnClickListener(null);
+            }
 
             holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
         } else { // Các ngày khác
             holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
             holder.btnStart.setVisibility(View.GONE);
-            holder.ivRest.setVisibility(item.isRestDay() ? View.VISIBLE : View.GONE);
+
+            // Dùng biến isRestDay tự tính ở trên
+            holder.ivRest.setVisibility(isRestDay ? View.VISIBLE : View.GONE);
             holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
+
             holder.btnStart.setOnClickListener(null); // Tránh lỗi click nhầm
         }
     }
 
     @Override
-    public int getItemCount() { return mList.size(); }
+    public int getItemCount() {
+        return mList.size();
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvSub, btnStart;
         ImageView ivRest;
         CardView cardView;
+
         public ViewHolder(View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvDayTitle);

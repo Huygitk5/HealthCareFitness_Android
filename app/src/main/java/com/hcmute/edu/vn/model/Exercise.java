@@ -2,9 +2,10 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Exercise {
+public class Exercise implements Serializable {
     @SerializedName("id")
     private String id;
     @SerializedName("name")
@@ -12,6 +13,7 @@ public class Exercise {
     @SerializedName("description")
     private String description;
     @SerializedName("muscle_group_id")
+
     private Integer muscleGroupId;
     @SerializedName("difficulty_level_id")
     private Integer difficultyLevelId;

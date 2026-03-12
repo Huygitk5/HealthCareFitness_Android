@@ -2,7 +2,9 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Equipment {
+import java.io.Serializable;
+
+public class Equipment implements Serializable {
     @SerializedName("id")
     private Integer id;
     @SerializedName("name")
