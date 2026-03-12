@@ -33,7 +33,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-public class HomeActivity extends AppCompatActivity {
+public class  HomeActivity extends AppCompatActivity {
 
     TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
