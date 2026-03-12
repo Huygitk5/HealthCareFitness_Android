@@ -1,9 +1,12 @@
 package com.hcmute.edu.vn.workout.activity;
 
 import android.content.Intent;
+import android.graphics.Color; // Import thêm thư viện màu sắc
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView; // Import ImageView
 import android.widget.LinearLayout;
+import android.widget.TextView; // Import TextView
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +22,14 @@ import com.hcmute.edu.vn.profile.ProfileActivity;
 
 public class WorkoutActivity extends AppCompatActivity {
     String username;
+
+    // =========================================================
+    // KHAI BÁO CÁC VIEW CHO PHẦN CHỌN LEVEL
+    // =========================================================
+    private TextView tvBeginner, tvIntermediate, tvAdvanced;
+    private TextView tvWorkoutPlanTitle;
+    private ImageView ivWorkoutPlan;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,6 +43,14 @@ public class WorkoutActivity extends AppCompatActivity {
 
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
+
+        // =========================================================
+        // KHỞI TẠO VÀ XỬ LÝ GIAO DIỆN LEVEL
+        // =========================================================
+        initLevelViews();
+        setupLevelListeners();
+        selectLevel("BEGINNER"); // Mặc định chọn thẻ Beginner khi mở màn hình
+
         // Thêm đoạn này vào cuối onCreate của WorkoutActivity
         findViewById(R.id.cardWorkoutPlan).setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
@@ -90,5 +109,64 @@ public class WorkoutActivity extends AppCompatActivity {
         setIntent(intent);
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
+    }
+
+    // =========================================================
+    // CÁC HÀM XỬ LÝ LOGIC ĐỔI LEVEL (Tách riêng để code sạch)
+    // =========================================================
+
+    private void initLevelViews() {
+        tvBeginner = findViewById(R.id.tvBeginner);
+        tvIntermediate = findViewById(R.id.tvIntermediate);
+        tvAdvanced = findViewById(R.id.tvAdvanced);
+        tvWorkoutPlanTitle = findViewById(R.id.tvWorkoutPlanTitle);
+        ivWorkoutPlan = findViewById(R.id.ivWorkoutPlan);
+    }
+
+    private void setupLevelListeners() {
+        tvBeginner.setOnClickListener(v -> selectLevel("BEGINNER"));
+        tvIntermediate.setOnClickListener(v -> selectLevel("INTERMEDIATE"));
+        tvAdvanced.setOnClickListener(v -> selectLevel("ADVANCED"));
+    }
+
+    private void selectLevel(String level) {
+        // Đưa tất cả các nút về trạng thái xám trước
+        resetLevelButtons();
+
+        // Tùy theo Level mà bật sáng nút và đổi nội dung thẻ CardView
+        switch (level) {
+            case "BEGINNER":
+                tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvBeginner.setTextColor(Color.WHITE);
+                tvWorkoutPlanTitle.setText("Khởi động & Làm quen");
+                ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv1);
+                break;
+
+            case "INTERMEDIATE":
+                tvIntermediate.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvIntermediate.setTextColor(Color.WHITE);
+                tvWorkoutPlanTitle.setText("Tăng cơ & Giảm mỡ");
+                ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv2);
+                break;
+
+            case "ADVANCED":
+                tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_button);
+                tvAdvanced.setTextColor(Color.WHITE);
+                tvWorkoutPlanTitle.setText("Đốt mỡ cường độ cao");
+                ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv3);
+                break;
+        }
+    }
+
+    private void resetLevelButtons() {
+        // Đưa nút về background xám và chữ màu xám
+        tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_inactive);
+        tvBeginner.setTextColor(Color.parseColor("#888888"));
+
+        tvIntermediate.setBackgroundResource(R.drawable.bg_workout_level_inactive);
+        tvIntermediate.setTextColor(Color.parseColor("#888888"));
+
+        tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_inactive);
+        tvAdvanced.setTextColor(Color.parseColor("#888888"));
     }
 }
