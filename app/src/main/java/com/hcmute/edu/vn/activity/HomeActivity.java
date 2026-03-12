@@ -31,7 +31,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID; // Dùng để tạo ID ngẫu nhiên cho Bài tập
 
-public class HomeActivity extends AppCompatActivity {
+public class  HomeActivity extends AppCompatActivity {
 
     TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
