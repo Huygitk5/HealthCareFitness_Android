@@ -1,33 +1,76 @@
 package com.hcmute.edu.vn.home.model;
 
-public class User {
-    private String username;
-    private String password;
-    private String fullName;
-    private String dob;
-    private String gender;
-    private String address;
-    private double height;
-    private double weight;
+import com.google.gson.annotations.SerializedName;
 
-    public User(String username, String password, String fullName, String dob, String gender, String address, double height, double weight) {
-        this.username = username;
-        this.password = password;
-        this.fullName = fullName;
-        this.dob = dob;
+public class User {
+    @SerializedName("id")
+    private String id;
+
+    @SerializedName("username")
+    private String username;
+
+    @SerializedName("name")
+    private String name;
+
+    @SerializedName("date_of_birth")
+    private String dateOfBirth; // Trả về dạng YYYY-MM-DD
+
+    @SerializedName("gender")
+    private String gender;
+
+    @SerializedName("height")
+    private Double height;
+
+    @SerializedName("weight")
+    private Double weight;
+
+    @SerializedName("fitness_goal_id")
+    private Integer fitnessGoalId;
+
+    @SerializedName("created_at")
+    private String createdAt;
+
+    // --- CONSTRUCTOR ---
+    public User() {}
+
+    // Dành cho lúc cập nhật Profile
+    public User(String name, String dateOfBirth, String gender, Double height, Double weight) {
+        this.name = name;
+        this.dateOfBirth = dateOfBirth;
         this.gender = gender;
-        this.address = address;
         this.height = height;
         this.weight = weight;
     }
 
-    // Getter methods
+    // Constructor dùng để Đăng ký (Chỉ cần truyền username và name, các cột khác để null)
+    public User(String username, String name) {
+        this.username = username;
+        this.name = name;
+    }
+
+    public User(String id, String username, String name) {
+        this.id = id;
+        this.username = username;
+        this.name = name;
+    }
+
+    // --- GETTER & SETTER ---
+    public String getId() { return id; }
     public String getUsername() { return username; }
-    public String getPassword() { return password; }
-    public String getFullName() { return fullName; }
-    public String getDob() { return dob; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
     public String getGender() { return gender; }
-    public String getAddress() { return address; }
-    public double getHeight() { return height; }
-    public double getWeight() { return weight; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
+
+    public Double getWeight() { return weight; }
+    public void setWeight(Double weight) { this.weight = weight; }
 }

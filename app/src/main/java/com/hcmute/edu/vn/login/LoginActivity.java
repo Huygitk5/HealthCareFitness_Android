@@ -12,10 +12,15 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.DatabaseHelper;
+import com.hcmute.edu.vn.SupabaseApiService;
+import com.hcmute.edu.vn.SupabaseClient;
 import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.home.model.User;
 import com.hcmute.edu.vn.profile.ProfileSetupActivity;
+
+import java.util.List;
+
+import retrofit2.Call;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -24,14 +29,11 @@ public class LoginActivity extends AppCompatActivity {
     Button btnSignIn;
     TextView tvRegisterLink;
     TextView tvForgotPassword;
-    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
-
-        dbHelper = new DatabaseHelper(this);
 
         edtUser = findViewById(R.id.edtUsername);
         edtPass = findViewById(R.id.edtPassword);
@@ -40,39 +42,67 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
+        // Xóa khai báo dbHelper, thêm đoạn mã sau vào sự kiện btnSignIn.setOnClickListener:
+
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String username = edtUser.getText().toString();
-                String password = edtPass.getText().toString();
+                String username = edtUser.getText().toString().trim();
+                String password = edtPass.getText().toString().trim();
 
                 tilPassword.setError(null);
 
                 if (username.isEmpty() || password.isEmpty()) {
-                    Toast.makeText(LoginActivity.this, "Please enter all the information!", Toast.LENGTH_SHORT).show();
-                } else {
-                    if (dbHelper.checkLogin(username, password)) {
-                        User currentUser = dbHelper.getUserDetails(username);
-                        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                        android.content.SharedPreferences.Editor editor = pref.edit();
-                        editor.putString("KEY_USER", username); // LƯU username vào máy
-                        editor.apply();
-                        Intent intent;
-                        if (currentUser.getFullName().isEmpty()) {
-                            intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
-                            intent.putExtra("KEY_REGISTER_USER", username);
-                            Toast.makeText(LoginActivity.this, "Fill in your information!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            intent = new Intent(LoginActivity.this, HomeActivity.class);
-                            intent.putExtra("KEY_USER", username);
-                            Toast.makeText(LoginActivity.this, "Login success!", Toast.LENGTH_SHORT).show();
-                        }
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        tilPassword.setError("Incorrect username or password!");
-                    }
+                    Toast.makeText(LoginActivity.this, "Vui lòng nhập đủ thông tin!", Toast.LENGTH_SHORT).show();
+                    return;
                 }
+
+                // Vô hiệu hóa nút để tránh bấm nhiều lần
+                btnSignIn.setEnabled(false);
+                btnSignIn.setText("Đang đăng nhập...");
+
+                SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+                // Gọi API: Tìm username bằng và password bằng...
+                apiService.loginUser("eq." + username, "eq." + password, "*").enqueue(new retrofit2.Callback<List<User>>() {
+                    @Override
+                    public void onResponse(Call<List<User>> call, retrofit2.Response<List<User>> response) {
+                        btnSignIn.setEnabled(true);
+                        btnSignIn.setText("Sign In");
+
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            // CÓ DATA TRẢ VỀ -> ĐĂNG NHẬP THÀNH CÔNG
+                            User currentUser = response.body().get(0);
+
+                            android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                            pref.edit().putString("KEY_USER", username).apply();
+
+                            Intent intent;
+                            // Kiểm tra xem đã cập nhật profile chưa (kiểm tra name)
+                            if (currentUser.getName() == null || currentUser.getName().isEmpty()) {
+                                intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
+                                intent.putExtra("KEY_REGISTER_USER", username);
+                                Toast.makeText(LoginActivity.this, "Hãy điền thông tin của bạn!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                intent = new Intent(LoginActivity.this, HomeActivity.class);
+                                intent.putExtra("KEY_USER", username);
+                                Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
+                            }
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            // TRẢ VỀ RỖNG -> SAI TÀI KHOẢN HOẶC MẬT KHẨU
+                            tilPassword.setError("Sai tài khoản hoặc mật khẩu!");
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<User>> call, Throwable t) {
+                        btnSignIn.setEnabled(true);
+                        btnSignIn.setText("Sign In");
+                        Toast.makeText(LoginActivity.this, "Lỗi kết nối mạng!", Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
 
