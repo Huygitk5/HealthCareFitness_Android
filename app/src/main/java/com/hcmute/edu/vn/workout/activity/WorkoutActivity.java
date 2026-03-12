@@ -1,12 +1,11 @@
 package com.hcmute.edu.vn.workout.activity;
 
 import android.content.Intent;
-import android.graphics.Color; // Import thêm thư viện màu sắc
+import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ImageView; // Import ImageView
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView; // Import TextView
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,21 +19,33 @@ import com.hcmute.edu.vn.home.activity.HomeActivity;
 import com.hcmute.edu.vn.nutrition.activity.NutritionActivity;
 import com.hcmute.edu.vn.profile.ProfileActivity;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class WorkoutActivity extends AppCompatActivity {
     String username;
 
-    // =========================================================
-    // KHAI BÁO CÁC VIEW CHO PHẦN CHỌN LEVEL
-    // =========================================================
+    // View cho phần Chọn Level Giáo Án
     private TextView tvBeginner, tvIntermediate, tvAdvanced;
     private TextView tvWorkoutPlanTitle;
     private ImageView ivWorkoutPlan;
+    private CardView cardWorkoutPlan;
+
+    // View cho phần Today's Workout (Hôm nay tập gì)
+    private TextView tvCurrentTime, tvTodayWorkoutTitle;
+    private ImageView ivTodayWorkout;
+    private CardView cardTodayWorkout;
+
+    // View cho phần Free Workout (Tập tự do)
+    private CardView cardFreeWorkout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_workout);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.workout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -44,63 +55,21 @@ public class WorkoutActivity extends AppCompatActivity {
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
-        // =========================================================
-        // KHỞI TẠO VÀ XỬ LÝ GIAO DIỆN LEVEL
-        // =========================================================
-        initLevelViews();
+        // 1. Ánh xạ toàn bộ view (Tránh lỗi NullPointerException)
+        initViews();
+
+        // 2. Setup Logic cho Cụm Chọn Level
         setupLevelListeners();
-        selectLevel("BEGINNER"); // Mặc định chọn thẻ Beginner khi mở màn hình
+        selectLevel("BEGINNER"); // Mặc định mở lên chọn thẻ Beginner
 
-        // Thêm đoạn này vào cuối onCreate của WorkoutActivity
-        findViewById(R.id.cardWorkoutPlan).setOnClickListener(v -> {
-            Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
-            startActivity(intent);
-        });
+        // 3. Setup Logic cho Cụm "Hôm nay tập gì" (Next Day Logic)
+        setupTodayWorkout();
 
-        // =========================================================
-        // XỬ LÝ CLICK BOTTOM NAVIGATION TRONG WORKOUT
-        // =========================================================
+        // 4. Cài đặt các sự kiện click chuyển trang (CardView)
+        setupClickListeners();
 
-        LinearLayout navHome = findViewById(R.id.nav_home);
-        navHome.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(WorkoutActivity.this, HomeActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                overridePendingTransition(0, 0);
-            }
-        });
-
-        LinearLayout navNutrition = findViewById(R.id.nav_nutrition);
-        navNutrition.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(WorkoutActivity.this, NutritionActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                overridePendingTransition(0, 0);
-            }
-        });
-
-        LinearLayout navProfile = findViewById(R.id.nav_profile);
-        navProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(WorkoutActivity.this, ProfileActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                overridePendingTransition(0, 0);
-            }
-        });
-
-        CardView cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
-
-        cardFreeWorkout.setOnClickListener(v -> {
-            // Chuyển sang màn hình Lọc bài tập tự do
-            Intent intent = new Intent(WorkoutActivity.this, FreeWorkoutFilterActivity.class);
-            startActivity(intent);
-        });
+        // 5. Cài đặt Bottom Navigation
+        setupBottomNavigation();
     }
 
     @Override
@@ -111,18 +80,76 @@ public class WorkoutActivity extends AppCompatActivity {
         username = pref.getString("KEY_USER", null);
     }
 
-    // =========================================================
-    // CÁC HÀM XỬ LÝ LOGIC ĐỔI LEVEL (Tách riêng để code sạch)
-    // =========================================================
 
-    private void initLevelViews() {
+    private void initViews() {
+        // Khởi tạo view cho Level
         tvBeginner = findViewById(R.id.tvBeginner);
         tvIntermediate = findViewById(R.id.tvIntermediate);
         tvAdvanced = findViewById(R.id.tvAdvanced);
         tvWorkoutPlanTitle = findViewById(R.id.tvWorkoutPlanTitle);
         ivWorkoutPlan = findViewById(R.id.ivWorkoutPlan);
+        cardWorkoutPlan = findViewById(R.id.cardWorkoutPlan);
+
+        // Khởi tạo view cho Today's Workout
+        tvCurrentTime = findViewById(R.id.tvCurrentTime);
+        tvTodayWorkoutTitle = findViewById(R.id.tvTodayWorkoutTitle);
+        ivTodayWorkout = findViewById(R.id.ivTodayWorkout);
+        cardTodayWorkout = findViewById(R.id.cardTodayWorkout);
+
+        // Khởi tạo view Free Workout
+        cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
     }
 
+    private void setupClickListeners() {
+        // Bấm vào Card Giáo Án -> Chuyển sang màn hình Chi tiết Giáo Án
+        cardWorkoutPlan.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
+            startActivity(intent);
+        });
+
+        // Bấm vào Card Tập Tự Do -> Chuyển sang màn hình Lọc bài tập
+        cardFreeWorkout.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, FreeWorkoutFilterActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    // =========================================================
+    // LOGIC 1: TODAY'S WORKOUT (HÔM NAY TẬP GÌ)
+    // =========================================================
+    private void setupTodayWorkout() {
+        // Cập nhật ngày tháng động
+        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
+        String currentDate = sdf.format(new Date());
+        tvCurrentTime.setText(currentDate);
+
+        // TODO: Giả lập Logic lấy ngày tập tiếp theo từ Database
+        int lastCompletedDay = 1; // Giả sử user vừa tập xong Ngày 1
+        int nextDayOrder = lastCompletedDay + 1; // Hệ thống tự nhảy sang Ngày 2
+
+        if (nextDayOrder == 1) {
+            tvTodayWorkoutTitle.setText("Ngày 1: Ngực & Tay sau");
+            ivTodayWorkout.setImageResource(R.drawable.workout_1);
+        } else if (nextDayOrder == 2) {
+            tvTodayWorkoutTitle.setText("Ngày 2: Lưng & Bắp tay trước");
+            ivTodayWorkout.setImageResource(R.drawable.workout_2);
+        } else {
+            tvTodayWorkoutTitle.setText("Ngày " + nextDayOrder + ": Chân & Mông");
+            ivTodayWorkout.setImageResource(R.drawable.workout_3);
+        }
+
+        // Sự kiện click bắt đầu tập
+        cardTodayWorkout.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
+            intent.putExtra("PLAN_ID", 1);
+            intent.putExtra("DAY_ORDER", nextDayOrder);
+            startActivity(intent);
+        });
+    }
+
+    // =========================================================
+    // LOGIC 2: CHOOSE WORKOUT PLAN (CHỌN LEVEL)
+    // =========================================================
     private void setupLevelListeners() {
         tvBeginner.setOnClickListener(v -> selectLevel("BEGINNER"));
         tvIntermediate.setOnClickListener(v -> selectLevel("INTERMEDIATE"));
@@ -130,10 +157,7 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void selectLevel(String level) {
-        // Đưa tất cả các nút về trạng thái xám trước
-        resetLevelButtons();
-
-        // Tùy theo Level mà bật sáng nút và đổi nội dung thẻ CardView
+        resetLevelButtons(); // Tắt highlight các nút trước
         switch (level) {
             case "BEGINNER":
                 tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_button);
@@ -141,14 +165,12 @@ public class WorkoutActivity extends AppCompatActivity {
                 tvWorkoutPlanTitle.setText("Khởi động & Làm quen");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv1);
                 break;
-
             case "INTERMEDIATE":
                 tvIntermediate.setBackgroundResource(R.drawable.bg_workout_level_button);
                 tvIntermediate.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Tăng cơ & Giảm mỡ");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv2);
                 break;
-
             case "ADVANCED":
                 tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_button);
                 tvAdvanced.setTextColor(Color.WHITE);
@@ -159,7 +181,6 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void resetLevelButtons() {
-        // Đưa nút về background xám và chữ màu xám
         tvBeginner.setBackgroundResource(R.drawable.bg_workout_level_inactive);
         tvBeginner.setTextColor(Color.parseColor("#888888"));
 
@@ -168,5 +189,34 @@ public class WorkoutActivity extends AppCompatActivity {
 
         tvAdvanced.setBackgroundResource(R.drawable.bg_workout_level_inactive);
         tvAdvanced.setTextColor(Color.parseColor("#888888"));
+    }
+
+    // =========================================================
+    // LOGIC 3: BOTTOM NAVIGATION
+    // =========================================================
+    private void setupBottomNavigation() {
+        LinearLayout navHome = findViewById(R.id.nav_home);
+        navHome.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, HomeActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
+        });
+
+        LinearLayout navNutrition = findViewById(R.id.nav_nutrition);
+        navNutrition.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, NutritionActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
+        });
+
+        LinearLayout navProfile = findViewById(R.id.nav_profile);
+        navProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(WorkoutActivity.this, ProfileActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+            startActivity(intent);
+            overridePendingTransition(0, 0);
+        });
     }
 }

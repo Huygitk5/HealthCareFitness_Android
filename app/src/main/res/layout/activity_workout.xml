@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/workout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -54,27 +54,33 @@
         app:cardElevation="0dp"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
+        android:foreground="?attr/selectableItemBackground"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTodayLabel">
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
             <ImageView
-                android:id="@+id/ivWarmUp"
+                android:id="@+id/ivTodayWorkout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:src="@drawable/workout_1"/>
+
+
             <TextView
+                android:id="@+id/tvTodayWorkoutTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Day 1 - Warm Up"
+                tools:text="Ngày 1: Ngực &amp; Tay sau"
                 android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:layout_gravity = "bottom|start"
-                android:layout_margin= "16dp" />
+                android:layout_gravity="bottom|start"
+                android:layout_margin="20dp" />
         </FrameLayout>
     </androidx.cardview.widget.CardView>
     
@@ -177,7 +183,7 @@
                 android:id="@+id/ivWorkoutPlan"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@drawable/workout_2"
+                android:src="@drawable/img_workout_lv1"
                 android:scaleType="centerCrop"
                 />
             <TextView
