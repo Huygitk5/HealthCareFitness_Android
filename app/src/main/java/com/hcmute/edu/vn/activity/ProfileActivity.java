@@ -172,8 +172,10 @@ public class ProfileActivity extends AppCompatActivity {
     private int calculateAge(String dobString) {
         if (dobString == null || dobString.isEmpty()) return 0;
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+            // SỬA ĐỊNH DẠNG TỪ dd/MM/yyyy THÀNH yyyy-MM-dd
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             Date birthDate = sdf.parse(dobString);
+
             if (birthDate == null) return 0;
 
             Calendar dob = Calendar.getInstance();
@@ -181,7 +183,10 @@ public class ProfileActivity extends AppCompatActivity {
             Calendar today = Calendar.getInstance();
 
             int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
-            if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+
+            // Kiểm tra xem đã đến sinh nhật năm nay chưa
+            if (today.get(Calendar.MONTH) < dob.get(Calendar.MONTH) ||
+                    (today.get(Calendar.MONTH) == dob.get(Calendar.MONTH) && today.get(Calendar.DAY_OF_MONTH) < dob.get(Calendar.DAY_OF_MONTH))) {
                 age--;
             }
             return age;
