@@ -331,23 +331,12 @@
                             android:layout_height="160dp"
                             android:background="#F8F9FA">
 
-                            <ImageView
-                                android:id="@+id/imgChartPlaceholder"
+                            <com.github.mikephil.charting.charts.LineChart
+                                android:id="@+id/lineChartBMI"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:padding="30dp"
-                                android:scaleType="centerInside"
-                                android:src="@android:drawable/ic_menu_gallery"
-                                app:tint="#E0E0E0" />
+                                android:layout_margin="8dp" />
 
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_centerInParent="true"
-                                android:layout_marginTop="40dp"
-                                android:text="(Khu vực hiển thị Biểu đồ)"
-                                android:textColor="#9E9E9E"
-                                android:textSize="13sp" />
                         </RelativeLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
