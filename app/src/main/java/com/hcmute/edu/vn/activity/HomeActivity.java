@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,10 +17,16 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.adapter.ActivityAdapter;
+import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.News;
 import com.hcmute.edu.vn.adapter.NewsAdapter;
@@ -47,6 +54,9 @@ public class HomeActivity extends AppCompatActivity {
     ImageView btnNotification;
     RecyclerView rvActivities, rvNews;
     String username;
+    TextView btnChartDay, btnChartWeek, btnChartMonth;
+    LineChart lineChartBMI;
+    List<BmiLog> currentBmiLogs = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +81,27 @@ public class HomeActivity extends AppCompatActivity {
         btnNotification = findViewById(R.id.btnNotification);
         rvActivities = findViewById(R.id.rvActivities);
         rvNews = findViewById(R.id.rvNews);
+        btnChartDay = findViewById(R.id.btnChartDay);
+        btnChartWeek = findViewById(R.id.btnChartWeek);
+        btnChartMonth = findViewById(R.id.btnChartMonth);
+        lineChartBMI = findViewById(R.id.lineChartBMI);
+
+        setupChartAppearance();
+
+        btnChartDay.setOnClickListener(v -> {
+            setActiveTab(btnChartDay, btnChartWeek, btnChartMonth);
+            updateChartData("DAY");
+        });
+
+        btnChartWeek.setOnClickListener(v -> {
+            setActiveTab(btnChartWeek, btnChartDay, btnChartMonth);
+            updateChartData("WEEK");
+        });
+
+        btnChartMonth.setOnClickListener(v -> {
+            setActiveTab(btnChartMonth, btnChartDay, btnChartWeek);
+            updateChartData("MONTH");
+        });
 
         // 4. Sự kiện Click Chuông Thông báo
         btnNotification.setOnClickListener(new View.OnClickListener() {
@@ -212,12 +243,15 @@ public class HomeActivity extends AppCompatActivity {
                         if (bmi < 18.5) {
                             tvBMIStatus.setText("Thiếu cân");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FF9800"));
                         } else if (bmi >= 18.5 && bmi < 23) {
                             tvBMIStatus.setText("Bình thường");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
                         } else {
                             tvBMIStatus.setText("Béo phì");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#F44336"));
                         }
                     } else {
                         // Hiển thị mặc định khi chưa có data
@@ -227,6 +261,7 @@ public class HomeActivity extends AppCompatActivity {
                         tvBMIStatus.setText("Chưa có");
                         // Trả về màu xám nếu chưa có data cho đỡ bị giữ màu cũ
                         tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9E9E9E")));
+                        tvBMIValue.setTextColor(android.graphics.Color.parseColor("#9E9E9E"));
                     }
 
                     // Hiển thị tuổi
@@ -270,5 +305,102 @@ public class HomeActivity extends AppCompatActivity {
             e.printStackTrace();
             return 0;
         }
+    }
+
+    private void setActiveTab(TextView active, TextView inactive1, TextView inactive2) {
+        // Nút được chọn -> Nền xanh, chữ trắng
+        active.setBackgroundResource(R.drawable.bg_nav_active);
+        active.setTextColor(Color.WHITE);
+
+        // Nút không chọn -> Trong suốt, chữ xám
+        inactive1.setBackgroundColor(Color.TRANSPARENT);
+        inactive1.setTextColor(Color.parseColor("#757575"));
+
+        inactive2.setBackgroundColor(Color.TRANSPARENT);
+        inactive2.setTextColor(Color.parseColor("#757575"));
+    }
+
+    // =========================================================
+    // HÀM SETUP GIAO DIỆN BIỂU ĐỒ BAN ĐẦU
+    // =========================================================
+    private void setupChartAppearance() {
+        lineChartBMI.getDescription().setEnabled(false); // Ẩn chữ mô tả
+        lineChartBMI.getLegend().setEnabled(false); // Ẩn chú thích
+        lineChartBMI.setDrawGridBackground(false);
+        lineChartBMI.getAxisRight().setEnabled(false); // Ẩn cột số bên phải
+
+        XAxis xAxis = lineChartBMI.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false); // Ẩn đường kẻ dọc dọc
+        xAxis.setTextColor(Color.parseColor("#9E9E9E"));
+
+        lineChartBMI.getAxisLeft().setDrawGridLines(true); // Giữ đường kẻ ngang
+        lineChartBMI.getAxisLeft().setTextColor(Color.parseColor("#9E9E9E"));
+    }
+
+    // =========================================================
+    // HÀM CẬP NHẬT DỮ LIỆU LÊN BIỂU ĐỒ TÙY THEO TAB
+    // =========================================================
+    private void updateChartData(String filterType) {
+        ArrayList<Entry> entries = new ArrayList<>();
+        final String[] labels; // Mảng chứa chữ hiển thị dưới trục X
+
+        // Chú ý: Trục X giờ sẽ bắt đầu từ 0 để dễ dàng map với mảng labels
+        if (filterType.equals("DAY")) {
+            // Dữ liệu 5 ngày (x: 0->4)
+            entries.add(new Entry(0, 23.5f));
+            entries.add(new Entry(1, 23.4f));
+            entries.add(new Entry(2, 23.4f));
+            entries.add(new Entry(3, 23.2f));
+            entries.add(new Entry(4, 23.1f));
+            labels = new String[]{"Ngày 1", "Ngày 2", "Ngày 3", "Ngày 4", "Ngày 5"};
+
+        } else if (filterType.equals("WEEK")) {
+            // Dữ liệu 4 tuần (x: 0->3)
+            entries.add(new Entry(0, 24.0f));
+            entries.add(new Entry(1, 23.8f));
+            entries.add(new Entry(2, 23.5f));
+            entries.add(new Entry(3, 23.1f));
+            labels = new String[]{"Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"};
+
+        } else {
+            // Dữ liệu các tháng (x: 0->2)
+            entries.add(new Entry(0, 25.0f));
+            entries.add(new Entry(1, 24.5f));
+            entries.add(new Entry(2, 23.1f));
+            labels = new String[]{"Tháng 1", "Tháng 2", "Tháng 3"};
+        }
+
+        // ==========================================
+        // CẤU HÌNH TRỤC X ĐỂ HIỂN THỊ CHỮ (Labels)
+        // ==========================================
+        XAxis xAxis = lineChartBMI.getXAxis();
+        xAxis.setGranularity(1f); // Ép chỉ hiện số nguyên, không hiện số thập phân như 1.5, 2.5
+        xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getAxisLabel(float value, com.github.mikephil.charting.components.AxisBase axis) {
+                int index = (int) value; // Ép từ float sang int
+                // Đảm bảo index không bị vượt quá độ dài của mảng
+                if (index >= 0 && index < labels.length) {
+                    return labels[index];
+                }
+                return "";
+            }
+        });
+
+        // Tạo đường vẽ (Line)
+        LineDataSet dataSet = new LineDataSet(entries, "BMI");
+        dataSet.setColor(android.graphics.Color.parseColor("#4DAA9A")); // Đường màu xanh lá
+        dataSet.setCircleColor(android.graphics.Color.parseColor("#4DAA9A")); // Chấm tròn màu xanh
+        dataSet.setLineWidth(3f);
+        dataSet.setCircleRadius(5f);
+        dataSet.setDrawValues(true); // Hiện con số trên biểu đồ
+        dataSet.setValueTextSize(10f);
+        dataSet.setValueTextColor(android.graphics.Color.parseColor("#212121"));
+
+        LineData lineData = new LineData(dataSet);
+        lineChartBMI.setData(lineData);
+        lineChartBMI.invalidate(); // Lệnh này giúp biểu đồ vẽ lại ngay lập tức
+        lineChartBMI.animateX(500); // Thêm hiệu ứng chạy ngang ra cho xịn xò
     }
 }
