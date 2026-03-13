@@ -32,7 +32,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
-        edtAddress = findViewById(R.id.edtAddress);
         edtHeight = findViewById(R.id.edtHeight);
         edtWeight = findViewById(R.id.edtWeight);
         rgGender = findViewById(R.id.rgGender);
