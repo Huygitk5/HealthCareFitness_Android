@@ -212,12 +212,15 @@ public class HomeActivity extends AppCompatActivity {
                         if (bmi < 18.5) {
                             tvBMIStatus.setText("Thiếu cân");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FF9800"));
                         } else if (bmi >= 18.5 && bmi < 23) {
                             tvBMIStatus.setText("Bình thường");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
                         } else {
                             tvBMIStatus.setText("Béo phì");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#F44336"));
                         }
                     } else {
                         // Hiển thị mặc định khi chưa có data
@@ -227,6 +230,7 @@ public class HomeActivity extends AppCompatActivity {
                         tvBMIStatus.setText("Chưa có");
                         // Trả về màu xám nếu chưa có data cho đỡ bị giữ màu cũ
                         tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9E9E9E")));
+                        tvBMIValue.setTextColor(android.graphics.Color.parseColor("#9E9E9E"));
                     }
 
                     // Hiển thị tuổi
