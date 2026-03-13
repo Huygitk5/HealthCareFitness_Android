@@ -2,7 +2,10 @@ package com.hcmute.edu.vn.database;
 
 import com.hcmute.edu.vn.activity.SignInRequest;
 import com.hcmute.edu.vn.activity.SignInResponse;
+import com.hcmute.edu.vn.model.BmiLog;
+import com.hcmute.edu.vn.model.Equipment;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.activity.SignUpRequest;
 import com.hcmute.edu.vn.activity.SignUpResponse;
@@ -165,5 +168,46 @@ public interface SupabaseApiService {
     Call<Void> updatePersonalRecord(
             @Query("id") String eqRecordId,
             @Body UserPersonalRecord record
+    );
+
+    // =================================================================================
+    // BMI LOGS (THEO DÕI CHỈ SỐ CƠ THỂ)
+    // =================================================================================
+
+    // Lấy danh sách lịch sử đo BMI của 1 User
+    @GET("bmi_logs")
+    Call<List<BmiLog>> getUserBmiLogs(
+            @Query("user_id") String eqUserId,      // VD: "eq.user-uuid-1234"
+            @Query("select") String select,         // VD: "*"
+            @Query("order") String orderBy          // VD: "recorded_at.desc" (Để xếp ngày mới nhất lên đầu)
+    );
+
+    // Lưu một bản ghi BMI mới (Khi user nhập cân nặng hôm nay)
+    @POST("bmi_logs")
+    Call<Void> saveBmiLog(
+            @Body BmiLog bmiLog
+    );
+
+    // Cập nhật một bản ghi BMI (Trong trường hợp user nhập sai và muốn sửa lại)
+    @PATCH("bmi_logs")
+    Call<Void> updateBmiLog(
+            @Query("id") String eqLogId,            // VD: "eq.log-uuid-1234"
+            @Body BmiLog bmiLog                     // Object chứa cân nặng/chiều cao mới
+    );
+
+    // =================================================================================
+    // DỤNG CỤ, NHÓM CƠ, ĐỘ KHÓ
+    // =================================================================================
+
+    // Lấy danh sách toàn bộ Dụng cụ tập (Equipments)
+    @GET("equipments")
+    Call<List<Equipment>> getAllEquipments(
+            @Query("select") String select
+    );
+
+    // Lấy danh sách Nhóm cơ (Muscle Groups)
+    @GET("muscle_groups")
+    Call<List<MuscleGroup>> getMuscleGroups(
+            @QueryMap Map<String, String> filters
     );
 }
