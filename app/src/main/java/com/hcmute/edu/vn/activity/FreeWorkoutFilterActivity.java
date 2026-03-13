@@ -21,7 +21,8 @@ public class FreeWorkoutFilterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_free_workout_filter);
-
+        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
         // 1. Ánh xạ View
         spinnerMuscleGroup = findViewById(R.id.spinnerMuscleGroup);
         spinnerEquipment = findViewById(R.id.spinnerEquipment);
