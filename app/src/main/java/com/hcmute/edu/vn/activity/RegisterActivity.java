@@ -11,15 +11,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.model.User;
+
+import java.util.List;
 
 import retrofit2.Call;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    EditText edtUser, edtPass, edtConfirm;
+    EditText edtUser, edtPass, edtConfirm, edtEmail;
     TextView tvPasswordMsg, tvConfirmMsg;
     Button btnRegister;
     TextView tvSignInLink;
@@ -31,6 +33,7 @@ public class RegisterActivity extends AppCompatActivity {
 
 
         edtUser = findViewById(R.id.edtUsername);
+        edtEmail = findViewById(R.id.edtEmail);
         edtPass = findViewById(R.id.edtPassword);
         edtConfirm = findViewById(R.id.edtConfirmPassword);
         tvPasswordMsg = findViewById(R.id.tvPasswordMsg);
@@ -98,13 +101,15 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String user = edtUser.getText().toString();
+                String email = edtEmail.getText().toString();
                 String pass = edtPass.getText().toString();
                 String confirm = edtConfirm.getText().toString();
 
-                if (pass.isEmpty() || confirm.isEmpty()) {
-                    Toast.makeText(RegisterActivity.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+                if (user.isEmpty() || email.isEmpty() || pass.isEmpty() || confirm.isEmpty()) {
+                    Toast.makeText(RegisterActivity.this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
                     return;
                 }
+
                 String passwordError = validatePassword(pass);
                 if (passwordError != null) {
                     tvPasswordMsg.setText(passwordError);
@@ -112,34 +117,89 @@ public class RegisterActivity extends AppCompatActivity {
                 }
 
                 if (!pass.equals(confirm)) {
-                    tvConfirmMsg.setText("Passwords do not match!");
+                    tvConfirmMsg.setText("Mật khẩu không khớp!");
                     return;
                 }
-                btnRegister.setEnabled(false);
 
-                User newUser = new User(user, "User Mới");
+                btnRegister.setEnabled(false);
+                btnRegister.setText("Đang kiểm tra...");
+
                 SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-                // Gọi API Đăng ký
-                apiService.registerUser(newUser).enqueue(new retrofit2.Callback<Void>() {
+                // KIỂM TRA XEM USERNAME ĐÃ TỒN TẠI TRONG DATABASE CHƯA
+                apiService.getUserByUsername("eq." + user, "*").enqueue(new retrofit2.Callback<List<User>>() {
                     @Override
-                    public void onResponse(Call<Void> call, retrofit2.Response<Void> response) {
-                        btnRegister.setEnabled(true);
-
-                        // Nếu HTTP CODE là 200~299 (Thành công)
-                        if (response.isSuccessful()) {
-                            Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-                            finish();
+                    public void onResponse(Call<List<User>> call, retrofit2.Response<List<User>> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            // Đã tìm thấy 1 user xài username này
+                            btnRegister.setEnabled(true);
+                            btnRegister.setText("REGISTER");
+                            Toast.makeText(RegisterActivity.this, "Username này đã có người sử dụng!", Toast.LENGTH_SHORT).show();
                         } else {
-                            // Supabase sẽ báo lỗi 409 Conflict nếu username (đặt UNIQUE) bị trùng
-                            Toast.makeText(RegisterActivity.this, "Tài khoản đã tồn tại!", Toast.LENGTH_SHORT).show();
+                            // USERNAME CHƯA AI DÙNG -> TIẾN HÀNH ĐĂNG KÝ EMAIL + PASS VỚI AUTH
+                            btnRegister.setText("Đang tạo tài khoản...");
+                            SignUpRequest authRequest = new SignUpRequest(email, pass);
+
+                            apiService.signUpAuth(authRequest).enqueue(new retrofit2.Callback<SignUpResponse>() {
+                                @Override
+                                public void onResponse(Call<SignUpResponse> call, retrofit2.Response<SignUpResponse> authResponse) {
+                                    if (authResponse.isSuccessful() && authResponse.body() != null) {
+                                        String authId = authResponse.body().getUser().getId();
+
+                                        // BƯỚC 3: LƯU (ID, USERNAME, EMAIL) VÀO DATABASE
+                                        User newUserProfile = new User(authId, user, email, "User Mới");
+                                        apiService.registerUser(newUserProfile).enqueue(new retrofit2.Callback<Void>() {
+                                            @Override
+                                            public void onResponse(Call<Void> call, retrofit2.Response<Void> dbResponse) {
+                                                if (dbResponse.isSuccessful()) {
+                                                    Toast.makeText(RegisterActivity.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
+                                                    finish();
+                                                } else {
+                                                    try {
+                                                        String errorDetails = dbResponse.errorBody().string();
+                                                        android.util.Log.e("LỖI_DB_SUPABASE", "Chi tiết từ Supabase: " + errorDetails);
+                                                    } catch (Exception e) {
+                                                        e.printStackTrace();
+                                                    }
+                                                    Toast.makeText(RegisterActivity.this, "Lỗi lưu hồ sơ!", Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                            @Override
+                                            public void onFailure(Call<Void> call, Throwable t) {
+                                                btnRegister.setEnabled(true);
+                                                btnRegister.setText("REGISTER");
+                                                Toast.makeText(RegisterActivity.this, "Rớt mạng khi lưu hồ sơ!", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                    } else {
+                                        btnRegister.setEnabled(true);
+                                        btnRegister.setText("REGISTER");
+                                        Toast.makeText(RegisterActivity.this, "Email này đã được sử dụng hoặc không hợp lệ!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                                @Override
+                                public void onFailure(Call<SignUpResponse> call, Throwable t) {
+                                    btnRegister.setEnabled(true);
+                                    btnRegister.setText("REGISTER");
+
+                                    // Thêm dòng này để in lỗi thật ra màn hình Logcat
+                                    android.util.Log.e("LỖI_API", "Chi tiết lỗi: " + t.getMessage());
+
+                                    Toast.makeText(RegisterActivity.this, "Lỗi mạng kết nối Auth!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         }
                     }
-
                     @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
+                    public void onFailure(Call<List<User>> call, Throwable t) {
+                        // Sửa lại đoạn này
                         btnRegister.setEnabled(true);
-                        Toast.makeText(RegisterActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                        btnRegister.setText("REGISTER"); // Trả lại tên cho nút bấm
+
+                        // In log lỗi của bước 1 ra Logcat
+                        android.util.Log.e("LỖI_API_BUOC_1", "Nguyên nhân rớt mạng: " + t.getMessage());
+
+                        Toast.makeText(RegisterActivity.this, "Lỗi kết nối mạng ở bước kiểm tra!", Toast.LENGTH_SHORT).show();
                     }
                 });
             }
