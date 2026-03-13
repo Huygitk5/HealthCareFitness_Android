@@ -47,6 +47,19 @@
         <activity
             android:name=".activity.FreeWorkoutFilterActivity"
             android:exported="false"  />
+
+        <activity
+            android:name=".activity.EquipmentSelectionActivity"
+            android:exported="false"  />
+
+        <activity
+            android:name=".activity.MuscleSelectionActivity"
+            android:exported="false"  />
+
+        <activity
+            android:name=".activity.CustomExerciseSelectionActivity"
+            android:exported="false"  />
+
         <activity android:name="com.hcmute.edu.vn.activity.WorkoutDetailActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseListActivity" android:exported="false" />
