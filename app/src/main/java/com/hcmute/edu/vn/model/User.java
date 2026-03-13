@@ -2,120 +2,88 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.List;
-
 public class User {
     @SerializedName("id")
     private String id;
+
     @SerializedName("username")
     private String username;
+
+    @SerializedName("email")
+    private String email;
+
     @SerializedName("name")
     private String name;
+
     @SerializedName("date_of_birth")
-    private String dateOfBirth;
+    private String dateOfBirth; // Trả về dạng YYYY-MM-DD
+
     @SerializedName("gender")
     private String gender;
+
     @SerializedName("height")
     private Double height;
+
     @SerializedName("weight")
     private Double weight;
+
     @SerializedName("fitness_goal_id")
     private Integer fitnessGoalId;
+
     @SerializedName("created_at")
     private String createdAt;
-    @SerializedName("medical_conditions")
-    private List<MedicalCondition> medicalConditions;
 
-    public User(String id, String username, String name, String dateOfBirth, String gender, Double height, Double weight, Integer fitnessGoalId, String createdAt, List<MedicalCondition> medicalConditions) {
-        this.id = id;
-        this.username = username;
+    // --- CONSTRUCTOR ---
+    public User() {}
+
+    // Dành cho lúc cập nhật Profile
+    public User(String name, String dateOfBirth, String gender, Double height, Double weight) {
         this.name = name;
         this.dateOfBirth = dateOfBirth;
         this.gender = gender;
         this.height = height;
         this.weight = weight;
-        this.fitnessGoalId = fitnessGoalId;
-        this.createdAt = createdAt;
-        this.medicalConditions = medicalConditions;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
+    // Constructor dùng để Đăng ký (Chỉ cần truyền username và name, các cột khác để null)
+    public User(String username, String name) {
         this.username = username;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
         this.name = name;
     }
 
-    public String getDateOfBirth() {
-        return dateOfBirth;
+    public User(String id, String username, String name) {
+        this.id = id;
+        this.username = username;
+        this.name = name;
     }
 
-    public void setDateOfBirth(String dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
+    // Constructor dùng lúc đăng ký
+    public User(String id, String username, String email, String name) {
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.name = name;
     }
 
-    public String getGender() {
-        return gender;
-    }
+    // --- GETTER & SETTER ---
+    public String getId() { return id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public Double getHeight() {
-        return height;
-    }
+    public String getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 
-    public void setHeight(Double height) {
-        this.height = height;
-    }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 
-    public Double getWeight() {
-        return weight;
-    }
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
 
-    public void setWeight(Double weight) {
-        this.weight = weight;
-    }
-
-    public Integer getFitnessGoalId() {
-        return fitnessGoalId;
-    }
-
-    public void setFitnessGoalId(Integer fitnessGoalId) {
-        this.fitnessGoalId = fitnessGoalId;
-    }
-
-    public String getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public List<MedicalCondition> getMedicalConditions() {
-        return medicalConditions;
-    }
-
-    public void setMedicalConditions(List<MedicalCondition> medicalConditions) {
-        this.medicalConditions = medicalConditions;
-    }
+    public Double getWeight() { return weight; }
+    public void setWeight(Double weight) { this.weight = weight; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

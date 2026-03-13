@@ -11,14 +11,18 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.database.DatabaseHelper;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.activity.HomeActivity;
+import com.hcmute.edu.vn.model.User;
+
+import retrofit2.Call;
 
 public class ProfileSetupActivity extends AppCompatActivity {
 
-    EditText edtFullName, edtDOB, edtHeight, edtWeight;
+    EditText edtFullName, edtDOB, edtAddress, edtHeight, edtWeight;
     RadioGroup rgGender;
     Button btnComplete;
-    DatabaseHelper dbHelper;
     String receivedUsername;
 
     @Override
@@ -26,11 +30,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile_setup);
 
-        dbHelper = new DatabaseHelper(this);
-
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
-        // ĐÃ XÓA: edtAddress = findViewById(R.id.edtAddress);
+        edtAddress = findViewById(R.id.edtAddress);
         edtHeight = findViewById(R.id.edtHeight);
         edtWeight = findViewById(R.id.edtWeight);
         rgGender = findViewById(R.id.rgGender);
@@ -43,7 +45,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String fullName = edtFullName.getText().toString().trim();
-                String dob = edtDOB.getText().toString().trim();
+                String dob = edtDOB.getText().toString().trim(); // Yêu cầu user nhập YYYY-MM-DD
                 String heightStr = edtHeight.getText().toString().trim();
                 String weightStr = edtWeight.getText().toString().trim();
 
@@ -52,36 +54,54 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 if (selectedId == R.id.rbMale) gender = "Male";
                 else if (selectedId == R.id.rbFemale) gender = "Female";
 
-                // ĐÃ XÓA address khỏi điều kiện check rỗng
                 if (fullName.isEmpty() || dob.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
-                    Toast.makeText(ProfileSetupActivity.this, "Please fill in all the information", Toast.LENGTH_SHORT).show();
-                } else {
-                    try {
-                        // Ép kiểu chuỗi thành số thực an toàn
-                        double height = Double.parseDouble(heightStr);
-                        double weight = Double.parseDouble(weightStr);
+                    Toast.makeText(ProfileSetupActivity.this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                        boolean checkUpdate = dbHelper.updateUserProfile(receivedUsername, fullName, dob, gender, height, weight, null);
+                try {
+                    double height = Double.parseDouble(heightStr);
+                    double weight = Double.parseDouble(weightStr);
 
-                        if(checkUpdate) {
-                            Toast.makeText(ProfileSetupActivity.this, "Setup Success!", Toast.LENGTH_LONG).show();
+                    // Tạo Object User CHỈ chứa các trường cần update
+                    User updateData = new User();
+                    updateData.setName(fullName);
+                    updateData.setDateOfBirth(dob); // Lưu ý format "YYYY-MM-DD"
+                    updateData.setGender(gender);
+                    updateData.setHeight(height);
+                    updateData.setWeight(weight);
 
-                            // Lưu lại phiên đăng nhập để các màn hình khác nhận diện được user
-                            android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                            android.content.SharedPreferences.Editor editor = pref.edit();
-                            editor.putString("KEY_USER", receivedUsername);
-                            editor.apply();
+                    btnComplete.setEnabled(false);
+                    btnComplete.setText("Đang lưu...");
 
-                            Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
-                            i.putExtra("KEY_USER", receivedUsername);
-                            startActivity(i);
-                            finish();
-                        } else {
-                            Toast.makeText(ProfileSetupActivity.this, "Error updating profile!", Toast.LENGTH_SHORT).show();
+                    // Gọi API PATCH của Supabase (như hướng dẫn ở các tin nhắn trước)
+                    SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+                    apiService.updateUserProfile("eq." + receivedUsername, updateData).enqueue(new retrofit2.Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, retrofit2.Response<Void> response) {
+                            if (response.isSuccessful()) {
+                                Toast.makeText(ProfileSetupActivity.this, "Cập nhật thành công!", Toast.LENGTH_LONG).show();
+                                Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
+                                i.putExtra("KEY_USER", receivedUsername);
+                                startActivity(i);
+                                finish();
+                            } else {
+                                btnComplete.setEnabled(true);
+                                btnComplete.setText("Hoàn Tất");
+                                Toast.makeText(ProfileSetupActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                            }
                         }
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(ProfileSetupActivity.this, "Invalid Height or Weight format!", Toast.LENGTH_SHORT).show();
-                    }
+
+                        @Override
+                        public void onFailure(Call<Void> call, Throwable t) {
+                            btnComplete.setEnabled(true);
+                            btnComplete.setText("Hoàn Tất");
+                            Toast.makeText(ProfileSetupActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                } catch (NumberFormatException e) {
+                    Toast.makeText(ProfileSetupActivity.this, "Chiều cao, cân nặng phải là số!", Toast.LENGTH_SHORT).show();
                 }
             }
         });

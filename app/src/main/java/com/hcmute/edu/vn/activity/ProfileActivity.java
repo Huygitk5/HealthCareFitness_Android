@@ -2,7 +2,6 @@ package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,21 +12,28 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
-import com.hcmute.edu.vn.database.DatabaseHelper;
 import com.hcmute.edu.vn.R;
-// 1. IMPORT ĐÚNG MODEL MỚI
+import com.hcmute.edu.vn.activity.HomeActivity;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.activity.NutritionActivity;
+import com.hcmute.edu.vn.activity.WorkoutActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ProfileActivity extends AppCompatActivity {
 
     TextView txtName, txtLocation, tvProfileAge, tvProfileWeight, tvProfileHeight;
     MaterialButton btnLogout;
-    DatabaseHelper dbHelper;
     String username;
 
     @Override
@@ -43,7 +49,6 @@ public class ProfileActivity extends AppCompatActivity {
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
-        dbHelper = new DatabaseHelper(this);
 
         // 1. Ánh xạ các View
         txtName = findViewById(R.id.txtName);
@@ -54,17 +59,13 @@ public class ProfileActivity extends AppCompatActivity {
         btnLogout = findViewById(R.id.btnLogout);
 
         btnLogout.setOnClickListener(v -> {
-            // 2. XOÁ PHIÊN ĐĂNG NHẬP TRONG SHAREDPREFS
-            android.content.SharedPreferences preferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            android.content.SharedPreferences.Editor editor = preferences.edit();
-            editor.clear(); // Xoá sạch dữ liệu user đã lưu
-            editor.apply();
+            // Chuyển hướng về trang Login (Bạn nhớ đổi đúng tên Class LoginActivity của bạn)
+            Intent loginIntent = new Intent(ProfileActivity.this, com.hcmute.edu.vn.activity.LoginActivity.class);
 
-            // Chuyển hướng về trang Login
-            Intent loginIntent = new Intent(ProfileActivity.this, LoginActivity.class);
+            // Cờ này giúp xóa toàn bộ Activity cũ, ngăn người dùng bấm Back để vào lại
             loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(loginIntent);
 
+            startActivity(loginIntent);
             Toast.makeText(ProfileActivity.this, "Đã đăng xuất thành công!", Toast.LENGTH_SHORT).show();
             finish();
         });
@@ -78,21 +79,18 @@ public class ProfileActivity extends AppCompatActivity {
 
         navHome.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, HomeActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // Giữ cờ này để chuyển mượt
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navWorkout.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navNutrition.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, NutritionActivity.class);
-            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i);
             overridePendingTransition(0, 0);
         });
@@ -106,6 +104,7 @@ public class ProfileActivity extends AppCompatActivity {
         username = pref.getString("KEY_USER", null);
     }
 
+    // Đưa việc lấy dữ liệu vào onResume để luôn refresh thông tin mới nhất
     @Override
     protected void onResume() {
         super.onResume();
@@ -114,35 +113,58 @@ public class ProfileActivity extends AppCompatActivity {
         username = pref.getString("KEY_USER", null);
 
         if (username != null && !username.isEmpty()) {
-            User currentUser = dbHelper.getUserDetails(username);
 
-            if (currentUser != null) {
-                // 3. ĐỔI THÀNH getName() VÀ BỎ LOGIC getAddress()
-                txtName.setText(currentUser.getName() != null ? currentUser.getName() : username);
-                txtLocation.setText("Chưa cập nhật địa chỉ");
+            // Khởi tạo Retrofit gọi API
+            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-                // 4. DÙNG DOUBLE (OBJECT) ĐỂ CHỐNG LỖI NULL
-                Double heightCm = currentUser.getHeight();
-                Double weightKg = currentUser.getWeight();
+            // Gọi API lấy thông tin Profile từ Supabase
+            apiService.getUserByUsername("eq." + username, "*").enqueue(new Callback<List<User>>() {
+                @Override
+                public void onResponse(Call<List<User>> call, Response<List<User>> response) {
 
-                if (heightCm != null && weightKg != null && heightCm > 0 && weightKg > 0) {
-                    tvProfileHeight.setText(heightCm + " cm");
-                    tvProfileWeight.setText(weightKg + " kg");
-                } else {
-                    tvProfileHeight.setText("-- cm");
-                    tvProfileWeight.setText("-- kg");
+                    // Nếu lấy dữ liệu thành công
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        User currentUser = response.body().get(0);
+
+                        // 1. Hiển thị Tên (Đổi getFullName() thành getName())
+                        txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty()
+                                ? currentUser.getName() : username);
+
+                        // 2. Hiển thị "Địa chỉ" (Do DB không còn address, ta dùng tạm ô này để hiện Email nhé)
+                        txtLocation.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
+
+                        // 3. Hiển thị chiều cao, cân nặng (Xử lý an toàn vì Double có thể null)
+                        double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                        double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+
+                        if (heightCm > 0 && weightKg > 0) {
+                            tvProfileHeight.setText(heightCm + " cm");
+                            tvProfileWeight.setText(weightKg + " kg");
+                        } else {
+                            tvProfileHeight.setText("-- cm");
+                            tvProfileWeight.setText("-- kg");
+                        }
+
+                        // 4. Tính toán và hiển thị tuổi (Đổi getDob() thành getDateOfBirth())
+                        int age = calculateAge(currentUser.getDateOfBirth());
+                        if(age > 0) {
+                            tvProfileAge.setText(String.valueOf(age));
+                        } else {
+                            tvProfileAge.setText("--");
+                        }
+                    } else {
+                        Toast.makeText(ProfileActivity.this, "Không tìm thấy thông tin người dùng trên Cloud", Toast.LENGTH_SHORT).show();
+                    }
                 }
 
-                // 5. ĐỔI THÀNH getDateOfBirth()
-                int age = calculateAge(currentUser.getDateOfBirth());
-                if(age > 0) {
-                    tvProfileAge.setText(String.valueOf(age));
-                } else {
-                    tvProfileAge.setText("--");
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi mạng: Không thể tải dữ liệu Profile!", Toast.LENGTH_SHORT).show();
                 }
-            }
+            });
+
         } else {
-            Toast.makeText(this, "Không tìm thấy thông tin người dùng", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tìm thấy thông tin đăng nhập trong máy", Toast.LENGTH_SHORT).show();
         }
     }
 
