@@ -22,7 +22,7 @@ import retrofit2.Call;
 public class RegisterActivity extends AppCompatActivity {
 
     EditText edtUser, edtPass, edtConfirm, edtEmail;
-    TextView tvPasswordMsg, tvConfirmMsg;
+    TextView tvPasswordMsg, tvConfirmMsg, tvEmailMsg;
     Button btnRegister;
     TextView tvSignInLink;
 
@@ -31,6 +31,9 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register);
 
+        androidx.activity.EdgeToEdge.enable(this);
+        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
 
         edtUser = findViewById(R.id.edtUsername);
         edtEmail = findViewById(R.id.edtEmail);
@@ -38,8 +41,33 @@ public class RegisterActivity extends AppCompatActivity {
         edtConfirm = findViewById(R.id.edtConfirmPassword);
         tvPasswordMsg = findViewById(R.id.tvPasswordMsg);
         tvConfirmMsg = findViewById(R.id.tvConfirmMsg);
+        tvEmailMsg = findViewById(R.id.tvEmailMsg);
         btnRegister = findViewById(R.id.btnRegister);
         tvSignInLink = findViewById(R.id.tvSignInLink);
+
+        edtEmail.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    String email = edtEmail.getText().toString().trim();
+                    if (!email.isEmpty() && tvEmailMsg != null) {
+                        tvEmailMsg.setVisibility(View.VISIBLE);
+
+                        if (!validateEmail(email)) {
+                            // EMAIL SAI -> Dấu ! và chữ Đỏ
+                            tvEmailMsg.setText("❗ Invalid email format! (e.g. abc@gmail.com)");
+                            tvEmailMsg.setTextColor(Color.parseColor("#D32F2F"));
+                        } else {
+                            // HỢP LỆ -> Dấu tick và chữ Xanh lá
+                            tvEmailMsg.setText("✅ Valid email format!");
+                            tvEmailMsg.setTextColor(Color.parseColor("#4CAF50"));
+                        }
+                    }
+                } else {
+                    if (tvEmailMsg != null) tvEmailMsg.setVisibility(View.GONE);
+                }
+            }
+        });
 
         edtPass.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -213,6 +241,10 @@ public class RegisterActivity extends AppCompatActivity {
         });
     }
 
+    private boolean validateEmail(String email) {
+        // Sử dụng pattern có sẵn của Android để check email chuẩn
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches();
+    }
     private String validatePassword(String password) {
         if (password.length() < 8) return "Password must be at least 8 characters long";
         if (!password.matches(".*[A-Z].*")) return "Password must contain at least one uppercase letter (A-Z)";
