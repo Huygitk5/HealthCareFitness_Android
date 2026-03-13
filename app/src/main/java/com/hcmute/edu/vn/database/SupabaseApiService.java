@@ -3,7 +3,9 @@ package com.hcmute.edu.vn.database;
 import com.hcmute.edu.vn.activity.SignInRequest;
 import com.hcmute.edu.vn.activity.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
+import com.hcmute.edu.vn.model.Equipment;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.activity.SignUpRequest;
 import com.hcmute.edu.vn.activity.SignUpResponse;
@@ -191,5 +193,21 @@ public interface SupabaseApiService {
     Call<Void> updateBmiLog(
             @Query("id") String eqLogId,            // VD: "eq.log-uuid-1234"
             @Body BmiLog bmiLog                     // Object chứa cân nặng/chiều cao mới
+    );
+
+    // =================================================================================
+    // DỤNG CỤ, NHÓM CƠ, ĐỘ KHÓ
+    // =================================================================================
+
+    // Lấy danh sách toàn bộ Dụng cụ tập (Equipments)
+    @GET("equipments")
+    Call<List<Equipment>> getAllEquipments(
+            @Query("select") String select
+    );
+
+    // Lấy danh sách Nhóm cơ (Muscle Groups)
+    @GET("muscle_groups")
+    Call<List<MuscleGroup>> getMuscleGroups(
+            @QueryMap Map<String, String> filters
     );
 }
