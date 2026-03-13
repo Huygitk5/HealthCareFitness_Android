@@ -24,6 +24,9 @@ public class NutritionActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
+
         // Chuyển hướng sang chi tiết bữa sáng
         TextView tvBreakfastDetail = findViewById(R.id.tvBreakfastDetail);
         tvBreakfastDetail.setOnClickListener(new View.OnClickListener() {
