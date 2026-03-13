@@ -2,7 +2,9 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class WorkoutDayExercise {
+import java.io.Serializable;
+
+public class WorkoutDayExercise implements Serializable {
     @SerializedName("exercise")
     private Exercise exercise;
     @SerializedName("sets")

@@ -24,7 +24,9 @@
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_margin="16dp"
-                android:src="@drawable/ic_back_white"
+                android:src="@drawable/ic_arrow_back_breakfast"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@android:color/white"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
