@@ -45,10 +45,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".activity.FreeWorkoutFilterActivity"
-            android:exported="false"  />
-
-        <activity
             android:name=".activity.EquipmentSelectionActivity"
             android:exported="false"  />
 
