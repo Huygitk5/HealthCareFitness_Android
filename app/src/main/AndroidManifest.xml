@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,7 +13,7 @@
         android:theme="@style/Theme.ListView">
 
         <activity
-            android:name="com.hcmute.edu.vn.login.LoginActivity"
+            android:name="com.hcmute.edu.vn.activity.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,31 +22,35 @@
         </activity>
 
         <activity
-            android:name="com.hcmute.edu.vn.home.activity.HomeActivity"
+            android:name="com.hcmute.edu.vn.activity.HomeActivity"
             android:exported="false" />
 
         <activity
-            android:name="com.hcmute.edu.vn.login.RegisterActivity"
+            android:name="com.hcmute.edu.vn.activity.RegisterActivity"
             android:exported="false" />
 
-        <activity android:name=".login.ForgotPasswordActivity" />
-
-        <activity android:name="com.hcmute.edu.vn.profile.ProfileSetupActivity"
+        <activity android:name=".activity.ForgotPasswordActivity"
             android:exported="false" />
 
-        <activity android:name="com.hcmute.edu.vn.profile.ProfileActivity"
+        <activity android:name="com.hcmute.edu.vn.activity.ProfileSetupActivity"
             android:exported="false" />
 
-        <activity android:name="com.hcmute.edu.vn.nutrition.activity.NutritionActivity"
+        <activity android:name="com.hcmute.edu.vn.activity.ProfileActivity"
             android:exported="false" />
 
-        <activity android:name="com.hcmute.edu.vn.nutrition.activity.DetailMealActivity"
+        <activity android:name="com.hcmute.edu.vn.activity.NutritionActivity"
             android:exported="false" />
 
-        <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutDetailActivity" android:exported="false" />
-        <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseActivity" android:exported="false" />
-        <activity android:name="com.hcmute.edu.vn.workout.activity.ExerciseListActivity" android:exported="false" />
-        <activity android:name="com.hcmute.edu.vn.workout.activity.WorkoutActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.activity.DetailMealActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activity.FreeWorkoutFilterActivity"
+            android:exported="false"  />
+        <activity android:name="com.hcmute.edu.vn.activity.WorkoutDetailActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.activity.ExerciseActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.activity.ExerciseListActivity" android:exported="false" />
+        <activity android:name="com.hcmute.edu.vn.activity.WorkoutActivity" android:exported="false" />
 
     </application>
 
