@@ -74,17 +74,32 @@ public class LoginActivity extends AppCompatActivity {
                                 public void onResponse(Call<SignInResponse> call, retrofit2.Response<SignInResponse> loginResponse) {
                                     btnSignIn.setEnabled(true);
                                     btnSignIn.setText("Sign In");
-
+                                    // Trong LoginActivity.java
                                     if (loginResponse.isSuccessful() && loginResponse.body() != null) {
-                                        // Đăng nhập thành công!
+                                        // 1. Lưu username vào SharedPreferences    android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                                         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                                         pref.edit().putString("KEY_USER", username).apply();
+                                        // 2. Lấy dữ liệu User đã fetch được từ bước đầu (apiService.getUserByUsername)
+                                        User currentUser = response.body().get(0);
 
-                                        Toast.makeText(LoginActivity.this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-                                        Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                                        Intent intent;
+                                        // 3. KIỂM TRA: Nếu tên trống HOẶC chưa có chiều cao/cân nặng thì đi setup
+                                        if (currentUser.getName() == null || currentUser.getName().isEmpty() ||
+                                                currentUser.getHeight() == null || currentUser.getHeight() <= 0) {
+
+                                            intent = new Intent(LoginActivity.this, ProfileSetupActivity.class);
+                                            intent.putExtra("KEY_REGISTER_USER", username);
+                                            Toast.makeText(LoginActivity.this, "Vui lòng hoàn tất thông tin cá nhân!", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            // Nếu đã có đủ thông tin thì vào thẳng Home
+                                            intent = new Intent(LoginActivity.this, HomeActivity.class);
+                                            Toast.makeText(LoginActivity.this, "Chào mừng quay trở lại!", Toast.LENGTH_SHORT).show();
+                                        }
+
                                         startActivity(intent);
                                         finish();
-                                    } else {
+                                    }
+                                    else {
                                         tilPassword.setError("Sai tài khoản hoặc mật khẩu!");
                                     }
                                 }
