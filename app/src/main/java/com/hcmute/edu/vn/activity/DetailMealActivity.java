@@ -24,6 +24,8 @@ public class DetailMealActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
 
         ImageView ivBack = findViewById(R.id.ivBack);
         ivBack.setOnClickListener(new View.OnClickListener() {
