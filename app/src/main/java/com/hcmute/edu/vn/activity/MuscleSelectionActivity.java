@@ -42,6 +42,10 @@ public class MuscleSelectionActivity extends AppCompatActivity {
 
     private List<MuscleGroup> allMuscleGroups = new ArrayList<>();
     private Set<Integer> validMuscleIds = new HashSet<>();
+    private TextView tvStep1Circle, tvStep1Title;
+    private TextView tvStep2Circle, tvStep2Title;
+    private TextView tvStep3Circle, tvStep3Title;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +62,7 @@ public class MuscleSelectionActivity extends AppCompatActivity {
         }
 
         initViews();
+        setupStepIndicator();
         setupUI();
         fetchDataFromApi();
     }
@@ -73,12 +78,31 @@ public class MuscleSelectionActivity extends AppCompatActivity {
         btnNextStep.setVisibility(View.GONE);
         btnNextStep.setTranslationY(200f);
         btnNextStep.setAlpha(0f);
+        tvStep1Circle = findViewById(R.id.tvStep1Circle);
+        tvStep1Title = findViewById(R.id.tvStep1Title);
+        tvStep2Circle = findViewById(R.id.tvStep2Circle);
+        tvStep2Title = findViewById(R.id.tvStep2Title);
+        tvStep3Circle = findViewById(R.id.tvStep3Circle);
+        tvStep3Title = findViewById(R.id.tvStep3Title);
+    }
+
+    private void setupStepIndicator() {
+        tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
+
+        // Bước 2: HIGHLIGHT
+        tvStep2Circle.setBackgroundResource(R.drawable.step_circle_selected);
+        tvStep2Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep2Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep2Title.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        // Bước 3: Chưa tới
+        tvStep3Circle.setBackgroundResource(R.drawable.step_circle_unselected);
     }
 
     private void setupUI() {
-        TextView tvStepCount = findViewById(R.id.tvStepCount);
+//        TextView tvStepCount = findViewById(R.id.tvStepCount);
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
-        tvStepCount.setText("BƯỚC 2/3");
+//        tvStepCount.setText("BƯỚC 2/3");
         tvStepTitle.setText("Hôm nay bạn muốn tập nhóm cơ nào?");
 
         rvSelection.setLayoutManager(new LinearLayoutManager(this));

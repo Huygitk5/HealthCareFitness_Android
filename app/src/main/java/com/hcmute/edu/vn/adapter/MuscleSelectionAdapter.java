@@ -48,6 +48,10 @@ public class MuscleSelectionAdapter extends RecyclerView.Adapter<MuscleSelection
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        // 1. QUAN TRỌNG: Reset kích thước về 100% để tránh lỗi tái sử dụng View khi cuộn
+        holder.itemView.setScaleX(1f);
+        holder.itemView.setScaleY(1f);
+
         MuscleGroup muscle = muscleList.get(position);
         holder.tvMuscleName.setText(muscle.getName());
 
@@ -81,16 +85,24 @@ public class MuscleSelectionAdapter extends RecyclerView.Adapter<MuscleSelection
         holder.itemView.setOnClickListener(v -> {
             if (!isValid) return;
 
+            // Thu nhỏ xuống 95%
             v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction(() -> {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
-                
-                if (isSelected) {
-                    selectedMuscleIds.remove(Integer.valueOf(muscle.getId()));
-                } else {
-                    selectedMuscleIds.add(muscle.getId());
-                }
-                notifyItemChanged(position);
-                listener.onSelectionChanged(selectedMuscleIds.size());
+
+                // Nảy trở lại 100%
+                v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
+
+                    // 2. Dời lệnh cập nhật trạng thái và giao diện vào ĐÂY (chờ nảy xong mới đổi)
+                    // Dùng selectedMuscleIds.contains(...) thay vì isSelected để an toàn khi bấm siêu nhanh
+                    if (selectedMuscleIds.contains(muscle.getId())) {
+                        selectedMuscleIds.remove(Integer.valueOf(muscle.getId()));
+                    } else {
+                        selectedMuscleIds.add(muscle.getId());
+                    }
+                    notifyItemChanged(position);
+                    listener.onSelectionChanged(selectedMuscleIds.size());
+
+                }).start();
+
             }).start();
         });
     }
