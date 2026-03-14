@@ -45,9 +45,13 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        // 1. QUAN TRỌNG: Đặt lại scale về 100% mỗi khi vẽ View để không bị lỗi tái sử dụng
+        holder.itemView.setScaleX(1f);
+        holder.itemView.setScaleY(1f);
+
         Exercise exercise = exercises.get(position);
         holder.tvExerciseName.setText(exercise.getName());
-        
+
         String info = (exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "00:30") + " • Cường độ cao";
         holder.tvExerciseInfo.setText(info);
 
@@ -78,16 +82,24 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
         }
 
         holder.itemView.setOnClickListener(v -> {
+            // Thu nhỏ xuống 96%
             v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).withEndAction(() -> {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
-                
-                if (isSelected) {
-                    selectedExercises.remove(exercise);
-                } else {
-                    selectedExercises.add(exercise);
-                }
-                notifyItemChanged(position);
-                listener.onSelectionChanged(selectedExercises.size());
+
+                // Nảy trở lại 100%
+                v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
+
+                    // 2. Đợi nảy lại hoàn toàn (EndAction) rồi mới đổi trạng thái và Notify
+                    // Dùng selectedExercises.contains() thay vì isSelected để tránh lỗi khi click quá nhanh
+                    if (selectedExercises.contains(exercise)) {
+                        selectedExercises.remove(exercise);
+                    } else {
+                        selectedExercises.add(exercise);
+                    }
+                    notifyItemChanged(position);
+                    listener.onSelectionChanged(selectedExercises.size());
+
+                }).start();
+
             }).start();
         });
     }

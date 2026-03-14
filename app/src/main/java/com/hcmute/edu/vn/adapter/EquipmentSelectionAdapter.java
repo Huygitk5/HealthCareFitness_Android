@@ -17,7 +17,7 @@ import com.hcmute.edu.vn.model.Equipment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdapter.ViewHolder> {
+public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSelectionAdapter.ViewHolder> {
 
     private List<Equipment> equipmentList;
     private ArrayList<Integer> selectedIds = new ArrayList<>();
@@ -27,7 +27,7 @@ public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdap
         void onSelectionChanged(int selectedCount);
     }
 
-    public EquipmentGridAdapter(List<Equipment> equipmentList, OnEquipmentSelectionListener listener) {
+    public EquipmentSelectionAdapter(List<Equipment> equipmentList, OnEquipmentSelectionListener listener) {
         this.equipmentList = equipmentList;
         this.listener = listener;
     }
@@ -45,6 +45,10 @@ public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        // 1. QUAN TRỌNG: Đặt lại scale về 1f ngay từ đầu để chống lỗi teo nhỏ khi tái sử dụng View
+        holder.itemView.setScaleX(1f);
+        holder.itemView.setScaleY(1f);
+
         Equipment eq = equipmentList.get(position);
         holder.tvEqName.setText(eq.getName());
 
@@ -64,19 +68,27 @@ public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdap
 
         // Hiệu ứng "nhún nhường" khi bấm
         holder.itemView.setOnClickListener(v -> {
+            // Thu nhỏ xuống 94%
             v.animate()
                     .scaleX(0.94f).scaleY(0.94f)
                     .setDuration(120)
                     .withEndAction(() -> {
-                        v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
 
-                        if (isSelected) {
-                            selectedIds.remove(Integer.valueOf(eq.getId()));
-                        } else {
-                            selectedIds.add(eq.getId());
-                        }
-                        notifyItemChanged(position); // Update UI
-                        listener.onSelectionChanged(selectedIds.size());
+                        // Nảy trở lại 100%
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(120).withEndAction(() -> {
+
+                            // 2. Dời logic cập nhật Data và UI vào đây (chờ nảy xong mới đổi)
+                            // Dùng selectedIds.contains() kiểm tra trực tiếp thay vì biến isSelected cũ
+                            if (selectedIds.contains(eq.getId())) {
+                                selectedIds.remove(Integer.valueOf(eq.getId()));
+                            } else {
+                                selectedIds.add(eq.getId());
+                            }
+                            notifyItemChanged(position); // Update UI
+                            listener.onSelectionChanged(selectedIds.size());
+
+                        }).start();
+
                     }).start();
         });
     }
