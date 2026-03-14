@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.adapter.EquipmentGridAdapter;
+import com.hcmute.edu.vn.adapter.EquipmentSelectionAdapter;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.Equipment;
@@ -30,7 +30,11 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
     private Button btnNextStep;
     private RecyclerView rvSelection;
     private ProgressBar progressBarApi;
-    private EquipmentGridAdapter adapter;
+    private EquipmentSelectionAdapter adapter;
+    private TextView tvStep1Circle, tvStep1Title;
+    private TextView tvStep2Circle, tvStep2Title;
+    private TextView tvStep3Circle, tvStep3Title;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +42,7 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
         setContentView(R.layout.activity_step_selection);
 
         initViews();
+        setupStepIndicator();
         setupUI();
         fetchEquipmentsFromApi();
     }
@@ -49,12 +54,28 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
 
         LinearProgressIndicator stepProgressBar = findViewById(R.id.stepProgressBar);
         stepProgressBar.setProgress(33);
+        tvStep1Circle = findViewById(R.id.tvStep1Circle);
+        tvStep1Title = findViewById(R.id.tvStep1Title);
+        tvStep2Circle = findViewById(R.id.tvStep2Circle);
+        tvStep2Title = findViewById(R.id.tvStep2Title);
+        tvStep3Circle = findViewById(R.id.tvStep3Circle);
+        tvStep3Title = findViewById(R.id.tvStep3Title);
+    }
+
+    private void setupStepIndicator() {
+        // SET TRẠNG THÁI CHO BƯỚC 1 (Highlight)
+        tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
+        tvStep1Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep1Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep1Title.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        // ĐẢM BẢO CÁC BƯỚC CÒN LẠI LÀ CHƯA CHỌN
+        tvStep2Circle.setBackgroundResource(R.drawable.step_circle_unselected);
+        tvStep3Circle.setBackgroundResource(R.drawable.step_circle_unselected);
     }
 
     private void setupUI() {
-        TextView tvStepCount = findViewById(R.id.tvStepCount);
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
-        tvStepCount.setText("BƯỚC 1/3");
         tvStepTitle.setText("Dụng cụ bạn đang có?");
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -85,7 +106,7 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
 
                     if (equipmentList != null && !equipmentList.isEmpty()) {
                         // Logic Animation trượt nút Tiếp tục
-                        adapter = new EquipmentGridAdapter(equipmentList, selectedCount -> {
+                        adapter = new EquipmentSelectionAdapter(equipmentList, selectedCount -> {
                             if (selectedCount > 0) {
                                 btnNextStep.setText("TIẾP TỤC (" + selectedCount + ") →");
 

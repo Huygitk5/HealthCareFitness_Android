@@ -36,6 +36,9 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
     private ProgressBar progressBarApi;
     private RecyclerView rvSelection;
     private ExerciseSelectionAdapter adapter;
+    private TextView tvStep1Circle, tvStep1Title;
+    private TextView tvStep2Circle, tvStep2Title;
+    private TextView tvStep3Circle, tvStep3Title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +53,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         if (receivedMuscleIds == null) receivedMuscleIds = new ArrayList<>();
 
         initViews();
+        setupStepIndicator();
         setupUI();
         fetchAndFilterExercises();
     }
@@ -66,13 +70,39 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         btnNextStep.setVisibility(View.GONE);
         btnNextStep.setTranslationY(200f);
         btnNextStep.setAlpha(0f);
+        tvStep1Circle = findViewById(R.id.tvStep1Circle);
+        tvStep1Title = findViewById(R.id.tvStep1Title);
+        tvStep2Circle = findViewById(R.id.tvStep2Circle);
+        tvStep2Title = findViewById(R.id.tvStep2Title);
+        tvStep3Circle = findViewById(R.id.tvStep3Circle);
+        tvStep3Title = findViewById(R.id.tvStep3Title);
+    }
+    private void setupStepIndicator() {
+        // --- BƯỚC 1 (Đã hoàn thành) ---
+        tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
+        tvStep1Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep1Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep1Title.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        // --- BƯỚC 2 (Đã hoàn thành) ---
+        tvStep2Circle.setBackgroundResource(R.drawable.step_circle_selected);
+        tvStep2Circle.setTextColor(android.graphics.Color.WHITE); // Phải thêm dòng này
+        tvStep2Title.setTextColor(android.graphics.Color.parseColor("#589A8D")); // Phải thêm dòng này
+        tvStep2Title.setTypeface(null, android.graphics.Typeface.BOLD); // Phải thêm dòng này
+
+        // Bước 3: HIGHLIGHT
+        tvStep3Circle.setBackgroundResource(R.drawable.step_circle_selected);
+        tvStep3Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep3Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep3Title.setTypeface(null, android.graphics.Typeface.BOLD);
     }
 
+
     private void setupUI() {
-        TextView tvStepCount = findViewById(R.id.tvStepCount);
+//        TextView tvStepCount = findViewById(R.id.tvStepCount);
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
 
-        tvStepCount.setText("BƯỚC 3/3");
+//        tvStepCount.setText("BƯỚC 3/3");
         tvStepTitle.setText("Chọn bài tập phù hợp");
 
         rvSelection.setLayoutManager(new LinearLayoutManager(this));
