@@ -200,7 +200,7 @@ public interface SupabaseApiService {
     // =================================================================================
 
     // Lấy danh sách toàn bộ Dụng cụ tập (Equipments)
-    @GET("equipments")
+    @GET("equipment")
     Call<List<Equipment>> getAllEquipments(
             @Query("select") String select
     );
