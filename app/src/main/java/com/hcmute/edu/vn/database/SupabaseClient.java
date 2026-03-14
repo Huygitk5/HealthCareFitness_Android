@@ -33,9 +33,4 @@ public class SupabaseClient {
         }
         return retrofit;
     }
-
-    // THÊM HÀM NÀY ĐỂ HẾT LỖI ĐỎ getApiService
-    public static SupabaseApiService getApiService() {
-        return getClient().create(SupabaseApiService.class);
-    }
 }

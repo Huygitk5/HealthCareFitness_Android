@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import retrofit2.Call;
@@ -37,7 +38,7 @@ public class MuscleSelectionActivity extends AppCompatActivity {
     private ProgressBar progressBarApi;
 
     private ArrayList<Integer> receivedEquipmentIds;
-    private MuscleGroup selectedMuscle = null;
+    private MuscleSelectionAdapter adapter;
 
     private List<MuscleGroup> allMuscleGroups = new ArrayList<>();
     private Set<Integer> validMuscleIds = new HashSet<>();
@@ -47,8 +48,14 @@ public class MuscleSelectionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_step_selection);
 
-        receivedEquipmentIds = getIntent().getIntegerArrayListExtra("SELECTED_EQUIPMENT_IDS");
-        if (receivedEquipmentIds == null) receivedEquipmentIds = new ArrayList<>();
+        Intent intent = getIntent();
+        if (intent != null) {
+            receivedEquipmentIds = intent.getIntegerArrayListExtra("SELECTED_EQUIPMENT_IDS");
+        }
+        
+        if (receivedEquipmentIds == null) {
+            receivedEquipmentIds = new ArrayList<>();
+        }
 
         initViews();
         setupUI();
@@ -62,6 +69,10 @@ public class MuscleSelectionActivity extends AppCompatActivity {
 
         LinearProgressIndicator stepProgressBar = findViewById(R.id.stepProgressBar);
         stepProgressBar.setProgress(66);
+
+        btnNextStep.setVisibility(View.GONE);
+        btnNextStep.setTranslationY(200f);
+        btnNextStep.setAlpha(0f);
     }
 
     private void setupUI() {
@@ -74,12 +85,14 @@ public class MuscleSelectionActivity extends AppCompatActivity {
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
         btnNextStep.setOnClickListener(v -> {
-            if (selectedMuscle != null) {
-                Intent intent = new Intent(MuscleSelectionActivity.this, CustomExerciseSelectionActivity.class);
-                intent.putIntegerArrayListExtra("SELECTED_EQUIPMENT_IDS", receivedEquipmentIds);
-                intent.putExtra("SELECTED_MUSCLE_ID", selectedMuscle.getId());
-                intent.putExtra("SELECTED_MUSCLE_NAME", selectedMuscle.getName());
-                startActivity(intent);
+            if (adapter != null && !adapter.getSelectedMuscleIds().isEmpty()) {
+                Intent nextIntent = new Intent(MuscleSelectionActivity.this, CustomExerciseSelectionActivity.class);
+                nextIntent.putIntegerArrayListExtra("SELECTED_EQUIPMENT_IDS", receivedEquipmentIds);
+                
+                ArrayList<Integer> selectedIds = new ArrayList<>(adapter.getSelectedMuscleIds());
+                nextIntent.putIntegerArrayListExtra("SELECTED_MUSCLE_IDS", selectedIds);
+                
+                startActivity(nextIntent);
             }
         });
     }
@@ -87,8 +100,11 @@ public class MuscleSelectionActivity extends AppCompatActivity {
     private void fetchDataFromApi() {
         progressBarApi.setVisibility(View.VISIBLE);
 
+        Map<String, String> filters = new HashMap<>();
+        filters.put("select", "*");
+
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.getMuscleGroups(new HashMap<>()).enqueue(new Callback<List<MuscleGroup>>() {
+        apiService.getMuscleGroups(filters).enqueue(new Callback<List<MuscleGroup>>() {
             @Override
             public void onResponse(Call<List<MuscleGroup>> call, Response<List<MuscleGroup>> response) {
                 if (response.isSuccessful() && response.body() != null) {
@@ -134,10 +150,18 @@ public class MuscleSelectionActivity extends AppCompatActivity {
                         }
                     }
 
-                    MuscleSelectionAdapter adapter = new MuscleSelectionAdapter(allMuscleGroups, validMuscleIds, muscle -> {
-                        selectedMuscle = muscle;
-                        btnNextStep.setEnabled(true);
-                        btnNextStep.setAlpha(1.0f);
+                    adapter = new MuscleSelectionAdapter(allMuscleGroups, validMuscleIds, selectedCount -> {
+                        if (selectedCount > 0) {
+                            btnNextStep.setText("TIẾP TỤC (" + selectedCount + ") →");
+
+                            if (btnNextStep.getVisibility() == View.GONE) {
+                                btnNextStep.setVisibility(View.VISIBLE);
+                                btnNextStep.animate().translationY(0f).alpha(1f).setDuration(300).start();
+                            }
+                        } else {
+                            btnNextStep.animate().translationY(200f).alpha(0f).setDuration(300)
+                                    .withEndAction(() -> btnNextStep.setVisibility(View.GONE)).start();
+                        }
                     });
                     rvSelection.setAdapter(adapter);
                 }
