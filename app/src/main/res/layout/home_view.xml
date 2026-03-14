@@ -80,177 +80,6 @@
                     app:tint="#FFFFFF" />
             </LinearLayout>
 
-<!--            <com.google.android.material.card.MaterialCardView-->
-<!--                android:id="@+id/cardBMI"-->
-<!--                android:layout_width="match_parent"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:layout_marginHorizontal="20dp"-->
-<!--                android:layout_marginTop="30dp"-->
-<!--                app:cardCornerRadius="24dp"-->
-<!--                app:cardElevation="10dp"-->
-<!--                app:layout_constraintTop_toBottomOf="@id/layoutGreeting"-->
-<!--                app:strokeWidth="0dp">-->
-
-<!--                <LinearLayout-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:background="#FFFFFF"-->
-<!--                    android:orientation="vertical"-->
-<!--                    android:padding="24dp">-->
-
-<!--                    <RelativeLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginBottom="20dp">-->
-
-<!--                        <TextView-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="Tình trạng hiện tại"-->
-<!--                            android:textColor="#212121"-->
-<!--                            android:textSize="18sp"-->
-<!--                            android:textStyle="bold" />-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/tvBMIStatus"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_alignParentEnd="true"-->
-<!--                            android:background="@drawable/rounded_corner_green_nutrition"-->
-<!--                            android:paddingHorizontal="12dp"-->
-<!--                            android:paddingVertical="4dp"-->
-<!--                            android:text="Chưa có"-->
-<!--                            android:textColor="#FFFFFF"-->
-<!--                            android:textSize="12sp"-->
-<!--                            android:textStyle="bold" />-->
-<!--                    </RelativeLayout>-->
-
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:orientation="horizontal"-->
-<!--                        android:weightSum="3">-->
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="0dp"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:gravity="center"-->
-<!--                            android:orientation="vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:text="Cân nặng"-->
-<!--                                android:textColor="#9E9E9E"-->
-<!--                                android:textSize="13sp" />-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/tvCurrentWeight"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_marginTop="4dp"-->
-<!--                                android:text="&#45;&#45; kg"-->
-<!--                                android:textColor="#009688"-->
-<!--                                android:textSize="20sp"-->
-<!--                                android:textStyle="bold" />-->
-<!--                        </LinearLayout>-->
-
-<!--                        <View-->
-<!--                            android:layout_width="1dp"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_marginVertical="4dp"-->
-<!--                            android:background="#EEEEEE" />-->
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="0dp"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:gravity="center"-->
-<!--                            android:orientation="vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:text="Chiều cao"-->
-<!--                                android:textColor="#9E9E9E"-->
-<!--                                android:textSize="13sp" />-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/tvCurrentHeight"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_marginTop="4dp"-->
-<!--                                android:text="&#45;&#45; cm"-->
-<!--                                android:textColor="#009688"-->
-<!--                                android:textSize="20sp"-->
-<!--                                android:textStyle="bold" />-->
-<!--                        </LinearLayout>-->
-
-<!--                        <View-->
-<!--                            android:layout_width="1dp"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_marginVertical="4dp"-->
-<!--                            android:background="#EEEEEE" />-->
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="0dp"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_weight="1"-->
-<!--                            android:gravity="center"-->
-<!--                            android:orientation="vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:text="Tuổi"-->
-<!--                                android:textColor="#9E9E9E"-->
-<!--                                android:textSize="13sp" />-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/tvCurrentAge"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_marginTop="4dp"-->
-<!--                                android:text="&#45;&#45;"-->
-<!--                                android:textColor="#009688"-->
-<!--                                android:textSize="20sp"-->
-<!--                                android:textStyle="bold" />-->
-<!--                        </LinearLayout>-->
-<!--                    </LinearLayout>-->
-
-<!--                    <View-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="1dp"-->
-<!--                        android:layout_marginTop="20dp"-->
-<!--                        android:layout_marginBottom="16dp"-->
-<!--                        android:background="#EEEEEE" />-->
-
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:gravity="center_vertical"-->
-<!--                        android:orientation="horizontal">-->
-
-<!--                        <TextView-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:text="Chỉ số BMI của bạn:"-->
-<!--                            android:textColor="#757575"-->
-<!--                            android:textSize="15sp" />-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/tvBMIValue"-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:gravity="end"-->
-<!--                            android:text="&#45;&#45;"-->
-<!--                            android:textColor="#FF9800"-->
-<!--                            android:textSize="22sp"-->
-<!--                            android:textStyle="bold" />-->
-<!--                    </LinearLayout>-->
-<!--                </LinearLayout>-->
-<!--            </com.google.android.material.card.MaterialCardView>-->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardBMI"
                 android:layout_width="match_parent"
@@ -418,65 +247,6 @@
                         android:layout_marginBottom="20dp"
                         android:background="#EEEEEE" />
 
-<!--                    <RelativeLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content">-->
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_alignParentStart="true"-->
-<!--                            android:layout_centerVertical="true"-->
-<!--                            android:orientation="vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:text="Chỉ số BMI của bạn"-->
-<!--                                android:textColor="#212121"-->
-<!--                                android:textSize="16sp"-->
-<!--                                android:textStyle="bold" />-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_marginTop="4dp"-->
-<!--                                android:text="Mức chuẩn: 18.5 - 22.9"-->
-<!--                                android:textColor="#9E9E9E"-->
-<!--                                android:textSize="13sp" />-->
-<!--                        </LinearLayout>-->
-
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_alignParentEnd="true"-->
-<!--                            android:layout_centerVertical="true"-->
-<!--                            android:gravity="center_horizontal"-->
-<!--                            android:orientation="vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/tvBMIValue"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:text="&#45;&#45;"-->
-<!--                                android:textColor="#9E9E9E"-->
-<!--                                android:textSize="34sp"-->
-<!--                                android:textStyle="bold" />-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/tvBMIStatus"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_marginTop="2dp"-->
-<!--                                android:background="@drawable/rounded_corner_green_nutrition"-->
-<!--                                android:paddingHorizontal="12dp"-->
-<!--                                android:paddingVertical="4dp"-->
-<!--                                android:text="Chưa có"-->
-<!--                                android:textColor="#FFFFFF"-->
-<!--                                android:textSize="11sp"-->
-<!--                                android:textStyle="bold" />-->
-<!--                        </LinearLayout>-->
-<!--                    </RelativeLayout>-->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -533,7 +303,7 @@
                             android:layout_height="6dp"
                             android:layout_marginTop="16dp"
                             android:orientation="horizontal"
-                            android:weightSum="4">
+                            android:weightSum="3">
 
                             <View
                                 android:layout_width="0dp"
@@ -548,13 +318,6 @@
                                 android:layout_weight="1"
                                 android:layout_marginEnd="4dp"
                                 android:background="#4CAF50" />
-
-                            <View
-                                android:layout_width="0dp"
-                                android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:layout_marginEnd="4dp"
-                                android:background="#FF9800" />
 
                             <View
                                 android:layout_width="0dp"
