@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -56,6 +57,8 @@ public class HomeActivity extends AppCompatActivity {
     TextView btnChartDay, btnChartWeek, btnChartMonth;
     LineChart lineChartBMI;
     List<BmiLog> currentBmiLogs = new ArrayList<>();
+    LinearLayout btnUpdateBMI;
+    User mCurrentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,6 +194,9 @@ public class HomeActivity extends AppCompatActivity {
                 overridePendingTransition(0, 0);
             }
         });
+
+        btnUpdateBMI = findViewById(R.id.btnUpdateBMI);
+        btnUpdateBMI.setOnClickListener(v -> showUpdateBMIDialog());
     }
 
     @Override
@@ -219,17 +225,17 @@ public class HomeActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
 
                     // Lấy User đầu tiên trong danh sách trả về
-                    User currentUser = response.body().get(0);
+                    mCurrentUser = response.body().get(0);
 
                     // Cập nhật tên hiển thị (Đổi getFullName() thành getName())
-                    tvGreeting.setText(currentUser.getName() != null ? currentUser.getName() : username);
+                    tvGreeting.setText(mCurrentUser.getName() != null ? mCurrentUser.getName() : username);
 
                     // Lấy Chiều cao & Cân nặng (Xử lý an toàn vì Double có thể null trên DB)
-                    double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
-                    double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+                    double heightCm = mCurrentUser.getHeight() != null ? mCurrentUser.getHeight() : 0.0;
+                    double weightKg = mCurrentUser.getWeight() != null ? mCurrentUser.getWeight() : 0.0;
 
                     // Tính tuổi (Đổi getDob() thành getDateOfBirth())
-                    int age = calculateAge(currentUser.getDateOfBirth());
+                    int age = calculateAge(mCurrentUser.getDateOfBirth());
 
                     // Tính toán và hiển thị BMI
                     if (heightCm > 0 && weightKg > 0) {
@@ -404,4 +410,114 @@ public class HomeActivity extends AppCompatActivity {
         lineChartBMI.invalidate(); // Lệnh này giúp biểu đồ vẽ lại ngay lập tức
         lineChartBMI.animateX(500); // Thêm hiệu ứng chạy ngang ra cho xịn xò
     }
+    private void showUpdateBMIDialog() {
+        if (mCurrentUser == null) {
+            Toast.makeText(this, "Đang tải dữ liệu, vui lòng đợi...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Khởi tạo Dialog
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_update_bmi, null);
+        builder.setView(dialogView);
+        android.app.AlertDialog dialog = builder.create();
+
+        // Bo góc cho nền Dialog trong suốt (để ăn theo file xml)
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        EditText edtWeight = dialogView.findViewById(R.id.edtUpdateWeight);
+        EditText edtHeight = dialogView.findViewById(R.id.edtUpdateHeight);
+        TextView btnCancel = dialogView.findViewById(R.id.btnCancelUpdate);
+        TextView btnSave = dialogView.findViewById(R.id.btnSaveUpdate);
+
+        // Điền sẵn số cũ vào ô nhập (nếu có)
+        if (mCurrentUser.getWeight() != null && mCurrentUser.getWeight() > 0) {
+            edtWeight.setText(String.valueOf(mCurrentUser.getWeight()));
+        }
+        if (mCurrentUser.getHeight() != null && mCurrentUser.getHeight() > 0) {
+            edtHeight.setText(String.valueOf(mCurrentUser.getHeight()));
+        }
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            String wStr = edtWeight.getText().toString().trim();
+            String hStr = edtHeight.getText().toString().trim();
+
+            if (wStr.isEmpty() || hStr.isEmpty()) {
+                Toast.makeText(HomeActivity.this, "Vui lòng nhập đầy đủ Cân nặng và Chiều cao", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            try {
+                double newWeight = Double.parseDouble(wStr);
+                double newHeight = Double.parseDouble(hStr);
+
+                // 1. Tạo object User MỚI chỉ chứa cân nặng & chiều cao để PATCH
+                User updateData = new User();
+                updateData.setWeight(newWeight);
+                updateData.setHeight(newHeight);
+
+                SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+                // Hiển thị trạng thái đang lưu
+                btnSave.setText("Đang lưu...");
+                btnSave.setEnabled(false);
+
+                // CẬP NHẬT PROFILE
+                apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        if (response.isSuccessful()) {
+
+                            // 2. TÍNH BMI & LƯU VÀO BMI_LOG ĐỂ VẼ BIỂU ĐỒ
+                            double heightM = newHeight / 100.0;
+                            double newBmi = newWeight / (heightM * heightM);
+
+                            // Format ngày giờ hiện tại
+                            String currentDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+
+                            BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), mCurrentUser.getId(), newWeight, newHeight, newBmi, currentDate);
+
+                            apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
+                                @Override
+                                public void onResponse(Call<Void> call, Response<Void> response) {
+                                    Toast.makeText(HomeActivity.this, "Đã cập nhật chỉ số cơ thể!", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                    // TẢI LẠI TRANG ĐỂ HIỂN THỊ SỐ MỚI NGAY LẬP TỨC
+                                    loadUserData();
+                                }
+
+                                @Override
+                                public void onFailure(Call<Void> call, Throwable t) {
+                                    dialog.dismiss();
+                                    loadUserData(); // Dù lỗi log nhưng vẫn load lại số mới
+                                }
+                            });
+
+                        } else {
+                            btnSave.setText("Lưu thay đổi");
+                            btnSave.setEnabled(true);
+                            Toast.makeText(HomeActivity.this, "Lỗi cập nhật. Vui lòng thử lại!", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        btnSave.setText("Lưu thay đổi");
+                        btnSave.setEnabled(true);
+                        Toast.makeText(HomeActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            } catch (NumberFormatException e) {
+                Toast.makeText(HomeActivity.this, "Vui lòng nhập số hợp lệ!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        dialog.show();
+    }
+
 }
