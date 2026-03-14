@@ -6,17 +6,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelectionAdapter.ViewHolder> {
 
     private List<Exercise> exercises;
-    private List<Exercise> selectedExercises = new ArrayList<>(); // Danh sách chứa các bài đã chọn
+    private List<Exercise> selectedExercises = new ArrayList<>();
     private OnSelectionChangedListener listener;
 
     public interface OnSelectionChangedListener {
@@ -28,7 +32,6 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
         this.listener = listener;
     }
 
-    // Hàm public để Activity lấy danh sách các bài đã chọn ra ngoài
     public ArrayList<Exercise> getSelectedExercises() {
         return (ArrayList<Exercise>) selectedExercises;
     }
@@ -45,11 +48,9 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
         Exercise exercise = exercises.get(position);
         holder.tvExerciseName.setText(exercise.getName());
         
-        // Thay đổi getter cho đúng với model Exercise
-        String info = "Nhóm cơ: " + exercise.getMuscleGroupId() + " • " + exercise.getBaseRecommendedReps();
+        String info = (exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "00:30") + " • Cường độ cao";
         holder.tvExerciseInfo.setText(info);
 
-        // Hiển thị ảnh (Sử dụng getImageUrl)
         try {
             String imageUrl = exercise.getImageUrl();
             if (imageUrl != null && !imageUrl.isEmpty()) {
@@ -62,31 +63,32 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
             holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
         }
 
-        // Logic thay đổi UI dựa vào việc bài này CÓ NẰM TRONG list selectedExercises không
         boolean isSelected = selectedExercises.contains(exercise);
+
+        // LOGIC HIỂN THỊ TRẠNG THÁI CHỌN
         if (isSelected) {
-            holder.layoutContainer.setBackgroundResource(R.drawable.bg_workout_chip_active); // Dùng lại viền xanh
-            holder.ivCheck.setImageResource(android.R.drawable.checkbox_on_background); // Icon Tích Xanh
-            holder.ivCheck.setColorFilter(Color.parseColor("#009688"));
-            holder.tvExerciseName.setTextColor(Color.WHITE);
-            holder.tvExerciseInfo.setTextColor(Color.WHITE);
+            holder.cardContainer.setStrokeWidth(4);
+            holder.cardContainer.setStrokeColor(Color.parseColor("#589A8D"));
+            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#F1F8F7"));
+            holder.tvExerciseName.setTextColor(Color.parseColor("#589A8D"));
         } else {
-            holder.layoutContainer.setBackgroundResource(R.drawable.bg_input_rounded);
-            holder.ivCheck.setImageResource(android.R.drawable.ic_input_add); // Icon Dấu Cộng
-            holder.ivCheck.setColorFilter(Color.parseColor("#BDBDBD"));
+            holder.cardContainer.setStrokeWidth(0);
+            holder.cardContainer.setCardBackgroundColor(Color.WHITE);
             holder.tvExerciseName.setTextColor(Color.BLACK);
-            holder.tvExerciseInfo.setTextColor(Color.parseColor("#757575"));
         }
 
-        // Xử lý sự kiện bấm
         holder.itemView.setOnClickListener(v -> {
-            if (isSelected) {
-                selectedExercises.remove(exercise); // Bấm lần 2 -> Bỏ chọn
-            } else {
-                selectedExercises.add(exercise); // Bấm lần 1 -> Chọn
-            }
-            notifyItemChanged(position); // Chỉ cập nhật đúng item vừa bấm cho mượt
-            listener.onSelectionChanged(selectedExercises.size()); // Báo về Activity số lượng đã chọn
+            v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).withEndAction(() -> {
+                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
+                
+                if (isSelected) {
+                    selectedExercises.remove(exercise);
+                } else {
+                    selectedExercises.add(exercise);
+                }
+                notifyItemChanged(position);
+                listener.onSelectionChanged(selectedExercises.size());
+            }).start();
         });
     }
 
@@ -94,15 +96,14 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
     public int getItemCount() { return exercises.size(); }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        View layoutContainer;
-        ImageView ivExerciseImage, ivCheck;
+        MaterialCardView cardContainer;
+        ImageView ivExerciseImage;
         TextView tvExerciseName, tvExerciseInfo;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            layoutContainer = itemView.findViewById(R.id.layoutContainer);
+            cardContainer = (MaterialCardView) itemView.findViewById(R.id.layoutContainerCard);
             ivExerciseImage = itemView.findViewById(R.id.ivExerciseImage);
-            ivCheck = itemView.findViewById(R.id.ivCheck);
             tvExerciseName = itemView.findViewById(R.id.tvExerciseName);
             tvExerciseInfo = itemView.findViewById(R.id.tvExerciseInfo);
         }

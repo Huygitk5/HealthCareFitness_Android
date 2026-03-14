@@ -6,18 +6,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Equipment;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdapter.ViewHolder> {
 
     private List<Equipment> equipmentList;
-    private ArrayList<Integer> selectedIds = new ArrayList<>(); // Lưu ID thay vì Name
+    private ArrayList<Integer> selectedIds = new ArrayList<>();
     private OnEquipmentSelectionListener listener;
 
     public interface OnEquipmentSelectionListener {
@@ -45,28 +48,36 @@ public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdap
         Equipment eq = equipmentList.get(position);
         holder.tvEqName.setText(eq.getName());
 
-        // TODO: Chèn ảnh thật từ eq.getImageUrl() qua Glide/Picasso nếu có
-
         boolean isSelected = selectedIds.contains(eq.getId());
 
         if (isSelected) {
-            holder.cardEquipment.setStrokeColor(Color.parseColor("#009688"));
-            holder.cardEquipment.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
-            holder.ivCheck.setVisibility(View.VISIBLE);
+            holder.cardEquipment.setCardBackgroundColor(Color.parseColor("#EAF4F3"));
+            holder.cardEquipment.setStrokeColor(Color.parseColor("#589A8D"));
+            holder.cardEquipment.setStrokeWidth(5);
+            holder.tvEqName.setTextColor(Color.parseColor("#589A8D"));
         } else {
-            holder.cardEquipment.setStrokeColor(Color.parseColor("#E0E0E0"));
             holder.cardEquipment.setCardBackgroundColor(Color.WHITE);
-            holder.ivCheck.setVisibility(View.GONE);
+            holder.cardEquipment.setStrokeColor(Color.parseColor("#E0E0E0"));
+            holder.cardEquipment.setStrokeWidth(2); // Viền mỏng mờ
+            holder.tvEqName.setTextColor(Color.parseColor("#333333"));
         }
 
+        // Hiệu ứng "nhún nhường" khi bấm
         holder.itemView.setOnClickListener(v -> {
-            if (isSelected) {
-                selectedIds.remove(Integer.valueOf(eq.getId()));
-            } else {
-                selectedIds.add(eq.getId());
-            }
-            notifyItemChanged(position);
-            listener.onSelectionChanged(selectedIds.size());
+            v.animate()
+                    .scaleX(0.94f).scaleY(0.94f)
+                    .setDuration(120)
+                    .withEndAction(() -> {
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+
+                        if (isSelected) {
+                            selectedIds.remove(Integer.valueOf(eq.getId()));
+                        } else {
+                            selectedIds.add(eq.getId());
+                        }
+                        notifyItemChanged(position); // Update UI
+                        listener.onSelectionChanged(selectedIds.size());
+                    }).start();
         });
     }
 
@@ -76,14 +87,13 @@ public class EquipmentGridAdapter extends RecyclerView.Adapter<EquipmentGridAdap
     public static class ViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView cardEquipment;
         TextView tvEqName;
-        ImageView ivEquipment, ivCheck;
+        ImageView ivEquipment;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             cardEquipment = itemView.findViewById(R.id.cardEquipment);
             tvEqName = itemView.findViewById(R.id.tvEqName);
             ivEquipment = itemView.findViewById(R.id.ivEquipment);
-            ivCheck = itemView.findViewById(R.id.ivCheck);
         }
     }
 }

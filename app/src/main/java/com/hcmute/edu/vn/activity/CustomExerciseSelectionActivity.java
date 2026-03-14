@@ -30,8 +30,7 @@ import retrofit2.Response;
 public class CustomExerciseSelectionActivity extends AppCompatActivity {
 
     private ArrayList<Integer> receivedEquipmentIds;
-    private int receivedMuscleId;
-    private String receivedMuscleName;
+    private ArrayList<Integer> receivedMuscleIds;
 
     private Button btnNextStep;
     private ProgressBar progressBarApi;
@@ -43,11 +42,12 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_step_selection);
 
+        // Hứng danh sách nhiều ID từ Bước 2
         receivedEquipmentIds = getIntent().getIntegerArrayListExtra("SELECTED_EQUIPMENT_IDS");
-        receivedMuscleId = getIntent().getIntExtra("SELECTED_MUSCLE_ID", -1);
-        receivedMuscleName = getIntent().getStringExtra("SELECTED_MUSCLE_NAME");
+        receivedMuscleIds = getIntent().getIntegerArrayListExtra("SELECTED_MUSCLE_IDS");
 
         if (receivedEquipmentIds == null) receivedEquipmentIds = new ArrayList<>();
+        if (receivedMuscleIds == null) receivedMuscleIds = new ArrayList<>();
 
         initViews();
         setupUI();
@@ -61,6 +61,11 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
 
         LinearProgressIndicator stepProgressBar = findViewById(R.id.stepProgressBar);
         stepProgressBar.setProgress(100);
+
+        // Hiệu ứng ẩn nút ban đầu
+        btnNextStep.setVisibility(View.GONE);
+        btnNextStep.setTranslationY(200f);
+        btnNextStep.setAlpha(0f);
     }
 
     private void setupUI() {
@@ -68,8 +73,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
 
         tvStepCount.setText("BƯỚC 3/3");
-        tvStepTitle.setText("Chọn bài tập " + (receivedMuscleName != null ? receivedMuscleName : ""));
-        btnNextStep.setText("BẮT ĐẦU TẬP");
+        tvStepTitle.setText("Chọn bài tập phù hợp");
 
         rvSelection.setLayoutManager(new LinearLayoutManager(this));
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -104,14 +108,13 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     List<Exercise> filteredList = new ArrayList<>();
 
                     for (Exercise ex : response.body()) {
-                        // Khớp nhóm cơ
-                        boolean matchMuscle = (ex.getMuscleGroupId() != null && ex.getMuscleGroupId() == receivedMuscleId);
-                        
-                        // Khớp dụng cụ (Bodyweight hoặc có dụng cụ trong list đã chọn)
+                        //Kiểm tra xem MuscleGroupId có nằm trong danh sách đã chọn không
+                        boolean matchMuscle = (ex.getMuscleGroupId() != null && receivedMuscleIds.contains(ex.getMuscleGroupId()));
+
                         boolean matchEquipment = false;
                         List<Equipment> exEquipments = ex.getEquipments();
                         if (exEquipments == null || exEquipments.isEmpty()) {
-                            matchEquipment = true;
+                            matchEquipment = true; // Bodyweight
                         } else {
                             for (Equipment eq : exEquipments) {
                                 if (receivedEquipmentIds.contains(eq.getId())) {
@@ -127,17 +130,18 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     }
 
                     if (filteredList.isEmpty()) {
-                        Toast.makeText(CustomExerciseSelectionActivity.this, "Rất tiếc không có bài tập nào phù hợp!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(CustomExerciseSelectionActivity.this, "Không có bài tập phù hợp cho lựa chọn này!", Toast.LENGTH_LONG).show();
                     } else {
                         adapter = new ExerciseSelectionAdapter(filteredList, selectedCount -> {
                             if (selectedCount > 0) {
-                                btnNextStep.setEnabled(true);
-                                btnNextStep.setAlpha(1.0f);
-                                btnNextStep.setText("BẮT ĐẦU TẬP (" + selectedCount + " BÀI)");
+                                btnNextStep.setText("BẮT ĐẦU (" + selectedCount + " BÀI) →");
+                                if (btnNextStep.getVisibility() == View.GONE) {
+                                    btnNextStep.setVisibility(View.VISIBLE);
+                                    btnNextStep.animate().translationY(0f).alpha(1f).setDuration(300).start();
+                                }
                             } else {
-                                btnNextStep.setEnabled(false);
-                                btnNextStep.setAlpha(0.5f);
-                                btnNextStep.setText("BẮT ĐẦU TẬP");
+                                btnNextStep.animate().translationY(200f).alpha(0f).setDuration(300)
+                                        .withEndAction(() -> btnNextStep.setVisibility(View.GONE)).start();
                             }
                         });
                         rvSelection.setAdapter(adapter);
@@ -148,7 +152,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<List<Exercise>> call, Throwable t) {
                 progressBarApi.setVisibility(View.GONE);
-                Toast.makeText(CustomExerciseSelectionActivity.this, "Lỗi lấy bài tập", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomExerciseSelectionActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
             }
         });
     }

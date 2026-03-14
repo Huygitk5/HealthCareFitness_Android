@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,18 +14,19 @@ import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.MuscleGroup;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class MuscleSelectionAdapter extends RecyclerView.Adapter<MuscleSelectionAdapter.ViewHolder> {
 
     private List<MuscleGroup> muscleList;
-    private Set<Integer> validMuscleIds; // Chứa ID các nhóm cơ khả dụng
-    private int selectedPosition = -1;
+    private Set<Integer> validMuscleIds; 
+    private List<Integer> selectedMuscleIds = new ArrayList<>();
     private OnMuscleSelectionListener listener;
 
     public interface OnMuscleSelectionListener {
-        void onSelected(MuscleGroup selectedMuscle);
+        void onSelectionChanged(int selectedCount);
     }
 
     public MuscleSelectionAdapter(List<MuscleGroup> muscleList, Set<Integer> validMuscleIds, OnMuscleSelectionListener listener) {
@@ -33,10 +35,13 @@ public class MuscleSelectionAdapter extends RecyclerView.Adapter<MuscleSelection
         this.listener = listener;
     }
 
+    public List<Integer> getSelectedMuscleIds() {
+        return selectedMuscleIds;
+    }
+
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Dùng file item_muscle_row.xml anh đưa ở bài trước
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_muscle_row, parent, false);
         return new ViewHolder(view);
     }
@@ -46,60 +51,63 @@ public class MuscleSelectionAdapter extends RecyclerView.Adapter<MuscleSelection
         MuscleGroup muscle = muscleList.get(position);
         holder.tvMuscleName.setText(muscle.getName());
 
-        // Kiểm tra xem nhóm cơ này có bài tập nào tương ứng với thiết bị không
         boolean isValid = validMuscleIds.contains(muscle.getId());
+        boolean isSelected = selectedMuscleIds.contains(muscle.getId());
 
         if (!isValid) {
-            // NẾU KHÔNG CÓ BÀI TẬP -> DISABLE
-            holder.cardMuscle.setAlpha(0.4f); // Làm mờ đi
+            holder.itemView.setAlpha(0.4f);
             holder.cardMuscle.setCardBackgroundColor(Color.parseColor("#F5F5F5"));
-            holder.cardMuscle.setStrokeColor(Color.TRANSPARENT);
-            holder.tvMuscleName.setTextColor(Color.parseColor("#9E9E9E"));
-
-            // Chặn click
-            holder.itemView.setOnClickListener(null);
+            holder.cardMuscle.setStrokeWidth(0);
+            holder.itemView.setClickable(false);
         } else {
-            // NẾU CÓ BÀI TẬP -> ENABLE
-            holder.cardMuscle.setAlpha(1.0f);
+            holder.itemView.setAlpha(1.0f);
+            holder.itemView.setClickable(true);
 
-            if (selectedPosition == position) {
-                // Trạng thái đang được chọn
-                holder.cardMuscle.setStrokeColor(Color.parseColor("#009688"));
-                holder.cardMuscle.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
-                holder.tvMuscleName.setTextColor(Color.parseColor("#009688"));
+            if (isSelected) {
+                holder.cardMuscle.setCardBackgroundColor(Color.parseColor("#EAF4F3"));
+                holder.cardMuscle.setStrokeColor(Color.parseColor("#589A8D"));
+                holder.cardMuscle.setStrokeWidth(5);
+                holder.tvMuscleName.setTextColor(Color.parseColor("#589A8D"));
+                holder.layoutCheck.setVisibility(View.VISIBLE);
             } else {
-                // Trạng thái bình thường
-                holder.cardMuscle.setStrokeColor(Color.parseColor("#E0E0E0"));
                 holder.cardMuscle.setCardBackgroundColor(Color.WHITE);
-                holder.tvMuscleName.setTextColor(Color.BLACK);
+                holder.cardMuscle.setStrokeColor(Color.parseColor("#E0E0E0"));
+                holder.cardMuscle.setStrokeWidth(2);
+                holder.tvMuscleName.setTextColor(Color.parseColor("#333333"));
+                holder.layoutCheck.setVisibility(View.GONE);
             }
-
-            holder.itemView.setOnClickListener(v -> {
-                int previousSelected = selectedPosition;
-                selectedPosition = holder.getAdapterPosition();
-
-                // Cập nhật giao diện mượt mà (Chỉ vẽ lại 2 thẻ bị thay đổi)
-                notifyItemChanged(previousSelected);
-                notifyItemChanged(selectedPosition);
-
-                listener.onSelected(muscle);
-            });
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (!isValid) return;
+
+            v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction(() -> {
+                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start();
+                
+                if (isSelected) {
+                    selectedMuscleIds.remove(Integer.valueOf(muscle.getId()));
+                } else {
+                    selectedMuscleIds.add(muscle.getId());
+                }
+                notifyItemChanged(position);
+                listener.onSelectionChanged(selectedMuscleIds.size());
+            }).start();
+        });
     }
 
     @Override
-    public int getItemCount() {
-        return muscleList.size();
-    }
+    public int getItemCount() { return muscleList.size(); }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         MaterialCardView cardMuscle;
         TextView tvMuscleName;
+        FrameLayout layoutCheck;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             cardMuscle = itemView.findViewById(R.id.cardMuscle);
             tvMuscleName = itemView.findViewById(R.id.tvMuscleName);
+            layoutCheck = itemView.findViewById(R.id.layoutCheck);
         }
     }
 }

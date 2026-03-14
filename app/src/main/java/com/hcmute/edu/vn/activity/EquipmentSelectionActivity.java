@@ -2,7 +2,6 @@ package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -49,7 +48,7 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
         progressBarApi = findViewById(R.id.progressBarApi);
 
         LinearProgressIndicator stepProgressBar = findViewById(R.id.stepProgressBar);
-        stepProgressBar.setProgress(33); 
+        stepProgressBar.setProgress(33);
     }
 
     private void setupUI() {
@@ -75,43 +74,38 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
         progressBarApi.setVisibility(View.VISIBLE);
 
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        
-        // Thêm Log để debug
-        Log.d("API_DEBUG", "Bắt đầu gọi getAllEquipments...");
 
         apiService.getAllEquipments("*").enqueue(new Callback<List<Equipment>>() {
             @Override
             public void onResponse(Call<List<Equipment>> call, Response<List<Equipment>> response) {
                 progressBarApi.setVisibility(View.GONE);
-                
+
                 if (response.isSuccessful()) {
                     List<Equipment> equipmentList = response.body();
-                    Log.d("API_DEBUG", "Thành công! Số lượng: " + (equipmentList != null ? equipmentList.size() : 0));
 
                     if (equipmentList != null && !equipmentList.isEmpty()) {
+                        // Logic Animation trượt nút Tiếp tục
                         adapter = new EquipmentGridAdapter(equipmentList, selectedCount -> {
                             if (selectedCount > 0) {
-                                btnNextStep.setEnabled(true);
-                                btnNextStep.setAlpha(1.0f);
+                                btnNextStep.setText("TIẾP TỤC (" + selectedCount + ") →");
+
+                                // Nếu nút đang ẩn thì cho trượt lên
+                                if (btnNextStep.getVisibility() == View.GONE) {
+                                    btnNextStep.setVisibility(View.VISIBLE);
+                                    btnNextStep.setTranslationY(200f);
+                                    btnNextStep.animate().translationY(0f).alpha(1f).setDuration(300).start();
+                                }
                             } else {
-                                btnNextStep.setEnabled(false);
-                                btnNextStep.setAlpha(0.5f);
+                                // Ẩn đi khi bỏ chọn hết
+                                btnNextStep.animate().translationY(200f).alpha(0f).setDuration(300)
+                                        .withEndAction(() -> btnNextStep.setVisibility(View.GONE)).start();
                             }
                         });
                         rvSelection.setAdapter(adapter);
                     } else {
-                        Toast.makeText(EquipmentSelectionActivity.this, "Không có dữ liệu dụng cụ trên Server", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EquipmentSelectionActivity.this, "Không có dữ liệu", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    // Log mã lỗi và nội dung lỗi từ Supabase
-                    String errorMsg = "Lỗi: " + response.code();
-                    try {
-                        if (response.errorBody() != null) {
-                            errorMsg += " - " + response.errorBody().string();
-                        }
-                    } catch (Exception e) { e.printStackTrace(); }
-                    
-                    Log.e("API_DEBUG", errorMsg);
                     Toast.makeText(EquipmentSelectionActivity.this, "Lỗi server: " + response.code(), Toast.LENGTH_SHORT).show();
                 }
             }
@@ -119,7 +113,6 @@ public class EquipmentSelectionActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<List<Equipment>> call, Throwable t) {
                 progressBarApi.setVisibility(View.GONE);
-                Log.e("API_DEBUG", "Lỗi kết nối: " + t.getMessage());
                 Toast.makeText(EquipmentSelectionActivity.this, "Lỗi kết nối mạng!", Toast.LENGTH_SHORT).show();
             }
         });
