@@ -129,7 +129,7 @@ public class WorkoutActivity extends AppCompatActivity {
 
         // Bấm vào Card Tập Tự Do -> Chuyển sang màn hình Lọc bài tập
         cardFreeWorkout.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkoutActivity.this, FreeWorkoutFilterActivity.class);
+            Intent intent = new Intent(WorkoutActivity.this, EquipmentSelectionActivity.class);
             startActivity(intent);
         });
     }
