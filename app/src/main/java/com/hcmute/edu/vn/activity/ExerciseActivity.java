@@ -1,7 +1,8 @@
 package com.hcmute.edu.vn.activity;
 
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
@@ -27,24 +29,26 @@ public class ExerciseActivity extends AppCompatActivity {
     private Button btnPause;
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_workout_exercise);
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        
+        // Cấu hình thanh trạng thái
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
-        // 1. Ánh xạ View
+
         initViews();
 
-        // 2. Nhận danh sách bài tập từ Intent
-        if (getIntent() != null && getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
-            try {
-                exerciseList = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
-            } catch (Exception e) {
-                Log.e("ExerciseActivity", "Lỗi nhận dữ liệu Intent: " + e.getMessage());
+        Intent intent = getIntent();
+        if (intent != null && intent.hasExtra("EXTRA_EXERCISE_LIST")) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                exerciseList = intent.getSerializableExtra("EXTRA_EXERCISE_LIST", ArrayList.class);
+            } else {
+                exerciseList = (ArrayList<Exercise>) intent.getSerializableExtra("EXTRA_EXERCISE_LIST");
             }
         }
 
-        // 3. Hiển thị bài tập đầu tiên
         if (exerciseList != null && !exerciseList.isEmpty()) {
             currentIndex = 0;
             updateExerciseUI();
@@ -53,7 +57,6 @@ public class ExerciseActivity extends AppCompatActivity {
             finish();
         }
 
-        // 4. Lắng nghe sự kiện click Next/Prev
         setupListeners();
     }
 
@@ -69,10 +72,8 @@ public class ExerciseActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Bấm X để đóng
         btnClose.setOnClickListener(v -> finish());
 
-        // Bấm Next để qua bài
         btnNext.setOnClickListener(v -> {
             if (currentIndex < exerciseList.size() - 1) {
                 currentIndex++;
@@ -80,7 +81,6 @@ public class ExerciseActivity extends AppCompatActivity {
             }
         });
 
-        // Bấm Prev để lùi bài
         btnPrevious.setOnClickListener(v -> {
             if (currentIndex > 0) {
                 currentIndex--;
@@ -88,21 +88,16 @@ public class ExerciseActivity extends AppCompatActivity {
             }
         });
 
-        // Tạm thời để nút Pause
         btnPause.setOnClickListener(v -> {
-            Toast.makeText(this, "Đã bấm Pause", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ExerciseActivity.this, "Đã bấm Pause", Toast.LENGTH_SHORT).show();
         });
     }
 
-    /**
-     * Hàm lấy bài tập hiện tại và nạp vào Giao diện
-     */
     private void updateExerciseUI() {
         if (exerciseList == null || exerciseList.isEmpty()) return;
 
         Exercise currentExercise = exerciseList.get(currentIndex);
 
-        // Đổ Tên và Thời gian
         if (currentExercise.getName() != null) {
             tvExerciseName.setText(currentExercise.getName().toUpperCase());
         }
@@ -111,29 +106,21 @@ public class ExerciseActivity extends AppCompatActivity {
             tvTimer.setText(currentExercise.getBaseRecommendedReps()); 
         }
 
-        // --- XỬ LÝ ẢNH ---
         try {
             String imageString = currentExercise.getImageUrl();
-
             if (imageString != null && !imageString.isEmpty()) {
-                // Giả sử imageUrl chứa ID của resource (ví dụ: "2131230856")
                 int imageResId = Integer.parseInt(imageString);
                 ivExercise.setImageResource(imageResId);
             } else {
                 ivExercise.setImageResource(R.drawable.workout_1);
             }
         } catch (Exception e) {
-            Log.e("ExerciseActivity", "Lỗi load ảnh: " + e.getMessage());
             ivExercise.setImageResource(R.drawable.workout_1);
         }
 
-        // Cập nhật bộ đếm (Ví dụ: 1 / 11)
-        if (tvExerciseProgress != null) {
-            String progressText = (currentIndex + 1) + " / " + exerciseList.size();
-            tvExerciseProgress.setText(progressText);
-        }
+        String progressText = (currentIndex + 1) + " / " + exerciseList.size();
+        tvExerciseProgress.setText(progressText);
 
-        // Ẩn hiện nút Next/Prev dựa vào vị trí bài tập
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
         btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
     }
