@@ -164,9 +164,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="WEIGHT"
+                                android:text="Cân nặng"
                                 android:textColor="#9E9E9E"
-                                android:textSize="11sp"
+                                android:textSize="14sp"
                                 android:textStyle="bold" />
                             <TextView
                                 android:id="@+id/tvCurrentWeight"
@@ -194,9 +194,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="HEIGHT"
+                                android:text="Chiều cao"
                                 android:textColor="#9E9E9E"
-                                android:textSize="11sp"
+                                android:textSize="14sp"
                                 android:textStyle="bold" />
                             <TextView
                                 android:id="@+id/tvCurrentHeight"
@@ -224,9 +224,9 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="AGE"
+                                android:text="Tuổi"
                                 android:textColor="#9E9E9E"
-                                android:textSize="11sp"
+                                android:textSize="14sp"
                                 android:textStyle="bold" />
                             <TextView
                                 android:id="@+id/tvCurrentAge"
