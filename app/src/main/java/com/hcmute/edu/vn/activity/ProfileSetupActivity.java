@@ -13,10 +13,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
-import com.hcmute.edu.vn.activity.HomeActivity;
+import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.User;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
 import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ProfileSetupActivity extends AppCompatActivity {
 
@@ -76,29 +84,65 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     btnComplete.setEnabled(false);
                     btnComplete.setText("Đang lưu...");
 
-                    // Gọi API PATCH của Supabase (như hướng dẫn ở các tin nhắn trước)
                     SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-                    apiService.updateUserProfile("eq." + receivedUsername, updateData).enqueue(new retrofit2.Callback<Void>() {
+
+                    // ===============================================================
+                    // BƯỚC 1: TÌM USER ĐỂ LẤY ID (UUID)
+                    // ===============================================================
+                    apiService.getUserByUsername("eq." + receivedUsername, "*").enqueue(new Callback<List<User>>() {
                         @Override
-                        public void onResponse(Call<Void> call, retrofit2.Response<Void> response) {
-                            if (response.isSuccessful()) {
-                                Toast.makeText(ProfileSetupActivity.this, "Cập nhật thành công!", Toast.LENGTH_LONG).show();
-                                Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
-                                i.putExtra("KEY_USER", receivedUsername);
-                                startActivity(i);
-                                finish();
+                        public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                            if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                                String userId = response.body().get(0).getId();
+
+                                // ===============================================================
+                                // BƯỚC 2: CẬP NHẬT PROFILE
+                                // ===============================================================
+                                apiService.updateUserProfile("eq." + receivedUsername, updateData).enqueue(new Callback<Void>() {
+                                    @Override
+                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
+                                        if (profileResponse.isSuccessful()) {
+
+                                            // ===============================================================
+                                            // BƯỚC 3: TÍNH VÀ LƯU BMI VÀO DATABASE CHO BIỂU ĐỒ
+                                            // ===============================================================
+                                            double heightM = height / 100.0;
+                                            double newBmi = weight / (heightM * heightM);
+                                            String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+
+                                            BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, newBmi, currentDateFull);
+
+                                            apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
+                                                @Override
+                                                public void onResponse(Call<Void> call, Response<Void> logResponse) {
+                                                    goToHome(); // Lưu log thành công -> Xong xuôi!
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<Void> call, Throwable t) {
+                                                    goToHome(); // Rớt mạng khúc lưu log thì vẫn cho vào trang Home
+                                                }
+                                            });
+
+                                        } else {
+                                            showError("Lỗi cập nhật thông tin!");
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        showError("Lỗi kết nối mạng khi cập nhật!");
+                                    }
+                                });
+
                             } else {
-                                btnComplete.setEnabled(true);
-                                btnComplete.setText("Hoàn Tất");
-                                Toast.makeText(ProfileSetupActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                                showError("Không tìm thấy tài khoản để cập nhật!");
                             }
                         }
 
                         @Override
-                        public void onFailure(Call<Void> call, Throwable t) {
-                            btnComplete.setEnabled(true);
-                            btnComplete.setText("Hoàn Tất");
-                            Toast.makeText(ProfileSetupActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                        public void onFailure(Call<List<User>> call, Throwable t) {
+                            showError("Lỗi mạng khi tìm thông tin tài khoản!");
                         }
                     });
 
@@ -107,5 +151,25 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    // Hàm phụ trợ để báo lỗi và mở lại nút bấm
+    private void showError(String message) {
+        btnComplete.setEnabled(true);
+        btnComplete.setText("Hoàn Tất");
+        Toast.makeText(ProfileSetupActivity.this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // Hàm phụ trợ để chuyển sang Home
+    private void goToHome() {
+        Toast.makeText(ProfileSetupActivity.this, "Thiết lập thành công!", Toast.LENGTH_SHORT).show();
+
+        // Ép lưu username vào SharedPreferences BẰNG LỆNH COMMIT() để Home tải được data ngay lập tức
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        pref.edit().putString("KEY_USER", receivedUsername).commit();
+
+        Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
+        startActivity(i);
+        finish();
     }
 }

@@ -58,7 +58,7 @@ public class HomeActivity extends AppCompatActivity {
     LineChart lineChartBMI;
     List<BmiLog> currentBmiLogs = new ArrayList<>();
     LinearLayout btnUpdateBMI;
-    User mCurrentUser;
+    User currentUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -220,60 +220,53 @@ public class HomeActivity extends AppCompatActivity {
         apiService.getUserByUsername("eq." + username, "*").enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-
-                // Nếu API gọi thành công và có dữ liệu trả về
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    currentUser = response.body().get(0);
 
-                    // Lấy User đầu tiên trong danh sách trả về
-                    mCurrentUser = response.body().get(0);
+                    // 1. HIỂN THỊ THÔNG TIN LÊN BẢNG TÌNH TRẠNG (Giữ nguyên code cũ của bạn)
+                    tvGreeting.setText(currentUser.getName() != null ? currentUser.getName() : username);
+                    double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                    double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+                    int age = calculateAge(currentUser.getDateOfBirth());
 
-                    // Cập nhật tên hiển thị (Đổi getFullName() thành getName())
-                    tvGreeting.setText(mCurrentUser.getName() != null ? mCurrentUser.getName() : username);
-
-                    // Lấy Chiều cao & Cân nặng (Xử lý an toàn vì Double có thể null trên DB)
-                    double heightCm = mCurrentUser.getHeight() != null ? mCurrentUser.getHeight() : 0.0;
-                    double weightKg = mCurrentUser.getWeight() != null ? mCurrentUser.getWeight() : 0.0;
-
-                    // Tính tuổi (Đổi getDob() thành getDateOfBirth())
-                    int age = calculateAge(mCurrentUser.getDateOfBirth());
-
-                    // Tính toán và hiển thị BMI
                     if (heightCm > 0 && weightKg > 0) {
                         tvCurrentHeight.setText(heightCm + " cm");
                         tvCurrentWeight.setText(weightKg + " kg");
 
                         double heightM = heightCm / 100.0;
                         double bmi = weightKg / (heightM * heightM);
-                        tvBMIValue.setText(String.format("%.1f", bmi));
+                        tvBMIValue.setText(String.format(Locale.getDefault(), "%.1f", bmi));
 
-                        // Code set màu sắc BMI Status
                         if (bmi < 18.5) {
                             tvBMIStatus.setText("Thiếu cân");
-                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
-                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FF9800"));
-                        } else if (bmi >= 18.5 && bmi < 23) {
+                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FFCA28")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FFCA28"));
+                        } else if (bmi < 23) {
                             tvBMIStatus.setText("Bình thường");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
                             tvBMIValue.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+                        } else if (bmi < 25) {
+                            tvBMIStatus.setText("Thừa cân");
+                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
+                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FF9800"));
                         } else {
                             tvBMIStatus.setText("Béo phì");
                             tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
                             tvBMIValue.setTextColor(android.graphics.Color.parseColor("#F44336"));
                         }
                     } else {
-                        // Hiển thị mặc định khi chưa có data
                         tvCurrentHeight.setText("-- cm");
                         tvCurrentWeight.setText("-- kg");
                         tvBMIValue.setText("--");
                         tvBMIStatus.setText("Chưa có");
-                        // Trả về màu xám nếu chưa có data cho đỡ bị giữ màu cũ
                         tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9E9E9E")));
-                        tvBMIValue.setTextColor(android.graphics.Color.parseColor("#9E9E9E"));
                     }
+                    tvCurrentAge.setText(age > 0 ? String.valueOf(age) : "--");
 
-                    // Hiển thị tuổi
-                    if (age > 0) tvCurrentAge.setText(String.valueOf(age));
-                    else tvCurrentAge.setText("--");
+                    // =======================================================
+                    // 2. GỌI API LẤY LỊCH SỬ BMI ĐỂ VẼ BIỂU ĐỒ (DÒNG MỚI THÊM)
+                    // =======================================================
+                    fetchBmiHistory(currentUser.getId());
 
                 } else {
                     Toast.makeText(HomeActivity.this, "Không tìm thấy dữ liệu người dùng!", Toast.LENGTH_SHORT).show();
@@ -283,6 +276,34 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<List<User>> call, Throwable t) {
                 Toast.makeText(HomeActivity.this, "Lỗi mạng: Không thể tải dữ liệu!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // =========================================================
+    // HÀM LẤY LỊCH SỬ BMI TỪ SUPABASE
+    // =========================================================
+    private void fetchBmiHistory(String userId) {
+        if (userId == null || userId.isEmpty()) return;
+
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        // order=recorded_at.asc để dữ liệu xếp từ quá khứ đến hiện tại
+        apiService.getUserBmiLogs("eq." + userId, "*", "recorded_at.asc").enqueue(new Callback<List<BmiLog>>() {
+            @Override
+            public void onResponse(Call<List<BmiLog>> call, Response<List<BmiLog>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    currentBmiLogs = response.body();
+
+                    // Sau khi có dữ liệu, vẽ mặc định tab DAY (Ngày)
+                    setActiveTab(btnChartDay, btnChartWeek, btnChartMonth);
+                    updateChartData("DAY");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<BmiLog>> call, Throwable t) {
+                android.util.Log.e("BMI_CHART", "Lỗi tải biểu đồ: " + t.getMessage());
             }
         });
     }
@@ -346,72 +367,89 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // =========================================================
-    // HÀM CẬP NHẬT DỮ LIỆU LÊN BIỂU ĐỒ TÙY THEO TAB
+    // HÀM CẬP NHẬT DỮ LIỆU THẬT LÊN BIỂU ĐỒ
     // =========================================================
     private void updateChartData(String filterType) {
-        ArrayList<Entry> entries = new ArrayList<>();
-        final String[] labels; // Mảng chứa chữ hiển thị dưới trục X
-
-        // Chú ý: Trục X giờ sẽ bắt đầu từ 0 để dễ dàng map với mảng labels
-        if (filterType.equals("DAY")) {
-            // Dữ liệu 5 ngày (x: 0->4)
-            entries.add(new Entry(0, 23.5f));
-            entries.add(new Entry(1, 23.4f));
-            entries.add(new Entry(2, 23.4f));
-            entries.add(new Entry(3, 23.2f));
-            entries.add(new Entry(4, 23.1f));
-            labels = new String[]{"Ngày 1", "Ngày 2", "Ngày 3", "Ngày 4", "Ngày 5"};
-
-        } else if (filterType.equals("WEEK")) {
-            // Dữ liệu 4 tuần (x: 0->3)
-            entries.add(new Entry(0, 24.0f));
-            entries.add(new Entry(1, 23.8f));
-            entries.add(new Entry(2, 23.5f));
-            entries.add(new Entry(3, 23.1f));
-            labels = new String[]{"Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"};
-
-        } else {
-            // Dữ liệu các tháng (x: 0->2)
-            entries.add(new Entry(0, 25.0f));
-            entries.add(new Entry(1, 24.5f));
-            entries.add(new Entry(2, 23.1f));
-            labels = new String[]{"Tháng 1", "Tháng 2", "Tháng 3"};
+        if (currentBmiLogs == null || currentBmiLogs.isEmpty()) {
+            lineChartBMI.clear();
+            lineChartBMI.setNoDataText("Chưa có dữ liệu BMI để hiển thị.");
+            lineChartBMI.invalidate();
+            return;
         }
 
-        // ==========================================
-        // CẤU HÌNH TRỤC X ĐỂ HIỂN THỊ CHỮ (Labels)
-        // ==========================================
+        ArrayList<Entry> entries = new ArrayList<>();
+        final ArrayList<String> labels = new ArrayList<>();
+
+        // Xác định số lượng mốc muốn vẽ dựa vào Tab đang chọn
+        int limit = 0;
+        if (filterType.equals("DAY")) limit = 7;         // 7 lần đo gần nhất
+        else if (filterType.equals("WEEK")) limit = 14;  // 14 lần đo gần nhất
+        else limit = currentBmiLogs.size();              // Lấy toàn bộ (Tháng/Tất cả)
+
+        // Cắt mảng (Lấy từ dưới lên để lấy các record mới nhất)
+        int startIndex = Math.max(0, currentBmiLogs.size() - limit);
+        List<BmiLog> displayLogs = currentBmiLogs.subList(startIndex, currentBmiLogs.size());
+
+        // Bộ chuyển đổi chuỗi ngày tháng từ DB (VD: 2025-10-25T14:30:00) sang định dạng ngắn (25/10)
+        SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+
+        for (int i = 0; i < displayLogs.size(); i++) {
+            BmiLog log = displayLogs.get(i);
+
+            // Xử lý lấy giá trị Y (BMI)
+            float bmiValue = log.getBmiValue() != null ? log.getBmiValue().floatValue() : 0f;
+            entries.add(new Entry(i, bmiValue));
+
+            // Xử lý lấy giá trị X (Ngày hiển thị)
+            try {
+                if (log.getRecordedAt() != null) {
+                    Date date = inputFormat.parse(log.getRecordedAt());
+                    labels.add(outputFormat.format(date));
+                } else {
+                    labels.add("N/A");
+                }
+            } catch (Exception e) {
+                labels.add("--");
+            }
+        }
+
+        // CẤU HÌNH TRỤC X ĐỂ HIỂN THỊ CHỮ NGÀY THÁNG
         XAxis xAxis = lineChartBMI.getXAxis();
-        xAxis.setGranularity(1f); // Ép chỉ hiện số nguyên, không hiện số thập phân như 1.5, 2.5
+        xAxis.setGranularity(1f);
         xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
             @Override
             public String getAxisLabel(float value, com.github.mikephil.charting.components.AxisBase axis) {
-                int index = (int) value; // Ép từ float sang int
-                // Đảm bảo index không bị vượt quá độ dài của mảng
-                if (index >= 0 && index < labels.length) {
-                    return labels[index];
+                int index = (int) value;
+                if (index >= 0 && index < labels.size()) {
+                    return labels.get(index);
                 }
                 return "";
             }
         });
 
-        // Tạo đường vẽ (Line)
-        LineDataSet dataSet = new LineDataSet(entries, "BMI");
-        dataSet.setColor(android.graphics.Color.parseColor("#4DAA9A")); // Đường màu xanh lá
-        dataSet.setCircleColor(android.graphics.Color.parseColor("#4DAA9A")); // Chấm tròn màu xanh
+        // Cấu hình đường vẽ
+        LineDataSet dataSet = new LineDataSet(entries, "Chỉ số BMI");
+        dataSet.setColor(android.graphics.Color.parseColor("#4DAA9A"));
+        dataSet.setCircleColor(android.graphics.Color.parseColor("#4DAA9A"));
         dataSet.setLineWidth(3f);
         dataSet.setCircleRadius(5f);
-        dataSet.setDrawValues(true); // Hiện con số trên biểu đồ
-        dataSet.setValueTextSize(10f);
+        dataSet.setDrawValues(true);
+        dataSet.setValueTextSize(11f);
         dataSet.setValueTextColor(android.graphics.Color.parseColor("#212121"));
+
+        // Thêm nền mờ dưới đường line cho biểu đồ hiện đại hơn
+        dataSet.setDrawFilled(true);
+        dataSet.setFillColor(android.graphics.Color.parseColor("#4DAA9A"));
+        dataSet.setFillAlpha(30);
 
         LineData lineData = new LineData(dataSet);
         lineChartBMI.setData(lineData);
-        lineChartBMI.invalidate(); // Lệnh này giúp biểu đồ vẽ lại ngay lập tức
-        lineChartBMI.animateX(500); // Thêm hiệu ứng chạy ngang ra cho xịn xò
+        lineChartBMI.invalidate();
+        lineChartBMI.animateX(400);
     }
     private void showUpdateBMIDialog() {
-        if (mCurrentUser == null) {
+        if (currentUser == null) {
             Toast.makeText(this, "Đang tải dữ liệu, vui lòng đợi...", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -422,7 +460,6 @@ public class HomeActivity extends AppCompatActivity {
         builder.setView(dialogView);
         android.app.AlertDialog dialog = builder.create();
 
-        // Bo góc cho nền Dialog trong suốt (để ăn theo file xml)
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -432,12 +469,11 @@ public class HomeActivity extends AppCompatActivity {
         TextView btnCancel = dialogView.findViewById(R.id.btnCancelUpdate);
         TextView btnSave = dialogView.findViewById(R.id.btnSaveUpdate);
 
-        // Điền sẵn số cũ vào ô nhập (nếu có)
-        if (mCurrentUser.getWeight() != null && mCurrentUser.getWeight() > 0) {
-            edtWeight.setText(String.valueOf(mCurrentUser.getWeight()));
+        if (currentUser.getWeight() != null && currentUser.getWeight() > 0) {
+            edtWeight.setText(String.valueOf(currentUser.getWeight()));
         }
-        if (mCurrentUser.getHeight() != null && mCurrentUser.getHeight() > 0) {
-            edtHeight.setText(String.valueOf(mCurrentUser.getHeight()));
+        if (currentUser.getHeight() != null && currentUser.getHeight() > 0) {
+            edtHeight.setText(String.valueOf(currentUser.getHeight()));
         }
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
@@ -455,47 +491,69 @@ public class HomeActivity extends AppCompatActivity {
                 double newWeight = Double.parseDouble(wStr);
                 double newHeight = Double.parseDouble(hStr);
 
-                // 1. Tạo object User MỚI chỉ chứa cân nặng & chiều cao để PATCH
                 User updateData = new User();
                 updateData.setWeight(newWeight);
                 updateData.setHeight(newHeight);
 
                 SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-                // Hiển thị trạng thái đang lưu
                 btnSave.setText("Đang lưu...");
                 btnSave.setEnabled(false);
 
-                // CẬP NHẬT PROFILE
+                // 1. CẬP NHẬT PROFILE
                 apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
                     @Override
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
 
-                            // 2. TÍNH BMI & LƯU VÀO BMI_LOG ĐỂ VẼ BIỂU ĐỒ
+                            // 2. TÍNH BMI
                             double heightM = newHeight / 100.0;
                             double newBmi = newWeight / (heightM * heightM);
 
-                            // Format ngày giờ hiện tại
-                            String currentDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+                            // Lấy thời gian hiện tại
+                            String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+                            String todayDateOnly = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-                            BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), mCurrentUser.getId(), newWeight, newHeight, newBmi, currentDate);
-
-                            apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
-                                @Override
-                                public void onResponse(Call<Void> call, Response<Void> response) {
-                                    Toast.makeText(HomeActivity.this, "Đã cập nhật chỉ số cơ thể!", Toast.LENGTH_SHORT).show();
-                                    dialog.dismiss();
-                                    // TẢI LẠI TRANG ĐỂ HIỂN THỊ SỐ MỚI NGAY LẬP TỨC
-                                    loadUserData();
+                            // 3. KIỂM TRA XEM HÔM NAY ĐÃ CÓ RECORD NÀO CHƯA
+                            BmiLog todayLog = null;
+                            if (currentBmiLogs != null && !currentBmiLogs.isEmpty()) {
+                                // Lấy record cuối cùng (mới nhất)
+                                BmiLog lastLog = currentBmiLogs.get(currentBmiLogs.size() - 1);
+                                if (lastLog.getRecordedAt() != null && lastLog.getRecordedAt().startsWith(todayDateOnly)) {
+                                    todayLog = lastLog; // Tìm thấy record của hôm nay!
                                 }
+                            }
 
-                                @Override
-                                public void onFailure(Call<Void> call, Throwable t) {
-                                    dialog.dismiss();
-                                    loadUserData(); // Dù lỗi log nhưng vẫn load lại số mới
-                                }
-                            });
+                            // 4. XỬ LÝ LƯU (GHI ĐÈ NẾU CÓ, TẠO MỚI NẾU KHÔNG)
+                            if (todayLog != null) {
+                                // ĐÃ CÓ -> UPDATE BẢN GHI CỦA HÔM NAY
+                                BmiLog updatePayload = new BmiLog(null, null, newWeight, newHeight, newBmi, currentDateFull);
+
+                                apiService.updateBmiLog("eq." + todayLog.getId(), updatePayload).enqueue(new Callback<Void>() {
+                                    @Override
+                                    public void onResponse(Call<Void> call, Response<Void> response) {
+                                        finishUpdate(dialog, "Đã cập nhật BMI hôm nay!");
+                                    }
+                                    @Override
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        finishUpdate(dialog, "Lưu biểu đồ thất bại!");
+                                    }
+                                });
+                            } else {
+                                // CHƯA CÓ -> TẠO BẢN GHI MỚI CHO NGÀY MỚI
+                                BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), currentUser.getId(), newWeight, newHeight, newBmi, currentDateFull);
+
+                                apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
+                                    @Override
+                                    public void onResponse(Call<Void> call, Response<Void> response) {
+                                        finishUpdate(dialog, "Đã thêm mốc BMI mới!");
+                                    }
+                                    @Override
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        finishUpdate(dialog, "Lưu biểu đồ thất bại!");
+                                    }
+                                });
+                            }
 
                         } else {
                             btnSave.setText("Lưu thay đổi");
@@ -520,4 +578,10 @@ public class HomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    // Hàm phụ trợ để đóng Dialog và Tải lại data cho code gọn gàng
+    private void finishUpdate(android.app.AlertDialog dialog, String message) {
+        Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
+        dialog.dismiss();
+        loadUserData();
+    }
 }
