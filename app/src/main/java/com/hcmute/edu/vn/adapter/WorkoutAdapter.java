@@ -49,6 +49,17 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.tvSub.setText(item.getExercises().size() + " Bài tập");
         }
 
+        // 3. THÊM SỰ KIỆN CLICK CHO TOÀN BỘ THẺ (Cho phép xem trước bài tập của mọi ngày)
+        if (!isRestDay) {
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
+                intent.putExtra("EXTRA_DAY_ID", item.getId()); // Truyền ID của ngày qua Intent
+                v.getContext().startActivity(intent);
+            });
+        } else {
+            holder.itemView.setOnClickListener(null); // Tránh click vào ngày nghỉ
+        }
+
         if (position == 0) { // Ngày 1 (Hoặc ngày đang active)
             holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
 
@@ -56,11 +67,11 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.btnStart.setVisibility(isRestDay ? View.GONE : View.VISIBLE);
             holder.ivRest.setVisibility(isRestDay ? View.VISIBLE : View.GONE);
 
-            // XỬ LÝ CLICK ĐẾN ACTIVITY DANH SÁCH BÀI TẬP
+            // XỬ LÝ CLICK NÚT START ĐẾN ACTIVITY DANH SÁCH BÀI TẬP
             if (!isRestDay) {
                 holder.btnStart.setOnClickListener(v -> {
                     Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
-                    // Ở các bước sau, bạn có thể truyền ID của ngày tập qua Intent ở đây
+                    intent.putExtra("EXTRA_DAY_ID", item.getId()); // Truyền ID của ngày qua Intent
                     v.getContext().startActivity(intent);
                 });
             } else {
