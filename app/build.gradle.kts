@@ -50,4 +50,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     // Thư viện vẽ biểu đồ
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Thêm Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
 }
