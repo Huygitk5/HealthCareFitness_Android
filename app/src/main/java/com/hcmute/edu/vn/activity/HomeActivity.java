@@ -88,19 +88,17 @@ public class HomeActivity extends AppCompatActivity {
 
         setupChartAppearance();
 
+        // ĐÃ SỬA: Gọi API fetchBmiHistory mỗi khi chuyển Tab thay vì chỉ vẽ lại
         btnChartDay.setOnClickListener(v -> {
-            setActiveTab(btnChartDay, btnChartWeek, btnChartMonth);
-            updateChartData("DAY");
+            if (currentUser != null) fetchBmiHistory(currentUser.getId(), "DAY");
         });
 
         btnChartWeek.setOnClickListener(v -> {
-            setActiveTab(btnChartWeek, btnChartDay, btnChartMonth);
-            updateChartData("WEEK");
+            if (currentUser != null) fetchBmiHistory(currentUser.getId(), "WEEK");
         });
 
         btnChartMonth.setOnClickListener(v -> {
-            setActiveTab(btnChartMonth, btnChartDay, btnChartWeek);
-            updateChartData("MONTH");
+            if (currentUser != null) fetchBmiHistory(currentUser.getId(), "MONTH");
         });
 
         // 4. Sự kiện Click Chuông Thông báo
@@ -262,7 +260,7 @@ public class HomeActivity extends AppCompatActivity {
                     // =======================================================
                     // 2. GỌI API LẤY LỊCH SỬ BMI ĐỂ VẼ BIỂU ĐỒ (DÒNG MỚI THÊM)
                     // =======================================================
-                    fetchBmiHistory(currentUser.getId());
+                    fetchBmiHistory(currentUser.getId(), "DAY");
 
                 } else {
                     Toast.makeText(HomeActivity.this, "Không tìm thấy dữ liệu người dùng!", Toast.LENGTH_SHORT).show();
@@ -277,23 +275,56 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // =========================================================
-    // HÀM LẤY LỊCH SỬ BMI TỪ SUPABASE
+    // HÀM LẤY LỊCH SỬ BMI TỪ SUPABASE THEO KHOẢNG THỜI GIAN
     // =========================================================
-    private void fetchBmiHistory(String userId) {
+    private void fetchBmiHistory(String userId, String period) {
         if (userId == null || userId.isEmpty()) return;
+
+        Calendar calStart = Calendar.getInstance();
+        Calendar calEnd = Calendar.getInstance();
+
+        // Thời gian kết thúc (lte) luôn là cuối ngày hôm nay
+        calEnd.set(Calendar.HOUR_OF_DAY, 23);
+        calEnd.set(Calendar.MINUTE, 59);
+        calEnd.set(Calendar.SECOND, 59);
+
+        // Tính thời gian bắt đầu (gte) dựa theo Tab
+        switch (period) {
+            case "DAY":
+                calStart.add(Calendar.DAY_OF_YEAR, -6); // 7 ngày gần nhất (tính cả hôm nay)
+                break;
+            case "WEEK":
+                calStart.add(Calendar.WEEK_OF_YEAR, -4); // 4 tuần gần nhất
+                break;
+            case "MONTH":
+                calStart.add(Calendar.MONTH, -6); // 6 tháng gần nhất
+                break;
+        }
+        calStart.set(Calendar.HOUR_OF_DAY, 0);
+        calStart.set(Calendar.MINUTE, 0);
+        calStart.set(Calendar.SECOND, 0);
+
+        // Format chuẩn yyyy-MM-dd'T'HH:mm:ss
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        String gteDate = "gte." + sdf.format(calStart.getTime());
+        String lteDate = "lte." + sdf.format(calEnd.getTime());
 
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // order=recorded_at.asc để dữ liệu xếp từ quá khứ đến hiện tại
-        apiService.getUserBmiLogs("eq." + userId, "*", "recorded_at.asc").enqueue(new Callback<List<BmiLog>>() {
+        // DÙNG API MỚI CỦA BẠN Ở ĐÂY
+        apiService.getUserBmiLogsByDateRange("eq." + userId, gteDate, lteDate, "*", "recorded_at.asc").enqueue(new Callback<List<BmiLog>>() {
             @Override
             public void onResponse(Call<List<BmiLog>> call, Response<List<BmiLog>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     currentBmiLogs = response.body();
 
-                    // Sau khi có dữ liệu, vẽ mặc định tab DAY (Ngày)
-                    setActiveTab(btnChartDay, btnChartWeek, btnChartMonth);
-                    updateChartData("DAY");
+                    // Chuyển đổi màu sắc Tab tương ứng
+                    if ("DAY".equals(period)) setActiveTab(btnChartDay, btnChartWeek, btnChartMonth);
+                    else if ("WEEK".equals(period)) setActiveTab(btnChartWeek, btnChartDay, btnChartMonth);
+                    else if ("MONTH".equals(period)) setActiveTab(btnChartMonth, btnChartDay, btnChartWeek);
+
+                    // Vẽ biểu đồ
+                    updateChartData(period);
                 }
             }
 
@@ -388,7 +419,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     // =========================================================
-    // HÀM CẬP NHẬT DỮ LIỆU THẬT LÊN BIỂU ĐỒ
+    // HÀM GOM NHÓM DỮ LIỆU & VẼ BIỂU ĐỒ
     // =========================================================
     private void updateChartData(String filterType) {
         if (currentBmiLogs == null || currentBmiLogs.isEmpty()) {
@@ -398,70 +429,91 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        ArrayList<Entry> entries = new ArrayList<>();
-        final ArrayList<String> labels = new ArrayList<>();
-
-        // Xác định số lượng mốc muốn vẽ dựa vào Tab đang chọn
-        int limit = 0;
-        if (filterType.equals("DAY")) limit = 7;         // 7 lần đo gần nhất
-        else if (filterType.equals("WEEK")) limit = 14;  // 14 lần đo gần nhất
-        else limit = currentBmiLogs.size();              // Lấy toàn bộ (Tháng/Tất cả)
-
-        // Cắt mảng (Lấy từ dưới lên để lấy các record mới nhất)
-        int startIndex = Math.max(0, currentBmiLogs.size() - limit);
-        List<BmiLog> displayLogs = currentBmiLogs.subList(startIndex, currentBmiLogs.size());
-
-        // Bộ chuyển đổi chuỗi ngày tháng từ DB (VD: 2025-10-25T14:30:00) sang định dạng ngắn (25/10)
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-        SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
 
-        for (int i = 0; i < displayLogs.size(); i++) {
-            BmiLog log = displayLogs.get(i);
+        // Dùng LinkedHashMap để phân loại dữ liệu theo khung thời gian
+        java.util.LinkedHashMap<String, java.util.ArrayList<Float>> groupedData = new java.util.LinkedHashMap<>();
 
-            // Xử lý lấy giá trị Y (BMI)
-            float bmiValue = log.getBmiValue() != null ? log.getBmiValue().floatValue() : 0f;
-            entries.add(new Entry(i, bmiValue));
-
-            // Xử lý lấy giá trị X (Ngày hiển thị)
+        // Thuật toán chia nhóm
+        for (BmiLog log : currentBmiLogs) {
+            float bmi = log.getBmiValue() != null ? log.getBmiValue().floatValue() : 0f;
+            String key = "";
             try {
                 if (log.getRecordedAt() != null) {
                     Date date = inputFormat.parse(log.getRecordedAt());
-                    labels.add(outputFormat.format(date));
-                } else {
-                    labels.add("N/A");
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(date);
+
+                    if (filterType.equals("DAY")) {
+                        key = dayFormat.format(date); // In ra "14/03"
+                    } else if (filterType.equals("WEEK")) {
+                        key = "Tuần " + cal.get(Calendar.WEEK_OF_YEAR); // In ra "Tuần 11"
+                    } else if (filterType.equals("MONTH")) {
+                        key = "Tháng " + (cal.get(Calendar.MONTH) + 1); // In ra "Tháng 3"
+                    }
                 }
             } catch (Exception e) {
-                labels.add("--");
+                key = "--";
             }
+
+            if (!groupedData.containsKey(key)) {
+                groupedData.put(key, new java.util.ArrayList<>());
+            }
+            groupedData.get(key).add(bmi);
         }
 
-        // CẤU HÌNH TRỤC X ĐỂ HIỂN THỊ CHỮ NGÀY THÁNG
+        ArrayList<Entry> entries = new ArrayList<>();
+        final ArrayList<String> labels = new ArrayList<>();
+        int index = 0;
+
+        // Tính trung bình BMI cho từng nhóm
+        for (java.util.Map.Entry<String, java.util.ArrayList<Float>> group : groupedData.entrySet()) {
+            labels.add(group.getKey());
+
+            float sum = 0;
+            for (Float b : group.getValue()) {
+                sum += b;
+            }
+            float avgBmi = sum / group.getValue().size();
+
+            entries.add(new Entry(index, avgBmi));
+            index++;
+        }
+
+        // Đổ dữ liệu chữ vào trục X
         XAxis xAxis = lineChartBMI.getXAxis();
         xAxis.setGranularity(1f);
         xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
             @Override
             public String getAxisLabel(float value, com.github.mikephil.charting.components.AxisBase axis) {
-                int index = (int) value;
-                if (index >= 0 && index < labels.size()) {
-                    return labels.get(index);
+                int idx = (int) value;
+                if (idx >= 0 && idx < labels.size()) {
+                    return labels.get(idx);
                 }
                 return "";
             }
         });
 
-        // Cấu hình đường vẽ
         LineDataSet dataSet = new LineDataSet(entries, "Chỉ số BMI");
-        dataSet.setColor(android.graphics.Color.parseColor("#4DAA9A"));
-        dataSet.setCircleColor(android.graphics.Color.parseColor("#4DAA9A"));
+        dataSet.setColor(Color.parseColor("#4DAA9A"));
+        dataSet.setCircleColor(Color.parseColor("#4DAA9A"));
         dataSet.setLineWidth(3f);
         dataSet.setCircleRadius(5f);
         dataSet.setDrawValues(true);
         dataSet.setValueTextSize(11f);
-        dataSet.setValueTextColor(android.graphics.Color.parseColor("#212121"));
+        dataSet.setValueTextColor(Color.parseColor("#212121"));
 
-        // Thêm nền mờ dưới đường line cho biểu đồ hiện đại hơn
+        // Làm tròn số trên biểu đồ
+        dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.format(Locale.getDefault(), "%.1f", value);
+            }
+        });
+
         dataSet.setDrawFilled(true);
-        dataSet.setFillColor(android.graphics.Color.parseColor("#4DAA9A"));
+        dataSet.setFillColor(Color.parseColor("#4DAA9A"));
         dataSet.setFillAlpha(30);
 
         LineData lineData = new LineData(dataSet);
