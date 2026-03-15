@@ -15,7 +15,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.activity.ExerciseListActivity;
 import com.hcmute.edu.vn.model.WorkoutDay;
-
+import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.WorkoutDayExercise;
+import java.util.ArrayList;
 import java.util.List;
 
 public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHolder> {
@@ -35,59 +37,56 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WorkoutDay item = mList.get(position);
+        if (item == null) return;
 
-        // 1. Dùng getName() thay vì getDayName()
-        holder.tvTitle.setText(item.getName());
+        String title = item.getName() != null ? item.getName() : "Ngày Tập";
+        holder.tvTitle.setText(title);
 
-        // 2. LOGIC TỰ ĐỘNG TÍNH NGÀY NGHỈ
-        boolean isRestDay = item.getExercises() == null || item.getExercises().isEmpty();
+        boolean isRestDay = title.toLowerCase().contains("nghỉ");
 
-        // Tự động set SubTitle dựa vào List
         if (isRestDay) {
             holder.tvSub.setText("Nghỉ ngơi");
-        } else {
-            holder.tvSub.setText(item.getExercises().size() + " Bài tập");
-        }
-
-        // 3. THÊM SỰ KIỆN CLICK CHO TOÀN BỘ THẺ (Cho phép xem trước bài tập của mọi ngày)
-        if (!isRestDay) {
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
-                intent.putExtra("EXTRA_DAY_ID", item.getId()); // Truyền ID của ngày qua Intent
-                v.getContext().startActivity(intent);
-            });
-        } else {
-            holder.itemView.setOnClickListener(null); // Tránh click vào ngày nghỉ
-        }
-
-        if (position == 0) { // Ngày 1 (Hoặc ngày đang active)
-            holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
-
-            // Nếu là ngày nghỉ thì ẩn luôn nút Start
-            holder.btnStart.setVisibility(isRestDay ? View.GONE : View.VISIBLE);
-            holder.ivRest.setVisibility(isRestDay ? View.VISIBLE : View.GONE);
-
-            // XỬ LÝ CLICK NÚT START ĐẾN ACTIVITY DANH SÁCH BÀI TẬP
-            if (!isRestDay) {
-                holder.btnStart.setOnClickListener(v -> {
-                    Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
-                    intent.putExtra("EXTRA_DAY_ID", item.getId()); // Truyền ID của ngày qua Intent
-                    v.getContext().startActivity(intent);
-                });
-            } else {
-                holder.btnStart.setOnClickListener(null);
-            }
-
-            holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
-        } else { // Các ngày khác
-            holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
+            holder.ivRest.setVisibility(View.VISIBLE);
             holder.btnStart.setVisibility(View.GONE);
+            holder.itemView.setOnClickListener(null);
+        } else {
+            holder.tvSub.setText("Danh sách bài tập");
+            holder.ivRest.setVisibility(View.GONE);
 
-            // Dùng biến isRestDay tự tính ở trên
-            holder.ivRest.setVisibility(isRestDay ? View.VISIBLE : View.GONE);
-            holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
+            // KỸ THUẬT BYPASS: Đóng gói bài tập gửi thẳng qua trang sau!
+            View.OnClickListener clickListener = v -> {
+                Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
+                ArrayList<Exercise> exercisesToPass = new ArrayList<>();
 
-            holder.btnStart.setOnClickListener(null); // Tránh lỗi click nhầm
+                if (item.getExercises() != null) {
+                    for (WorkoutDayExercise wde : item.getExercises()) {
+                        if (wde.getExercise() != null) {
+                            Exercise ex = wde.getExercise();
+                            if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
+                            if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
+                            exercisesToPass.add(ex);
+                        }
+                    }
+                }
+
+                // Gửi danh sách và gửi luôn cả tên ngày để hiển thị
+                intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
+                intent.putExtra("EXTRA_DAY_TITLE", title);
+                v.getContext().startActivity(intent);
+            };
+
+            holder.itemView.setOnClickListener(clickListener);
+
+            if (position == 0) {
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
+                holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
+                holder.btnStart.setVisibility(View.VISIBLE);
+                holder.btnStart.setOnClickListener(clickListener);
+            } else {
+                holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
+                holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
+                holder.btnStart.setVisibility(View.GONE);
+            }
         }
     }
 

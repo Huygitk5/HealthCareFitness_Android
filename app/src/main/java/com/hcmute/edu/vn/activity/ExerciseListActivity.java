@@ -61,16 +61,23 @@ public class ExerciseListActivity extends AppCompatActivity {
 
             fetchExercisesForDay(dayId);
 
+            // Sửa lại nhánh này trong onCreate()
         } else if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
-            // LUỒNG TẬP TỰ DO: Lấy list đã chọn sẵn
             exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
+
+            // Nhận thêm Title để hiển thị cho đẹp
+            String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
             TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-            if(tvDayTitle != null) tvDayTitle.setText("Tập Tự Do");
+            if(tvDayTitle != null) {
+                tvDayTitle.setText(dayTitle != null ? dayTitle : "Danh sách bài tập");
+            }
 
             adapter = new ExerciseAdapter(exercises);
             rvExercises.setAdapter(adapter);
-        } else {
-            Toast.makeText(this, "Không tìm thấy dữ liệu", Toast.LENGTH_SHORT).show();
+
+            if (exercises == null || exercises.isEmpty()) {
+                Toast.makeText(this, "Ngày này chưa được gán bài tập nào!", Toast.LENGTH_SHORT).show();
+            }
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -93,46 +100,61 @@ public class ExerciseListActivity extends AppCompatActivity {
     }
 
     // Hàm gọi API để nạp bài tập
+    // Hàm gọi API để nạp bài tập (Đã được nâng cấp để hiển thị lỗi thật của Supabase)
     private void fetchExercisesForDay(String dayId) {
-        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        try {
+            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // Lấy ngày tập, nhúng thông qua bảng trung gian workout_day_exercises để lấy chi tiết Exercise
-        String selectQuery = "*, exercises:workout_day_exercises(*, exercise:exercises(*))";
+            // ĐÃ SỬA: Bỏ chữ "exercises:" đi, gọi thẳng tên bảng trung gian
+            String selectQuery = "*, workout_day_exercises(*, exercise:exercises(*))";
 
-        apiService.getExercisesForSpecificDay("eq." + dayId, selectQuery).enqueue(new Callback<List<WorkoutDay>>() {
-            @Override
-            public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    WorkoutDay day = response.body().get(0);
+            apiService.getExercisesForSpecificDay("eq." + dayId, selectQuery).enqueue(new Callback<List<WorkoutDay>>() {
+                @Override
+                public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
+                    try {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            WorkoutDay day = response.body().get(0);
 
-                    TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-                    if(tvDayTitle != null) tvDayTitle.setText(day.getName() != null ? day.getName() : "Bài tập");
+                            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
+                            if(tvDayTitle != null) tvDayTitle.setText(day.getName() != null ? day.getName() : "Bài tập");
 
-                    List<Exercise> fetchedList = new ArrayList<>();
-                    if (day.getExercises() != null) {
-                        for (WorkoutDayExercise wde : day.getExercises()) {
-                            Exercise ex = wde.getExercise();
-                            if (ex != null) {
-                                // Ghi đè số Sets và Reps của Ngày này vào Bài tập gốc
-                                if (wde.getReps() != null) ex.setBaseRecommendedReps(wde.getReps());
-                                if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
-                                fetchedList.add(ex);
+                            List<Exercise> fetchedList = new ArrayList<>();
+
+                            // Gọi getExercises() theo đúng tên biến trong Model của bạn
+                            if (day.getExercises() != null) {
+                                for (WorkoutDayExercise wde : day.getExercises()) {
+                                    Exercise ex = wde.getExercise();
+                                    if (ex != null) {
+                                        // Ép kiểu an toàn chống crash
+                                        if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
+                                        if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
+                                        fetchedList.add(ex);
+                                    }
+                                }
                             }
+
+                            exercises = new ArrayList<>(fetchedList);
+                            adapter = new ExerciseAdapter(exercises);
+                            rvExercises.setAdapter(adapter);
+
+                            if (exercises.isEmpty()) {
+                                Toast.makeText(ExerciseListActivity.this, "Ngày này là ngày nghỉ hoặc chưa có bài tập", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(ExerciseListActivity.this, "Dữ liệu trả về rỗng từ Server", Toast.LENGTH_SHORT).show();
                         }
+                    } catch (Exception e) {
+                        Toast.makeText(ExerciseListActivity.this, "Lỗi xử lý dữ liệu: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
-
-                    exercises = new ArrayList<>(fetchedList);
-                    adapter = new ExerciseAdapter(exercises);
-                    rvExercises.setAdapter(adapter);
-                } else {
-                    Toast.makeText(ExerciseListActivity.this, "Ngày tập trống", Toast.LENGTH_SHORT).show();
                 }
-            }
 
-            @Override
-            public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {
-                Toast.makeText(ExerciseListActivity.this, "Lỗi kết nối", Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {
+                    Toast.makeText(ExerciseListActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(this, "Lỗi gọi API: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 }

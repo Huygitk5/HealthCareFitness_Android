@@ -148,7 +148,7 @@ public class WorkoutActivity extends AppCompatActivity {
             tvTodayWorkoutTitle.setText("Ngày 1: Khởi động & Làm quen");
             ivTodayWorkout.setImageResource(R.drawable.workout_1);
             // Bạn có thể sửa chuỗi dưới đây thành ID Ngày 1 của gói Beginner trên Supabase
-            setupClickForTodayWorkout("ID_NGAY_1_GOI_BEGINNER_CUA_BAN");
+            setupClickForTodayWorkout("14dd7725-ba8d-4151-8acd-efc8d0a54d8a");
             return;
         }
 
@@ -171,7 +171,7 @@ public class WorkoutActivity extends AppCompatActivity {
                     tvTodayWorkoutTitle.setText("Ngày 1: Khởi động & Làm quen");
                     ivTodayWorkout.setImageResource(R.drawable.workout_1);
                     // Sửa chuỗi dưới đây thành ID Ngày 1 của gói Beginner trên Supabase
-                    setupClickForTodayWorkout("ID_NGAY_1_GOI_BEGINNER_CUA_BAN");
+                    setupClickForTodayWorkout("14dd7725-ba8d-4151-8acd-efc8d0a54d8a");
                 }
             }
 
