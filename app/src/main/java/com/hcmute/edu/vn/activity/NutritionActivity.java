@@ -335,15 +335,16 @@ public class NutritionActivity extends AppCompatActivity {
     private void setupRecyclerView(RecyclerView recyclerView, List<Food> foodList, OnFoodUpdate callback) {
         FoodAdapter adapter = new FoodAdapter(this, foodList, food -> {
             callback.onUpdate(food);
-            calculateAndDisplayTotals();
+            calculateAndDisplayTotals(); // Tính toán khi user click
         });
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
 
+        // QUAN TRỌNG: Nếu có data, chọn món đầu tiên và TÍNH TOÁN LUÔN
         if (!foodList.isEmpty()) {
             callback.onUpdate(foodList.get(0));
+            calculateAndDisplayTotals(); // Thêm dòng này để dashboard chạy ngay khi load xong data
         }
     }
 
