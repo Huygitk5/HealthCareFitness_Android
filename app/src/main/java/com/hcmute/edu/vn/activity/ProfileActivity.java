@@ -32,7 +32,7 @@ import retrofit2.Response;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    TextView txtName, txtLocation, tvProfileAge, tvProfileWeight, tvProfileHeight;
+    TextView txtName, txtEmail, tvProfileAge, tvProfileWeight, tvProfileHeight;
     MaterialButton btnLogout;
     String username;
 
@@ -50,7 +50,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // 1. Ánh xạ các View
         txtName = findViewById(R.id.txtName);
-        txtLocation = findViewById(R.id.txtLocation);
+        txtEmail = findViewById(R.id.txtEmail);
         tvProfileAge = findViewById(R.id.tvProfileAge);
         tvProfileWeight = findViewById(R.id.tvProfileWeight);
         tvProfileHeight = findViewById(R.id.tvProfileHeight);
@@ -132,7 +132,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 ? currentUser.getName() : username);
 
                         // 2. Hiển thị "Địa chỉ" (Do DB không còn address, ta dùng tạm ô này để hiện Email nhé)
-                        txtLocation.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
+                        txtEmail.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
 
                         // 3. Hiển thị chiều cao, cân nặng (Xử lý an toàn vì Double có thể null)
                         double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
