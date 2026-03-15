@@ -10,18 +10,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.FoodVerticalAdapter;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.Food;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class FoodListActivity extends AppCompatActivity {
 
@@ -52,11 +55,11 @@ public class FoodListActivity extends AppCompatActivity {
             tvFoodListTitle.setText(title);
         }
 
-        // 2. Tải dữ liệu tương ứng với CategoryID
-        loadData(categoryId);
-
-        // 3. Khởi tạo RecyclerView
+        // 2. Khởi tạo RecyclerView TRƯỚC VỚI DANH SÁCH RỖNG để tránh lỗi giao diện
         setupRecyclerView();
+
+        // 3. Tải dữ liệu thật từ API tương ứng với CategoryID
+        loadDataFromApi(categoryId);
 
         // 4. Xử lý các sự kiện (Click back, Gõ tìm kiếm...)
         setupListeners();
@@ -67,47 +70,54 @@ public class FoodListActivity extends AppCompatActivity {
         tvFoodListTitle = findViewById(R.id.tvFoodListTitle);
         edtSearchFood = findViewById(R.id.edtSearchFood);
         rvFullFoodList = findViewById(R.id.rvFullFoodList);
+
+        // Khởi tạo mảng rỗng để không bị NullPointerException khi nhét vào Adapter
+        allFoods = new ArrayList<>();
+        displayFoods = new ArrayList<>();
     }
 
-    private void loadData(int categoryId) {
-        allFoods = new ArrayList<>();
+    // =======================================================
+    // HÀM LẤY DỮ LIỆU TỪ SUPABASE BẰNG API THẬT
+    // =======================================================
+    private void loadDataFromApi(int categoryId) {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // GIẢ LẬP DỮ LIỆU: Nếu sau này có Database, bạn sẽ query dựa vào categoryId ở đây
-        if (categoryId == 1) {
-            // Danh sách Thịt & Đạm
-            allFoods.add(new Food("1", "Trứng Luộc", 1, "2 quả", 155.0, 13.0, 1.0, 0.0, 11.0));
-            allFoods.add(new Food("2", "Sữa Tươi", 1, "1 ly", 120.0, 8.0, 12.0, 0.0, 4.0));
-            allFoods.add(new Food("3", "Xúc Xích", 1, "1 cây", 250.0, 10.0, 2.0, 0.0, 20.0));
-            allFoods.add(new Food("4", "Bơ Đậu Phộng", 1, "2 thìa", 190.0, 7.0, 6.0, 2.0, 16.0));
-            allFoods.add(new Food("13", "Ức Gà", 1, "200g", 330.0, 62.0, 0.0, 0.0, 7.2));
-            allFoods.add(new Food("14", "Thịt Lợn Luộc", 1, "150g", 360.0, 30.0, 0.0, 0.0, 25.0));
-            allFoods.add(new Food("15", "Tôm Hấp", 1, "150g", 150.0, 30.0, 0.0, 0.0, 2.0));
-            allFoods.add(new Food("25", "Cá Hồi", 1, "150g", 312.0, 30.0, 0.0, 0.0, 20.0));
-        } else if (categoryId == 2) {
-            // Danh sách Rau củ
-            allFoods.add(new Food("5", "Súp Lơ Xanh", 2, "100g", 34.0, 2.8, 7.0, 2.6, 0.4));
-            allFoods.add(new Food("6", "Cà Rốt Luộc", 2, "1 củ", 41.0, 0.9, 10.0, 2.8, 0.2));
-            allFoods.add(new Food("17", "Cà Chua Bi", 2, "10 quả", 30.0, 1.0, 6.0, 1.5, 0.2));
-            allFoods.add(new Food("18", "Bắp Cải Luộc", 2, "100g", 25.0, 1.3, 5.8, 2.5, 0.1));
-            allFoods.add(new Food("29", "Cần Tây", 2, "100g", 14.0, 0.7, 3.0, 1.6, 0.2));
-        } else {
-            // Danh sách Tinh bột
-            allFoods.add(new Food("9", "Bánh Phở", 3, "1 bát", 200.0, 4.0, 45.0, 1.0, 0.5));
-            allFoods.add(new Food("10", "Chuối", 3, "1 quả", 105.0, 1.3, 27.0, 3.1, 0.3));
-            allFoods.add(new Food("21", "Gạo Lứt", 3, "1 bát", 216.0, 5.0, 45.0, 3.5, 1.8));
-            allFoods.add(new Food("22", "Khoai Tây", 3, "1 củ", 161.0, 4.3, 37.0, 3.8, 0.2));
-            allFoods.add(new Food("33", "Táo", 3, "1 quả", 95.0, 0.5, 25.0, 4.4, 0.3));
-        }
+        // Định dạng eqCategoryId: "eq.1", "eq.2",...
+        String eqCategoryId = "eq." + categoryId;
 
-        // Khởi tạo danh sách hiển thị bằng danh sách gốc
-        displayFoods = new ArrayList<>(allFoods);
+        apiService.getFoodsByCategory(eqCategoryId, "*").enqueue(new Callback<List<Food>>() {
+            @Override
+            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Xóa dữ liệu cũ (nếu có)
+                    allFoods.clear();
+                    // Thêm dữ liệu từ API về
+                    allFoods.addAll(response.body());
+
+                    // Cập nhật lại danh sách hiển thị
+                    displayFoods.clear();
+                    displayFoods.addAll(allFoods);
+
+                    // Báo cho Adapter biết là có data mới để vẽ ra màn hình
+                    if (adapter != null) {
+                        adapter.notifyDataSetChanged();
+                    }
+                } else {
+                    Toast.makeText(FoodListActivity.this, "Không tìm thấy món ăn nào!", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Food>> call, Throwable t) {
+                Toast.makeText(FoodListActivity.this, "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setupRecyclerView() {
-        // Truyền displayFoods vào Adapter. Mỗi khi user chọn 1 món, sẽ Toast số lượng lên
+        // Truyền displayFoods vào Adapter.
         adapter = new FoodVerticalAdapter(displayFoods, selectedCount -> {
-            // Khi làm thật, bạn có thể lưu List đồ ăn này lại để mang về màn hình trước
-            // Toast.makeText(this, "Đã chọn: " + selectedCount + " món", Toast.LENGTH_SHORT).show();
+            // Callback khi user tick chọn món (nếu cần)
         });
 
         rvFullFoodList.setLayoutManager(new LinearLayoutManager(this));
@@ -125,10 +135,13 @@ public class FoodListActivity extends AppCompatActivity {
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("CATEGORY_TITLE", getIntent().getStringExtra("CATEGORY_TITLE"));
                 resultIntent.putExtra("FOOD_NAME", selected.getName());
-                resultIntent.putExtra("FOOD_CAL", selected.getCalories());
-                resultIntent.putExtra("FOOD_P", selected.getProteinG());
-                resultIntent.putExtra("FOOD_C", selected.getCarbG());
-                resultIntent.putExtra("FOOD_F", selected.getFatG());
+
+                // Lấy thông số Macro
+                resultIntent.putExtra("FOOD_CAL", selected.getCalories() != null ? selected.getCalories() : 0.0);
+                resultIntent.putExtra("FOOD_P", selected.getProteinG() != null ? selected.getProteinG() : 0.0);
+                resultIntent.putExtra("FOOD_C", selected.getCarbG() != null ? selected.getCarbG() : 0.0);
+                resultIntent.putExtra("FOOD_F", selected.getFatG() != null ? selected.getFatG() : 0.0);
+                resultIntent.putExtra("FOOD_IMAGE", selected.getImageUrl());
 
                 setResult(RESULT_OK, resultIntent); // Xác nhận gửi thành công
             }
@@ -160,13 +173,12 @@ public class FoodListActivity extends AppCompatActivity {
             String lowerCaseQuery = query.toLowerCase();
             for (Food food : allFoods) {
                 // Nếu tên món ăn có chứa từ khóa đang gõ thì thêm vào danh sách hiển thị
-                if (food.getName().toLowerCase().contains(lowerCaseQuery)) {
+                if (food.getName() != null && food.getName().toLowerCase().contains(lowerCaseQuery)) {
                     displayFoods.add(food);
                 }
             }
         }
 
-        // ĐÃ SỬA LỖI Ở ĐÂY: Dùng notifyDataSetChanged()
         adapter.notifyDataSetChanged();
     }
 }

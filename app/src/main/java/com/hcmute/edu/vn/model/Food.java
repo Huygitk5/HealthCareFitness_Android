@@ -21,6 +21,8 @@ public class Food {
     private Double fiberG;
     @SerializedName("fat_g")
     private Double fatG;
+    @SerializedName("image_url")
+    private String imageUrl;
 
     public Food(String id, String name, Integer categoryId, String servingSize, Double calories, Double proteinG, Double carbG, Double fiberG, Double fatG) {
         this.id = id;
@@ -104,5 +106,13 @@ public class Food {
 
     public void setFatG(Double fatG) {
         this.fatG = fatG;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

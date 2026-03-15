@@ -39,6 +39,7 @@
                     android:layout_centerInParent="true"
                     android:gravity="center"
                     android:text="Kế Hoạch Dinh Dưỡng"
+                    android:paddingTop="24dp"
                     android:textColor="#212121"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -117,7 +118,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="🍞 Carb"
+                                android:text="Carb"
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -155,7 +156,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="🐟 Protein"
+                                android:text="Protein"
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -192,7 +193,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="🍶 Fat"
+                                android:text="Fat"
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
