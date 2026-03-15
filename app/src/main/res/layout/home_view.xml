@@ -333,27 +333,68 @@
                                 android:background="#F44336" />
                         </LinearLayout>
 
-                        <RelativeLayout
+                        <androidx.constraintlayout.widget.ConstraintLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp">
 
                             <TextView
+                                android:id="@+id/tvBmiMin"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="15.0"
                                 android:textColor="#BDBDBD"
                                 android:textSize="10sp"
-                                android:layout_alignParentStart="true"/>
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
 
                             <TextView
+                                android:id="@+id/tvBmi1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="18.5"
+                                android:textColor="#BDBDBD"
+                                android:textSize="10sp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintHorizontal_bias="0.25"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/tvBmi2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="23.0"
+                                android:textColor="#BDBDBD"
+                                android:textSize="10sp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintHorizontal_bias="0.5"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/tvBmi3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="25.0"
+                                android:textColor="#BDBDBD"
+                                android:textSize="10sp"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintHorizontal_bias="0.75"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                            <TextView
+                                android:id="@+id/tvBmiMax"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="40.0+"
                                 android:textColor="#BDBDBD"
                                 android:textSize="10sp"
-                                android:layout_alignParentEnd="true"/>
-                        </RelativeLayout>
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+
+                        </androidx.constraintlayout.widget.ConstraintLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -434,7 +475,7 @@
 
                         <RelativeLayout
                             android:layout_width="match_parent"
-                            android:layout_height="160dp"
+                            android:layout_height="200dp"
                             android:background="#F8F9FA">
 
                             <com.github.mikephil.charting.charts.LineChart
