@@ -119,7 +119,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="🍞 Carb"
                                 android:textColor="#757575"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textStyle="bold" />
 
                             <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -157,7 +157,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="🐟 Protein"
                                 android:textColor="#757575"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textStyle="bold" />
 
                             <com.google.android.material.progressindicator.LinearProgressIndicator
@@ -194,7 +194,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="🍶 Fat"
                                 android:textColor="#757575"
-                                android:textSize="14sp"
+                                android:textSize="12sp"
                                 android:textStyle="bold" />
 
                             <com.google.android.material.progressindicator.LinearProgressIndicator
