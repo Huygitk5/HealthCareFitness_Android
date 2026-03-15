@@ -55,7 +55,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Xin chào,"
-                        android:textColor="#E0F2F1"
+                        android:textColor="#6C757D"
                         android:textSize="14sp" />
 
                     <TextView
@@ -63,7 +63,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Người dùng"
-                        android:textColor="#FFFFFF"
+                        android:textColor="#1A1C1E"
                         android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
