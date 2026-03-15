@@ -77,18 +77,21 @@ public class ProfileActivity extends AppCompatActivity {
 
         navHome.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, HomeActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // THÊM DÒNG NÀY
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navWorkout.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // THÊM DÒNG NÀY
             startActivity(i);
             overridePendingTransition(0, 0);
         });
 
         navNutrition.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, NutritionActivity.class);
+            i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT); // THÊM DÒNG NÀY
             startActivity(i);
             overridePendingTransition(0, 0);
         });

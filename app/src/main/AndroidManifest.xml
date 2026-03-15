@@ -60,6 +60,7 @@
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseListActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.WorkoutActivity" android:exported="false" />
+        <activity android:name=".activity.FoodListActivity" android:exported="false" />
 
     </application>
 
