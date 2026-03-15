@@ -62,9 +62,11 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         holder.tvMacroC.setText("C: " + Math.round(food.getCarbG()) + "g");
         holder.tvMacroF.setText("F: " + Math.round(food.getFatG()) + "g");
 
-        // Gắn ảnh mặc định (sau này bạn thay bằng Glide/Picasso)
-        holder.imgFoodList.setImageResource(R.mipmap.ic_launcher_round);
-
+        com.bumptech.glide.Glide.with(holder.itemView.getContext())
+                .load(food.getImageUrl()) // Nhớ check lại tên hàm getImageUrl() trong model Food
+                .placeholder(R.mipmap.ic_launcher_round) // Ảnh chờ lúc đang tải mạng
+                .error(R.mipmap.ic_launcher_round)       // Ảnh báo lỗi nếu link hỏng
+                .into(holder.imgFoodList);
         // Kiểm tra xem món này có đang nằm trong danh sách "được tick chọn" không
         boolean isSelected = selectedFoods.contains(food);
 

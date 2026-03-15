@@ -90,7 +90,7 @@ public class NutritionActivity extends AppCompatActivity {
                         Food newFood = new Food("999", data.getStringExtra("FOOD_NAME"), 1, "1 phần",
                                 data.getDoubleExtra("FOOD_CAL", 0), data.getDoubleExtra("FOOD_P", 0),
                                 data.getDoubleExtra("FOOD_C", 0), data.getDoubleExtra("FOOD_F", 0), 0.0);
-
+                        newFood.setImageUrl(data.getStringExtra("FOOD_IMAGE"));
                         // Chèn món mới lên vị trí ĐẦU TIÊN của danh sách và chọn nó
                         if (title != null) {
                             if (title.contains("Thịt & Đạm (Bữa Sáng)")) addNewFoodToTop(rvBreakfastMeat, listBfMeat, newFood, f -> selBfMeat = f);
