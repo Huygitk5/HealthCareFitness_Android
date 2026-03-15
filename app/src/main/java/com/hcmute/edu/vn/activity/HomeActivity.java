@@ -65,11 +65,7 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.home_view);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.home), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+
         androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -351,6 +347,21 @@ public class HomeActivity extends AppCompatActivity {
     // =========================================================
     // HÀM SETUP GIAO DIỆN BIỂU ĐỒ BAN ĐẦU
     // =========================================================
+//    private void setupChartAppearance() {
+//        lineChartBMI.getDescription().setEnabled(false); // Ẩn chữ mô tả
+//        lineChartBMI.getLegend().setEnabled(false); // Ẩn chú thích
+//        lineChartBMI.setDrawGridBackground(false);
+//        lineChartBMI.getAxisRight().setEnabled(false); // Ẩn cột số bên phải
+//
+//        XAxis xAxis = lineChartBMI.getXAxis();
+//        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+//        xAxis.setDrawGridLines(false); // Ẩn đường kẻ dọc dọc
+//        xAxis.setTextColor(Color.parseColor("#9E9E9E"));
+//
+//        lineChartBMI.getAxisLeft().setDrawGridLines(true); // Giữ đường kẻ ngang
+//        lineChartBMI.getAxisLeft().setTextColor(Color.parseColor("#9E9E9E"));
+//    }
+
     private void setupChartAppearance() {
         lineChartBMI.getDescription().setEnabled(false); // Ẩn chữ mô tả
         lineChartBMI.getLegend().setEnabled(false); // Ẩn chú thích
@@ -362,8 +373,18 @@ public class HomeActivity extends AppCompatActivity {
         xAxis.setDrawGridLines(false); // Ẩn đường kẻ dọc dọc
         xAxis.setTextColor(Color.parseColor("#9E9E9E"));
 
+        // ==========================================
+        // CÁCH CHỮA BỆNH ĐÈ SỐ: Thêm khoảng đệm 2 đầu trục X
+        // ==========================================
+        xAxis.setSpaceMin(0.3f); // Đẩy điểm đầu thụt vào trong (cách trục Y)
+        xAxis.setSpaceMax(0.3f); // Đẩy điểm cuối thụt lùi lại không dính mép phải
+
         lineChartBMI.getAxisLeft().setDrawGridLines(true); // Giữ đường kẻ ngang
         lineChartBMI.getAxisLeft().setTextColor(Color.parseColor("#9E9E9E"));
+
+        // Đẩy đường line xa khỏi trần và sàn để nó lơ lửng đẹp mắt
+        lineChartBMI.getAxisLeft().setSpaceTop(20f);
+        lineChartBMI.getAxisLeft().setSpaceBottom(20f);
     }
 
     // =========================================================
