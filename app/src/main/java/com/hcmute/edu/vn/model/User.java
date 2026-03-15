@@ -1,8 +1,7 @@
 package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
-
-import java.util.List;
+import java.util.List; // Thêm import List
 
 public class User {
     @SerializedName("id")
@@ -35,9 +34,9 @@ public class User {
     @SerializedName("created_at")
     private String createdAt;
 
-    @SerializedName("medical_conditions")
-    private List<MedicalCondition> medicalConditions;
-
+    // Thêm biến để chứa danh sách Bệnh / Dị ứng của User
+    @SerializedName("user_medical_conditions")
+    private List<UserMedicalCondition> userMedicalConditions;
 
     // --- CONSTRUCTOR ---
     public User() {}
@@ -90,30 +89,15 @@ public class User {
 
     public Double getWeight() { return weight; }
     public void setWeight(Double weight) { this.weight = weight; }
+
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public List<MedicalCondition> getMedicalConditions() {
-        return medicalConditions;
+    // GETTER & SETTER CHO DANH SÁCH BỆNH (Vừa thêm)
+    public List<UserMedicalCondition> getUserMedicalConditions() {
+        return userMedicalConditions;
     }
-
-    public void setMedicalConditions(List<MedicalCondition> medicalConditions) {
-        this.medicalConditions = medicalConditions;
-    }
-
-    public String getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Integer getFitnessGoalId() {
-        return fitnessGoalId;
-    }
-
-    public void setFitnessGoalId(Integer fitnessGoalId) {
-        this.fitnessGoalId = fitnessGoalId;
+    public void setUserMedicalConditions(List<UserMedicalCondition> userMedicalConditions) {
+        this.userMedicalConditions = userMedicalConditions;
     }
 }
