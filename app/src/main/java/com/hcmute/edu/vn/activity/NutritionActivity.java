@@ -43,6 +43,11 @@ public class NutritionActivity extends AppCompatActivity {
     List<Food> listLunchMeat, listLunchVeggie, listLunchCarb;
     List<Food> listDinnerMeat, listDinnerVeggie, listDinnerCarb;
 
+    // Biến cho thanh Tab chuyển đổi
+    TextView tabBreakfast, tabLunch, tabDinner;
+    LinearLayout layoutBreakfast, layoutLunch, layoutDinner;
+
+
     // Mục tiêu (Target) trong ngày
     final double TARGET_CALORIES = 2000.0;
     final double TARGET_CARB = 250.0;
@@ -139,6 +144,20 @@ public class NutritionActivity extends AppCompatActivity {
         findViewById(R.id.btnMoreDinnerMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Tối)", 1));
         findViewById(R.id.btnMoreDinnerVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Tối)", 2));
         findViewById(R.id.btnMoreDinnerCarb).setOnClickListener(v -> openFoodList("Tinh bột & Trái cây (Bữa Tối)", 3));
+
+        // Ánh xạ Tab chuyển đổi
+        tabBreakfast = findViewById(R.id.tabBreakfast);
+        tabLunch = findViewById(R.id.tabLunch);
+        tabDinner = findViewById(R.id.tabDinner);
+
+        layoutBreakfast = findViewById(R.id.layoutBreakfast);
+        layoutLunch = findViewById(R.id.layoutLunch);
+        layoutDinner = findViewById(R.id.layoutDinner);
+
+        // Bắt sự kiện Click chuyển Tab
+        tabBreakfast.setOnClickListener(v -> switchTab(0));
+        tabLunch.setOnClickListener(v -> switchTab(1));
+        tabDinner.setOnClickListener(v -> switchTab(2));
     }
 
     private void openFoodList(String title, int categoryId) {
@@ -146,6 +165,43 @@ public class NutritionActivity extends AppCompatActivity {
         intent.putExtra("CATEGORY_TITLE", title);
         intent.putExtra("CATEGORY_ID", categoryId);
         foodListLauncher.launch(intent);
+    }
+
+    // ===============================================
+    // HÀM XỬ LÝ CHUYỂN ĐỔI TAB BỮA ĂN
+    // ===============================================
+    private void switchTab(int tabIndex) {
+        // 1. Reset màu tất cả các Tab về trạng thái chưa chọn (chữ xám, nền trong suốt)
+        tabBreakfast.setBackgroundResource(android.R.color.transparent);
+        tabBreakfast.setTextColor(android.graphics.Color.parseColor("#757575"));
+
+        tabLunch.setBackgroundResource(android.R.color.transparent);
+        tabLunch.setTextColor(android.graphics.Color.parseColor("#757575"));
+
+        tabDinner.setBackgroundResource(android.R.color.transparent);
+        tabDinner.setTextColor(android.graphics.Color.parseColor("#757575"));
+
+        // 2. Ẩn tất cả các danh sách món ăn
+        layoutBreakfast.setVisibility(android.view.View.GONE);
+        layoutLunch.setVisibility(android.view.View.GONE);
+        layoutDinner.setVisibility(android.view.View.GONE);
+
+        // 3. Hiển thị danh sách tương ứng và tô màu Xanh cho Tab được bấm
+        if (tabIndex == 0) {
+            tabBreakfast.setBackgroundResource(R.drawable.bg_nav_active);
+            tabBreakfast.setTextColor(android.graphics.Color.WHITE);
+            layoutBreakfast.setVisibility(android.view.View.VISIBLE);
+
+        } else if (tabIndex == 1) {
+            tabLunch.setBackgroundResource(R.drawable.bg_nav_active);
+            tabLunch.setTextColor(android.graphics.Color.WHITE);
+            layoutLunch.setVisibility(android.view.View.VISIBLE);
+
+        } else if (tabIndex == 2) {
+            tabDinner.setBackgroundResource(R.drawable.bg_nav_active);
+            tabDinner.setTextColor(android.graphics.Color.WHITE);
+            layoutDinner.setVisibility(android.view.View.VISIBLE);
+        }
     }
 
     // ===============================================

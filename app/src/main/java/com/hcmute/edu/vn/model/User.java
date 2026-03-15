@@ -2,6 +2,8 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class User {
     @SerializedName("id")
     private String id;
@@ -32,6 +34,10 @@ public class User {
 
     @SerializedName("created_at")
     private String createdAt;
+
+    @SerializedName("medical_conditions")
+    private List<MedicalCondition> medicalConditions;
+
 
     // --- CONSTRUCTOR ---
     public User() {}
@@ -86,4 +92,28 @@ public class User {
     public void setWeight(Double weight) { this.weight = weight; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public List<MedicalCondition> getMedicalConditions() {
+        return medicalConditions;
+    }
+
+    public void setMedicalConditions(List<MedicalCondition> medicalConditions) {
+        this.medicalConditions = medicalConditions;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getFitnessGoalId() {
+        return fitnessGoalId;
+    }
+
+    public void setFitnessGoalId(Integer fitnessGoalId) {
+        this.fitnessGoalId = fitnessGoalId;
+    }
 }
