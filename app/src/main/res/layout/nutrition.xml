@@ -11,8 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottomNav"
-        android:scrollbars="none"
-        android:clipToPadding="false">
+        android:clipToPadding="false"
+        android:scrollbars="none">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -27,17 +27,16 @@
                 android:paddingTop="24dp"
                 android:paddingBottom="16dp">
 
-
                 <TextView
                     android:id="@+id/tvNutritionTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerInParent="true"
+                    android:gravity="center"
                     android:text="Kế Hoạch Dinh Dưỡng"
                     android:textColor="#212121"
                     android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:gravity="center" />
+                    android:textStyle="bold" />
             </RelativeLayout>
 
             <LinearLayout
@@ -60,10 +59,11 @@
                         android:progress="75"
                         app:indicatorColor="#4DAA9A"
                         app:indicatorSize="100dp"
+                        app:indicatorTrackGapSize="0dp"
                         app:trackColor="#E0F2F1"
                         app:trackCornerRadius="8dp"
-                        app:trackThickness="8dp"
-                        app:indicatorTrackGapSize="0dp" />
+                        app:trackThickness="8dp" />
+
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -108,6 +108,7 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:orientation="vertical">
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -115,6 +116,7 @@
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
+
                             <com.google.android.material.progressindicator.LinearProgressIndicator
                                 android:id="@+id/progressCarb"
                                 android:layout_width="match_parent"
@@ -122,10 +124,11 @@
                                 android:layout_marginVertical="8dp"
                                 android:progress="70"
                                 app:indicatorColor="#4DAA9A"
+                                app:indicatorTrackGapSize="0dp"
                                 app:trackColor="#E0F2F1"
                                 app:trackCornerRadius="4dp"
-                                app:trackThickness="8dp"
-                                app:indicatorTrackGapSize="0dp" />
+                                app:trackThickness="8dp" />
+
                             <TextView
                                 android:id="@+id/tvTotalCarb"
                                 android:layout_width="wrap_content"
@@ -151,6 +154,7 @@
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
+
                             <com.google.android.material.progressindicator.LinearProgressIndicator
                                 android:id="@+id/progressProtein"
                                 android:layout_width="match_parent"
@@ -158,10 +162,11 @@
                                 android:layout_marginVertical="8dp"
                                 android:progress="75"
                                 app:indicatorColor="#42A5F5"
+                                app:indicatorTrackGapSize="0dp"
                                 app:trackColor="#E3F2FD"
                                 app:trackCornerRadius="4dp"
-                                app:trackThickness="8dp"
-                                app:indicatorTrackGapSize="0dp" />
+                                app:trackThickness="8dp" />
+
                             <TextView
                                 android:id="@+id/tvTotalProtein"
                                 android:layout_width="wrap_content"
@@ -178,6 +183,7 @@
                             android:layout_weight="1"
                             android:gravity="center"
                             android:orientation="vertical">
+
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
@@ -185,6 +191,7 @@
                                 android:textColor="#757575"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
+
                             <com.google.android.material.progressindicator.LinearProgressIndicator
                                 android:id="@+id/progressFat"
                                 android:layout_width="match_parent"
@@ -192,10 +199,11 @@
                                 android:layout_marginVertical="8dp"
                                 android:progress="76"
                                 app:indicatorColor="#EF5350"
+                                app:indicatorTrackGapSize="0dp"
                                 app:trackColor="#FFEBEE"
                                 app:trackCornerRadius="4dp"
-                                app:trackThickness="8dp"
-                                app:indicatorTrackGapSize="0dp" />
+                                app:trackThickness="8dp" />
+
                             <TextView
                                 android:id="@+id/tvTotalFat"
                                 android:layout_width="wrap_content"
@@ -214,6 +222,7 @@
                         app:cardBackgroundColor="#FFF9C4"
                         app:cardCornerRadius="8dp"
                         app:cardElevation="0dp">
+
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -248,70 +257,113 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="12dp"
-                    android:text="Thịt &amp; Đạm (200 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Thịt &amp; Đạm (200 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreBfMeat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBreakfastMeat"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Rau củ &amp; Chất xơ (50 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Rau củ &amp; Chất xơ (50 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreBfVeggie"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBreakfastVeggie"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
-
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Tinh bột &amp; Trái cây (250 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Tinh bột &amp; Trái cây (250 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreBfCarb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvBreakfastCarb"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
             </LinearLayout>
 
             <View
@@ -336,69 +388,113 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="12dp"
-                    android:text="Thịt &amp; Đạm (300 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Thịt &amp; Đạm (300 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreLunchMeat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvLunchMeat"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Rau củ &amp; Chất xơ (100 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Rau củ &amp; Chất xơ (100 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreLunchVeggie"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvLunchVeggie"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Tinh bột &amp; Trái cây (300 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Tinh bột &amp; Trái cây (300 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreLunchCarb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvLunchCarb"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
             </LinearLayout>
 
             <View
@@ -423,68 +519,113 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="12dp"
-                    android:text="Thịt &amp; Đạm (150 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Thịt &amp; Đạm (150 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreDinnerMeat"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvDinnerMeat"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Rau củ &amp; Chất xơ (100 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Rau củ &amp; Chất xơ (100 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreDinnerVeggie"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvDinnerVeggie"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="20dp"
                     android:layout_marginTop="8dp"
-                    android:text="Tinh bột &amp; Trái cây (50 Kcal)"
-                    android:textColor="#424242"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:paddingHorizontal="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="Tinh bột &amp; Trái cây (50 Kcal)"
+                        android:textColor="#424242"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/btnMoreDinnerCarb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:text="Xem thêm"
+                        android:textColor="#4DAA9A"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </RelativeLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvDinnerCarb"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
+                    android:orientation="horizontal"
                     android:paddingHorizontal="16dp"
                     android:paddingVertical="4dp"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                    android:orientation="horizontal"
-                    tools:listitem="@layout/item_food_card"
-                    tools:itemCount="3" />
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_food_card" />
             </LinearLayout>
 
         </LinearLayout>
