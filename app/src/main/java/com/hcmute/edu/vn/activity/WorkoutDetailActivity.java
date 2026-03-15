@@ -60,7 +60,7 @@ public class WorkoutDetailActivity extends AppCompatActivity {
 
     private void fetchWorkoutPlan(String planId) {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        String selectQuery = "*,workout_days(*,workout_day_exercises(*))";
+        String selectQuery = "*,workout_days(*, workout_day_exercises(*, exercise:exercises(*)))";
 
         apiService.getWorkoutPlanById("eq." + planId, selectQuery).enqueue(new Callback<List<WorkoutPlan>>() {
             @Override
