@@ -136,11 +136,12 @@ public class FoodListActivity extends AppCompatActivity {
                 resultIntent.putExtra("CATEGORY_TITLE", getIntent().getStringExtra("CATEGORY_TITLE"));
                 resultIntent.putExtra("FOOD_NAME", selected.getName());
 
-                // Lấy thông số Macro, dùng Double.valueOf() hoặc ép kiểu an toàn
+                // Lấy thông số Macro
                 resultIntent.putExtra("FOOD_CAL", selected.getCalories() != null ? selected.getCalories() : 0.0);
                 resultIntent.putExtra("FOOD_P", selected.getProteinG() != null ? selected.getProteinG() : 0.0);
                 resultIntent.putExtra("FOOD_C", selected.getCarbG() != null ? selected.getCarbG() : 0.0);
                 resultIntent.putExtra("FOOD_F", selected.getFatG() != null ? selected.getFatG() : 0.0);
+                resultIntent.putExtra("FOOD_IMAGE", selected.getImageUrl());
 
                 setResult(RESULT_OK, resultIntent); // Xác nhận gửi thành công
             }
