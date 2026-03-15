@@ -46,24 +46,19 @@ public class WorkoutActivity extends AppCompatActivity {
         androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
-        // ĐỒNG BỘ THANH TÁC VỤ VỚI CÁC TAB KHÁC
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.workout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            
-            // Chỉ Padding cho ScrollView để nội dung không bị navigation che khuất
+
             ScrollView mainScrollView = findViewById(R.id.mainScrollView);
             if (mainScrollView != null) {
-                // Thêm padding cho nội dung, giữ navigation sát đáy
                 mainScrollView.setPadding(0, systemBars.top, 0, 70); // 70 là chiều cao của bottomNav
             }
 
-            // Thanh Bottom Navigation sẽ để mặc định, không can thiệp padding/margin dư thừa
             View bottomNav = findViewById(R.id.bottomNav);
             if (bottomNav != null) {
                 ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
                 params.bottomMargin = 0; 
                 bottomNav.setLayoutParams(params);
-                // Xóa bỏ hoàn toàn padding bottom dư thừa gây dịch icon lên
                 bottomNav.setPadding(0, 0, 0, 0);
             }
 

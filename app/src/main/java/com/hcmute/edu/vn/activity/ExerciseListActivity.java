@@ -2,6 +2,7 @@ package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -12,16 +13,17 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.button.MaterialButton; // Nhớ import thư viện này
+import com.google.android.material.button.MaterialButton;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.ExerciseAdapter;
 import com.hcmute.edu.vn.model.Exercise;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 public class ExerciseListActivity extends AppCompatActivity {
+
+    private ArrayList<Exercise> exercises = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,20 +39,19 @@ public class ExerciseListActivity extends AppCompatActivity {
         });
 
         RecyclerView rv = findViewById(R.id.rvExercises);
-        List<Exercise> exercises = new ArrayList<>();
 
-        // Seed 11 dữ liệu mẫu (nhớ truyền null ở cuối cho List<Equipment>)
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Crunches", "Bài tập cơ bụng", 1, 1, 3, "00:30", "", String.valueOf(R.drawable.workout_2), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Plank", "Giữ thăng bằng", 1, 1, 3, "01:00", "", String.valueOf(R.drawable.workout_1), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Push Ups", "Hít đất cơ bản", 2, 2, 3, "x15", "", String.valueOf(R.drawable.workout_3), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Leg Raises", "Nâng chân", 1, 2, 3, "00:45", "", String.valueOf(R.drawable.workout_2), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Russian Twist", "Xoay lườn", 1, 2, 3, "00:30", "", String.valueOf(R.drawable.workout_1), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Squats", "Gập gối", 3, 1, 3, "x20", "", String.valueOf(R.drawable.workout_3), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Jumping Jacks", "Bài tập Cardio toàn thân", 4, 1, 3, "01:00", "", String.valueOf(R.drawable.workout_1), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Lunges", "Chùng chân tập đùi và mông", 3, 2, 3, "x16", "", String.valueOf(R.drawable.workout_2), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "High Knees", "Chạy nâng cao đùi", 4, 2, 3, "00:45", "", String.valueOf(R.drawable.workout_3), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Burpees", "Tập toàn thân cường độ cao", 4, 3, 3, "x10", "", String.valueOf(R.drawable.workout_1), null));
-        exercises.add(new Exercise(UUID.randomUUID().toString(), "Bicycle Crunches", "Gập bụng đạp xe", 1, 2, 3, "00:45", "", String.valueOf(R.drawable.workout_2), null));
+        // Nhận dữ liệu bài tập đã chọn truyền từ Intent
+        if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
+            exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
+
+            // Đổi tên Title thành Tập Tự Do (Tuỳ chọn hiển thị trên UI)
+            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
+            if(tvDayTitle != null) {
+                tvDayTitle.setText("Tập Tự Do");
+            }
+        } else {
+            Toast.makeText(this, "Không tìm thấy dữ liệu bài tập", Toast.LENGTH_SHORT).show();
+        }
 
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(new ExerciseAdapter(exercises));
@@ -58,11 +59,21 @@ public class ExerciseListActivity extends AppCompatActivity {
         // Nút Back trên cùng
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
+        // Nút START để bắt đầu vào màn hình tập (ExerciseActivity)
         findViewById(R.id.btnStartWorkout).setOnClickListener(v -> {
-            // Intent chứa action mang theo data để chuyển sang ExerciseActivity
+            if (exercises == null || exercises.isEmpty()) {
+                Toast.makeText(ExerciseListActivity.this, "Danh sách bài tập trống!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Intent intent = new Intent(ExerciseListActivity.this, ExerciseActivity.class);
-            ArrayList<Exercise> exerciseList = new ArrayList<>(exercises);
-            intent.putExtra("EXTRA_EXERCISE_LIST", exerciseList);
+            intent.putExtra("EXTRA_EXERCISE_LIST", exercises);
+
+            // Chuyển tiếp cờ "tập tự do" nếu có
+            if (getIntent().hasExtra("IS_FREE_WORKOUT")) {
+                intent.putExtra("IS_FREE_WORKOUT", getIntent().getBooleanExtra("IS_FREE_WORKOUT", false));
+            }
+
             startActivity(intent);
         });
     }

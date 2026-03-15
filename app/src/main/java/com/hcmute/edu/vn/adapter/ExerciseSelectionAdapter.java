@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
@@ -55,15 +56,27 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
         String info = (exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "00:30") + " • Cường độ cao";
         holder.tvExerciseInfo.setText(info);
 
-        try {
-            String imageUrl = exercise.getImageUrl();
-            if (imageUrl != null && !imageUrl.isEmpty()) {
-                int imageRes = Integer.parseInt(imageUrl);
-                holder.ivExerciseImage.setImageResource(imageRes);
+        // Cập nhật load ảnh bằng Glide
+        String imageUrl = exercise.getImageUrl();
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            if (imageUrl.startsWith("http")) {
+                // Nếu là đường link từ mạng (Supabase)
+                Glide.with(holder.itemView.getContext())
+                        .load(imageUrl)
+                        .placeholder(R.drawable.workout_1) // Ảnh chờ
+                        .error(R.drawable.workout_1)       // Ảnh nếu lỗi
+                        .into(holder.ivExerciseImage);
             } else {
-                holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
+                // Nếu là dữ liệu mẫu cũ
+                try {
+                    int imageRes = Integer.parseInt(imageUrl);
+                    holder.ivExerciseImage.setImageResource(imageRes);
+                } catch (Exception e) {
+                    holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
+                }
             }
-        } catch (Exception e) {
+        } else {
+            // Nếu Supabase không có ảnh
             holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
         }
 
