@@ -5,6 +5,9 @@ import com.hcmute.edu.vn.activity.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.Equipment;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.Food;
+import com.hcmute.edu.vn.model.MealRecommendedFood;
+import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.activity.SignUpRequest;
@@ -174,12 +177,22 @@ public interface SupabaseApiService {
     // BMI LOGS (THEO DÕI CHỈ SỐ CƠ THỂ)
     // =================================================================================
 
-    // Lấy danh sách lịch sử đo BMI của 1 User
+    // Lấy danh sách all BMI của 1 User
     @GET("bmi_logs")
     Call<List<BmiLog>> getUserBmiLogs(
             @Query("user_id") String eqUserId,      // VD: "eq.user-uuid-1234"
             @Query("select") String select,         // VD: "*"
             @Query("order") String orderBy          // VD: "recorded_at.desc" (Để xếp ngày mới nhất lên đầu)
+    );
+
+    // Lấy danh sách BMI theo khoảng thời gian (Từ ngày A -> Đến ngày B)
+    @GET("bmi_logs")
+    Call<List<BmiLog>> getUserBmiLogsByDateRange(
+            @Query("user_id") String eqUserId,
+            @Query("recorded_at") String gteDate,   // Lớn hơn hoặc bằng (Từ ngày) -> VD: "gte.2026-03-01T00:00:00"
+            @Query("recorded_at") String lteDate,   // Nhỏ hơn hoặc bằng (Đến ngày) -> VD: "lte.2026-03-31T23:59:59"
+            @Query("select") String select,
+            @Query("order") String orderBy
     );
 
     // Lưu một bản ghi BMI mới (Khi user nhập cân nặng hôm nay)
@@ -209,5 +222,51 @@ public interface SupabaseApiService {
     @GET("muscle_groups")
     Call<List<MuscleGroup>> getMuscleGroups(
             @QueryMap Map<String, String> filters
+    );
+
+    // =================================================================================
+    // FOODS & NUTRITION
+    // =================================================================================
+
+    // Lấy danh sách thức ăn theo Nhóm
+    @GET("foods")
+    Call<List<Food>> getFoodsByCategory(
+            @Query("category_id") String eqCategoryId, // VD: "eq.1"
+            @Query("select") String select
+    );
+
+    // Tìm kiếm thức ăn theo Tên (Có thể kết hợp lọc theo Nhóm)
+    // - Tìm theo tên: map.put("name", "ilike.%gà%"); (Note: dùng ilike để tìm kiếm không phân biệt hoa thường)
+    // - Tìm theo tên + nhóm: map.put("name", "ilike.%gà%"); map.put("category_id", "eq.1");
+    @GET("foods")
+    Call<List<Food>> searchFoods(
+            @QueryMap Map<String, String> filters
+    );
+
+
+    // =================================================================================
+    // MEDICAL CONDITIONS (TIỀN SỬ BỆNH & DỊ ỨNG)
+    // =================================================================================
+
+    // Lấy danh sách TOÀN BỘ tiền sử bệnh
+    // Dùng cho lúc user khai báo tiền sử bệnh của mình vào hệ thống
+    @GET("medical_conditions")
+    Call<List<MedicalCondition>> getAllMedicalConditions(
+            @Query("select") String select
+    );
+
+    // Lấy danh sách Tiền sử bệnh CỦA RIÊNG 1 USER (Có thể lọc theo loại bệnh)
+    @GET("users")
+    Call<List<User>> getUserSpecificMedicalConditions(
+            @Query("id") String eqUserId,                    // VD: "eq.user-uuid-1234"
+            @Query("medical_conditions.type") String eqType, // VD: "eq.history" (Chỉ lấy loại history)
+            @Query("select") String select                   // VD: "id, medical_conditions(*)"
+    );
+
+    // Lấy danh sách Thức ăn cần tránh (Dựa trên danh sách ID bệnh của user)
+    @GET("condition_restricted_foods")
+    Call<List<MealRecommendedFood>> getRestrictedFoodsByCondition(
+            @Query("medical_condition_id") String inConditionIds, // VD: "in.(1,2,3)"
+            @Query("select") String select // VD: "*, food:foods(*)"
     );
 }
