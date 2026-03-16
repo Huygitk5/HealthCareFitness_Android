@@ -20,6 +20,9 @@ import com.hcmute.edu.vn.adapter.FoodAdapter;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.Food;
+import com.hcmute.edu.vn.model.MedicalCondition;
+import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserMedicalCondition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +41,10 @@ public class NutritionActivity extends AppCompatActivity {
     CircularProgressIndicator progressCalories;
     LinearProgressIndicator progressCarb, progressProtein, progressFat;
     TextView tvTotalCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
+
+    // ĐÃ THÊM: Biến cho Khung cảnh báo dị ứng
+    TextView tvAllergiesWarning;
+    String username;
 
     // Biến lưu trữ món ăn ĐANG ĐƯỢC CHỌN
     Food selBfMeat, selBfVeggie, selBfCarb;
@@ -69,13 +76,18 @@ public class NutritionActivity extends AppCompatActivity {
         androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
+        // ĐÃ THÊM: Lấy username để lát nữa gọi API
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
+
         initViews();
 
-        // ĐÃ THAY ĐỔI: Gọi data từ API thay vì dùng data giả
         loadDataFromApi();
 
-        setupBottomNavigation();
+        // ĐÃ THÊM: Gọi API kéo dữ liệu Dị ứng của User
+        loadUserAllergies();
 
+        setupBottomNavigation();
         calculateAndDisplayTotals();
 
         // Lắng nghe dữ liệu trả về từ màn hình Xem thêm
@@ -116,6 +128,12 @@ public class NutritionActivity extends AppCompatActivity {
         setIntent(intent);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserAllergies();
+    }
+
     private void initViews() {
         rvBreakfastMeat = findViewById(R.id.rvBreakfastMeat);
         rvBreakfastVeggie = findViewById(R.id.rvBreakfastVeggie);
@@ -137,6 +155,9 @@ public class NutritionActivity extends AppCompatActivity {
         tvTotalProtein = findViewById(R.id.tvTotalProtein);
         progressFat = findViewById(R.id.progressFat);
         tvTotalFat = findViewById(R.id.tvTotalFat);
+
+        // ĐÃ THÊM: Ánh xạ view
+        tvAllergiesWarning = findViewById(R.id.tvAllergiesWarning);
 
         findViewById(R.id.btnMoreBfMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Sáng)", 1));
         findViewById(R.id.btnMoreBfVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Sáng)", 2));
@@ -171,7 +192,50 @@ public class NutritionActivity extends AppCompatActivity {
     }
 
     // ===============================================
-    // HÀM TẢI DỮ LIỆU TỪ SUPABASE
+    // HÀM LẤY DANH SÁCH DỊ ỨNG CỦA USER TỪ API
+    // ===============================================
+    private void loadUserAllergies() {
+        if (username == null || username.isEmpty()) return;
+
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    User currentUser = response.body().get(0);
+                    StringBuilder allergyStr = new StringBuilder();
+
+                    // Chạy vòng lặp lọc ra các bệnh có type là "allergy"
+                    if (currentUser.getUserMedicalConditions() != null) {
+                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
+                            MedicalCondition mc = umc.getMedicalCondition();
+                            if (mc != null && "allergy".equalsIgnoreCase(mc.getType())) {
+                                allergyStr.append(mc.getName()).append(", ");
+                            }
+                        }
+                    }
+
+                    // Cập nhật lên màn hình
+                    if (allergyStr.length() > 0) {
+                        String finalStr = allergyStr.substring(0, allergyStr.length() - 2);
+                        tvAllergiesWarning.setText("⚠️ Tránh: " + finalStr);
+                    } else {
+                        tvAllergiesWarning.setText("⚠️ Tránh: Không có");
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<User>> call, Throwable t) {
+                tvAllergiesWarning.setText("⚠️ Tránh: Lỗi kết nối mạng");
+            }
+        });
+    }
+
+    // ===============================================
+    // HÀM TẢI DỮ LIỆU MÓN ĂN TỪ SUPABASE
     // ===============================================
     private void loadDataFromApi() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);

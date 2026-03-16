@@ -12,6 +12,7 @@ import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.activity.SignUpRequest;
 import com.hcmute.edu.vn.activity.SignUpResponse;
+import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
 import com.hcmute.edu.vn.model.UserWorkoutExerciseLog;
 import com.hcmute.edu.vn.model.UserWorkoutSession;
@@ -28,7 +29,7 @@ import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
-
+import retrofit2.http.DELETE; // Nhớ import thư viện này ở trên cùng nhé
 public interface SupabaseApiService {
 
     // =================================================================================
@@ -128,6 +129,15 @@ public interface SupabaseApiService {
             @Query("user_id") String eqUserId,
             @Query("select") String select
     );
+
+    // Tìm buổi tập cho "Today plan"
+    @GET("workout_days")
+    Call<List<WorkoutDay>> getNextWorkoutDay(
+            @Query("plan_id") String eqPlanId,
+            @Query("day_order") String eqDayOrder,
+            @Query("select") String select
+    );
+
 
     // Bắt đầu một buổi tập mới của User
     @POST("user_workout_sessions")
@@ -269,4 +279,11 @@ public interface SupabaseApiService {
             @Query("medical_condition_id") String inConditionIds, // VD: "in.(1,2,3)"
             @Query("select") String select // VD: "*, food:foods(*)"
     );
+    // Xóa bệnh cũ của User
+    @DELETE("user_medical_conditions")
+    Call<Void> deleteUserMedicalConditions(@Query("user_id") String eqUserId);
+
+    // Lưu bệnh mới
+    @POST("user_medical_conditions")
+    Call<Void> saveUserMedicalConditions(@Body java.util.List<UserMedicalConditionInsert> conditions);
 }
