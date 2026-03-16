@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.Glide;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
@@ -36,27 +37,41 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         holder.tvName.setText(item.getName());
         holder.tvDuration.setText(item.getBaseRecommendedReps());
 
-        // Cập nhật load ảnh bằng Glide
+        // ==========================================
+        // XỬ LÝ ẢNH TỪ TÊN FILE LOCAL (TRONG DRAWABLE)
+        // ==========================================
         if (holder.ivThumb != null) {
-            String imageUrl = item.getImageUrl();
-            if (imageUrl != null && !imageUrl.isEmpty()) {
-                if (imageUrl.startsWith("http")) {
-                    // Nếu là đường link từ mạng (Supabase)
+            String imageName = item.getImageUrl(); // Trả về tên file (VD: "pushup", "squat")
+
+            if (imageName != null && !imageName.isEmpty()) {
+
+                // Mẹo nhỏ: Nếu trên DB bạn lỡ lưu có đuôi ".png" hay ".jpg", ta cắt nó đi
+                if (imageName.contains(".")) {
+                    imageName = imageName.substring(0, imageName.lastIndexOf('.'));
+                }
+
+                // "Thủ thư" đi tìm ID ảnh dựa trên tên chuỗi
+                int imageResId = holder.itemView.getContext().getResources().getIdentifier(
+                        imageName,
+                        "drawable", // Nếu bạn để ảnh ở thư mục mipmap thì đổi chữ này thành "mipmap"
+                        holder.itemView.getContext().getPackageName()
+                );
+
+                if (imageResId != 0) {
+                    // TÌM THẤY ẢNH: Đưa cho Glide load để tối ưu hiệu năng
                     Glide.with(holder.itemView.getContext())
-                            .load(imageUrl)
-                            .placeholder(R.drawable.workout_1) // Ảnh mặc định khi đang tải
-                            .error(R.mipmap.ic_launcher)       // Ảnh lỗi nếu link die
+                            .load(imageResId)
+                            .centerCrop()
                             .into(holder.ivThumb);
                 } else {
-                    // Dữ liệu cũ (Local ID)
-                    try {
-                        int imageResId = Integer.parseInt(imageUrl);
-                        holder.ivThumb.setImageResource(imageResId);
-                    } catch (NumberFormatException e) {
-                        holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
-                    }
+                    // KHÔNG TÌM THẤY: Gán ảnh mặc định (Tránh lỗi văng app)
+                    Glide.with(holder.itemView.getContext())
+                            .load(R.mipmap.ic_launcher) // Đã hết bị đỏ rồi nhé!
+                            .centerCrop()
+                            .into(holder.ivThumb);
                 }
             } else {
+                // Tên ảnh bị rỗng từ DB
                 holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
             }
         }
@@ -70,7 +85,7 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
     @Override
     public int getItemCount() {
-        return exerciseList.size();
+        return exerciseList != null ? exerciseList.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
