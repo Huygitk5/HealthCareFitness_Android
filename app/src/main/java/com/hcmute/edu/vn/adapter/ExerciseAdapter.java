@@ -38,40 +38,45 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         holder.tvDuration.setText(item.getBaseRecommendedReps());
 
         // ==========================================
-        // XỬ LÝ ẢNH TỪ TÊN FILE LOCAL (TRONG DRAWABLE)
+        // XỬ LÝ ẢNH: HỖ TRỢ CẢ LINK WEB (HTTPS) VÀ LOCAL (DRAWABLE)
         // ==========================================
         if (holder.ivThumb != null) {
-            String imageName = item.getImageUrl(); // Trả về tên file (VD: "pushup", "squat")
+            String imageUrl = item.getImageUrl();
 
-            if (imageName != null && !imageName.isEmpty()) {
-
-                // Mẹo nhỏ: Nếu trên DB bạn lỡ lưu có đuôi ".png" hay ".jpg", ta cắt nó đi
-                if (imageName.contains(".")) {
-                    imageName = imageName.substring(0, imageName.lastIndexOf('.'));
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                // KIỂM TRA: Nếu là đường link từ mạng Internet (Bắt đầu bằng http hoặc https)
+                if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                    Glide.with(holder.itemView.getContext())
+                            .load(imageUrl)
+                            .centerCrop()
+                            .placeholder(R.mipmap.ic_launcher) // Ảnh hiển thị tạm trong lúc chờ tải
+                            .error(R.mipmap.ic_launcher)       // Ảnh hiển thị nếu tải link thất bại
+                            .diskCacheStrategy(DiskCacheStrategy.ALL) // Lưu cache để lần sau mở lẹ hơn
+                            .into(holder.ivThumb);
                 }
+                // NẾU KHÔNG PHẢI LINK MẠNG: Xử lý như file có sẵn trong máy (drawable)
+                else {
+                    String imageName = imageUrl;
+                    if (imageName.contains(".")) {
+                        imageName = imageName.substring(0, imageName.lastIndexOf('.'));
+                    }
 
-                // "Thủ thư" đi tìm ID ảnh dựa trên tên chuỗi
-                int imageResId = holder.itemView.getContext().getResources().getIdentifier(
-                        imageName,
-                        "drawable", // Nếu bạn để ảnh ở thư mục mipmap thì đổi chữ này thành "mipmap"
-                        holder.itemView.getContext().getPackageName()
-                );
+                    int imageResId = holder.itemView.getContext().getResources().getIdentifier(
+                            imageName,
+                            "drawable",
+                            holder.itemView.getContext().getPackageName()
+                    );
 
-                if (imageResId != 0) {
-                    // TÌM THẤY ẢNH: Đưa cho Glide load để tối ưu hiệu năng
-                    Glide.with(holder.itemView.getContext())
-                            .load(imageResId)
-                            .centerCrop()
-                            .into(holder.ivThumb);
-                } else {
-                    // KHÔNG TÌM THẤY: Gán ảnh mặc định (Tránh lỗi văng app)
-                    Glide.with(holder.itemView.getContext())
-                            .load(R.mipmap.ic_launcher) // Đã hết bị đỏ rồi nhé!
-                            .centerCrop()
-                            .into(holder.ivThumb);
+                    if (imageResId != 0) {
+                        Glide.with(holder.itemView.getContext())
+                                .load(imageResId)
+                                .centerCrop()
+                                .into(holder.ivThumb);
+                    } else {
+                        holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
+                    }
                 }
             } else {
-                // Tên ảnh bị rỗng từ DB
                 holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
             }
         }
