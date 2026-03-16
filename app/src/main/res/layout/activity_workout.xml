@@ -299,8 +299,8 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_home"
                 app:tint="#9E9E9E" />
             <TextView
@@ -309,7 +309,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Home"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -324,8 +324,8 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_nutriton"
                 app:tint="#9E9E9E" />
             <TextView
@@ -334,7 +334,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Nutrition"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -349,8 +349,8 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_workout"
                 app:tint="#4DAA9A" />
             <TextView
@@ -359,7 +359,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Workout"
                 android:textColor="#4DAA9A"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -374,8 +374,8 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_trainer"
                 app:tint="#9E9E9E" />
             <TextView
@@ -384,7 +384,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Trainer"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -399,8 +399,8 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_profile"
                 app:tint="#9E9E9E" />
             <TextView
@@ -409,7 +409,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Profile"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
