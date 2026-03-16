@@ -277,7 +277,8 @@
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="85dp"
+        android:paddingBottom="20dp"
         android:background="#FFFFFF"
         android:elevation="12dp"
         android:gravity="center"
