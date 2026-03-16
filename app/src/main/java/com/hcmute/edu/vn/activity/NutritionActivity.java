@@ -6,9 +6,9 @@ import android.os.Bundle;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,10 +17,19 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.FoodAdapter;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.Food;
+import com.hcmute.edu.vn.model.MedicalCondition;
+import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserMedicalCondition;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class NutritionActivity extends AppCompatActivity {
 
@@ -33,12 +42,16 @@ public class NutritionActivity extends AppCompatActivity {
     LinearProgressIndicator progressCarb, progressProtein, progressFat;
     TextView tvTotalCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
 
+    // ĐÃ THÊM: Biến cho Khung cảnh báo dị ứng
+    TextView tvAllergiesWarning;
+    String username;
+
     // Biến lưu trữ món ăn ĐANG ĐƯỢC CHỌN
     Food selBfMeat, selBfVeggie, selBfCarb;
     Food selLunchMeat, selLunchVeggie, selLunchCarb;
     Food selDinnerMeat, selDinnerVeggie, selDinnerCarb;
 
-    // ĐÃ THÊM: Lưu trữ danh sách để có thể chèn món mới vào
+    // Lưu trữ danh sách để có thể chèn món mới vào
     List<Food> listBfMeat, listBfVeggie, listBfCarb;
     List<Food> listLunchMeat, listLunchVeggie, listLunchCarb;
     List<Food> listDinnerMeat, listDinnerVeggie, listDinnerCarb;
@@ -46,7 +59,6 @@ public class NutritionActivity extends AppCompatActivity {
     // Biến cho thanh Tab chuyển đổi
     TextView tabBreakfast, tabLunch, tabDinner;
     LinearLayout layoutBreakfast, layoutLunch, layoutDinner;
-
 
     // Mục tiêu (Target) trong ngày
     final double TARGET_CALORIES = 2000.0;
@@ -64,12 +76,18 @@ public class NutritionActivity extends AppCompatActivity {
         androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
-        initViews();
-        setupBreakfastData();
-        setupLunchData();
-        setupDinnerData();
-        setupBottomNavigation();
+        // ĐÃ THÊM: Lấy username để lát nữa gọi API
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        username = pref.getString("KEY_USER", null);
 
+        initViews();
+
+        loadDataFromApi();
+
+        // ĐÃ THÊM: Gọi API kéo dữ liệu Dị ứng của User
+        loadUserAllergies();
+
+        setupBottomNavigation();
         calculateAndDisplayTotals();
 
         // Lắng nghe dữ liệu trả về từ màn hình Xem thêm
@@ -84,7 +102,7 @@ public class NutritionActivity extends AppCompatActivity {
                         Food newFood = new Food("999", data.getStringExtra("FOOD_NAME"), 1, "1 phần",
                                 data.getDoubleExtra("FOOD_CAL", 0), data.getDoubleExtra("FOOD_P", 0),
                                 data.getDoubleExtra("FOOD_C", 0), data.getDoubleExtra("FOOD_F", 0), 0.0);
-
+                        newFood.setImageUrl(data.getStringExtra("FOOD_IMAGE"));
                         // Chèn món mới lên vị trí ĐẦU TIÊN của danh sách và chọn nó
                         if (title != null) {
                             if (title.contains("Thịt & Đạm (Bữa Sáng)")) addNewFoodToTop(rvBreakfastMeat, listBfMeat, newFood, f -> selBfMeat = f);
@@ -104,11 +122,16 @@ public class NutritionActivity extends AppCompatActivity {
         );
     }
 
-    // Thêm vào trong class NutritionActivity.java
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUserAllergies();
     }
 
     private void initViews() {
@@ -132,6 +155,9 @@ public class NutritionActivity extends AppCompatActivity {
         tvTotalProtein = findViewById(R.id.tvTotalProtein);
         progressFat = findViewById(R.id.progressFat);
         tvTotalFat = findViewById(R.id.tvTotalFat);
+
+        // ĐÃ THÊM: Ánh xạ view
+        tvAllergiesWarning = findViewById(R.id.tvAllergiesWarning);
 
         findViewById(R.id.btnMoreBfMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Sáng)", 1));
         findViewById(R.id.btnMoreBfVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Sáng)", 2));
@@ -158,6 +184,116 @@ public class NutritionActivity extends AppCompatActivity {
         tabBreakfast.setOnClickListener(v -> switchTab(0));
         tabLunch.setOnClickListener(v -> switchTab(1));
         tabDinner.setOnClickListener(v -> switchTab(2));
+
+        // Khởi tạo các list rỗng để tránh NullPointerException khi app vừa mở
+        listBfMeat = new ArrayList<>(); listBfVeggie = new ArrayList<>(); listBfCarb = new ArrayList<>();
+        listLunchMeat = new ArrayList<>(); listLunchVeggie = new ArrayList<>(); listLunchCarb = new ArrayList<>();
+        listDinnerMeat = new ArrayList<>(); listDinnerVeggie = new ArrayList<>(); listDinnerCarb = new ArrayList<>();
+    }
+
+    // ===============================================
+    // HÀM LẤY DANH SÁCH DỊ ỨNG CỦA USER TỪ API
+    // ===============================================
+    private void loadUserAllergies() {
+        if (username == null || username.isEmpty()) return;
+
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    User currentUser = response.body().get(0);
+                    StringBuilder allergyStr = new StringBuilder();
+
+                    // Chạy vòng lặp lọc ra các bệnh có type là "allergy"
+                    if (currentUser.getUserMedicalConditions() != null) {
+                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
+                            MedicalCondition mc = umc.getMedicalCondition();
+                            if (mc != null && "allergy".equalsIgnoreCase(mc.getType())) {
+                                allergyStr.append(mc.getName()).append(", ");
+                            }
+                        }
+                    }
+
+                    // Cập nhật lên màn hình
+                    if (allergyStr.length() > 0) {
+                        String finalStr = allergyStr.substring(0, allergyStr.length() - 2);
+                        tvAllergiesWarning.setText("⚠️ Tránh: " + finalStr);
+                    } else {
+                        tvAllergiesWarning.setText("⚠️ Tránh: Không có");
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<User>> call, Throwable t) {
+                tvAllergiesWarning.setText("⚠️ Tránh: Lỗi kết nối mạng");
+            }
+        });
+    }
+
+    // ===============================================
+    // HÀM TẢI DỮ LIỆU MÓN ĂN TỪ SUPABASE
+    // ===============================================
+    private void loadDataFromApi() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        // 1. Tải danh sách Thịt & Đạm (Category = 1)
+        apiService.getFoodsByCategory("eq.1", "*").enqueue(new Callback<List<Food>>() {
+            @Override
+            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Food> meats = response.body();
+                    // Tạo bản sao độc lập cho 3 bữa
+                    listBfMeat = new ArrayList<>(meats);
+                    listLunchMeat = new ArrayList<>(meats);
+                    listDinnerMeat = new ArrayList<>(meats);
+
+                    setupRecyclerView(rvBreakfastMeat, listBfMeat, food -> selBfMeat = food);
+                    setupRecyclerView(rvLunchMeat, listLunchMeat, food -> selLunchMeat = food);
+                    setupRecyclerView(rvDinnerMeat, listDinnerMeat, food -> selDinnerMeat = food);
+                }
+            }
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
+        });
+
+        // 2. Tải danh sách Rau Củ & Chất xơ (Category = 2)
+        apiService.getFoodsByCategory("eq.2", "*").enqueue(new Callback<List<Food>>() {
+            @Override
+            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Food> veggies = response.body();
+                    listBfVeggie = new ArrayList<>(veggies);
+                    listLunchVeggie = new ArrayList<>(veggies);
+                    listDinnerVeggie = new ArrayList<>(veggies);
+
+                    setupRecyclerView(rvBreakfastVeggie, listBfVeggie, food -> selBfVeggie = food);
+                    setupRecyclerView(rvLunchVeggie, listLunchVeggie, food -> selLunchVeggie = food);
+                    setupRecyclerView(rvDinnerVeggie, listDinnerVeggie, food -> selDinnerVeggie = food);
+                }
+            }
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
+        });
+
+        // 3. Tải danh sách Tinh bột & Trái cây (Category = 3)
+        apiService.getFoodsByCategory("eq.3", "*").enqueue(new Callback<List<Food>>() {
+            @Override
+            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    List<Food> carbs = response.body();
+                    listBfCarb = new ArrayList<>(carbs);
+                    listLunchCarb = new ArrayList<>(carbs);
+                    listDinnerCarb = new ArrayList<>(carbs);
+
+                    setupRecyclerView(rvBreakfastCarb, listBfCarb, food -> selBfCarb = food);
+                    setupRecyclerView(rvLunchCarb, listLunchCarb, food -> selLunchCarb = food);
+                    setupRecyclerView(rvDinnerCarb, listDinnerCarb, food -> selDinnerCarb = food);
+                }
+            }
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
+        });
     }
 
     private void openFoodList(String title, int categoryId) {
@@ -171,7 +307,6 @@ public class NutritionActivity extends AppCompatActivity {
     // HÀM XỬ LÝ CHUYỂN ĐỔI TAB BỮA ĂN
     // ===============================================
     private void switchTab(int tabIndex) {
-        // 1. Reset màu tất cả các Tab về trạng thái chưa chọn (chữ xám, nền trong suốt)
         tabBreakfast.setBackgroundResource(android.R.color.transparent);
         tabBreakfast.setTextColor(android.graphics.Color.parseColor("#757575"));
 
@@ -181,12 +316,10 @@ public class NutritionActivity extends AppCompatActivity {
         tabDinner.setBackgroundResource(android.R.color.transparent);
         tabDinner.setTextColor(android.graphics.Color.parseColor("#757575"));
 
-        // 2. Ẩn tất cả các danh sách món ăn
         layoutBreakfast.setVisibility(android.view.View.GONE);
         layoutLunch.setVisibility(android.view.View.GONE);
         layoutDinner.setVisibility(android.view.View.GONE);
 
-        // 3. Hiển thị danh sách tương ứng và tô màu Xanh cho Tab được bấm
         if (tabIndex == 0) {
             tabBreakfast.setBackgroundResource(R.drawable.bg_nav_active);
             tabBreakfast.setTextColor(android.graphics.Color.WHITE);
@@ -208,17 +341,13 @@ public class NutritionActivity extends AppCompatActivity {
     // HÀM HELPER XỬ LÝ CHÈN MÓN MỚI LÊN ĐẦU DANH SÁCH
     // ===============================================
     private void addNewFoodToTop(RecyclerView rv, List<Food> list, Food newFood, OnFoodUpdate callback) {
-        // Xóa món ăn trùng tên nếu đã tồn tại trong mảng
         for (int i = 0; i < list.size(); i++) {
             if (list.get(i).getName().equals(newFood.getName())) {
                 list.remove(i);
                 break;
             }
         }
-        // Chèn món mới vào vị trí index = 0 (Ngoài cùng bên trái)
         list.add(0, newFood);
-
-        // Gọi lại hàm setup để Adapter tự động vẽ lại và highlight món đầu tiên
         setupRecyclerView(rv, list, callback);
     }
 
@@ -270,88 +399,17 @@ public class NutritionActivity extends AppCompatActivity {
     private void setupRecyclerView(RecyclerView recyclerView, List<Food> foodList, OnFoodUpdate callback) {
         FoodAdapter adapter = new FoodAdapter(this, foodList, food -> {
             callback.onUpdate(food);
-            calculateAndDisplayTotals();
+            calculateAndDisplayTotals(); // Tính toán khi user click
         });
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
 
+        // QUAN TRỌNG: Nếu có data, chọn món đầu tiên và TÍNH TOÁN LUÔN
         if (!foodList.isEmpty()) {
             callback.onUpdate(foodList.get(0));
+            calculateAndDisplayTotals(); // Thêm dòng này để dashboard chạy ngay khi load xong data
         }
-    }
-
-    // ===============================================
-    // DATA MẪU
-    // ===============================================
-    private void setupBreakfastData() {
-        listBfMeat = new ArrayList<>();
-        listBfMeat.add(new Food("1", "Trứng Luộc", 1, "2 quả", 155.0, 13.0, 1.0, 0.0, 11.0));
-        listBfMeat.add(new Food("2", "Sữa Tươi", 1, "1 ly", 120.0, 8.0, 12.0, 0.0, 4.0));
-        listBfMeat.add(new Food("3", "Xúc Xích", 1, "1 cây", 250.0, 10.0, 2.0, 0.0, 20.0));
-        listBfMeat.add(new Food("4", "Bơ Đậu Phộng", 1, "2 thìa", 190.0, 7.0, 6.0, 2.0, 16.0));
-        setupRecyclerView(rvBreakfastMeat, listBfMeat, food -> selBfMeat = food);
-
-        listBfVeggie = new ArrayList<>();
-        listBfVeggie.add(new Food("5", "Súp Lơ Xanh", 2, "100g", 34.0, 2.8, 7.0, 2.6, 0.4));
-        listBfVeggie.add(new Food("6", "Cà Rốt Luộc", 2, "1 củ", 41.0, 0.9, 10.0, 2.8, 0.2));
-        listBfVeggie.add(new Food("7", "Salad Trộn", 2, "1 bát", 50.0, 1.0, 5.0, 2.0, 3.0));
-        listBfVeggie.add(new Food("8", "Rau Bina", 2, "100g", 23.0, 2.9, 3.6, 2.2, 0.4));
-        setupRecyclerView(rvBreakfastVeggie, listBfVeggie, food -> selBfVeggie = food);
-
-        listBfCarb = new ArrayList<>();
-        listBfCarb.add(new Food("9", "Bánh Phở", 3, "1 bát", 200.0, 4.0, 45.0, 1.0, 0.5));
-        listBfCarb.add(new Food("10", "Chuối", 3, "1 quả", 105.0, 1.3, 27.0, 3.1, 0.3));
-        listBfCarb.add(new Food("11", "Khoai Lang", 3, "1 củ", 112.0, 2.0, 26.0, 4.0, 0.1));
-        listBfCarb.add(new Food("12", "Yến Mạch", 3, "50g", 194.0, 7.0, 34.0, 5.0, 3.5));
-        setupRecyclerView(rvBreakfastCarb, listBfCarb, food -> selBfCarb = food);
-    }
-
-    private void setupLunchData() {
-        listLunchMeat = new ArrayList<>();
-        listLunchMeat.add(new Food("13", "Ức Gà", 1, "200g", 330.0, 62.0, 0.0, 0.0, 7.2));
-        listLunchMeat.add(new Food("14", "Thịt Lợn", 1, "150g", 360.0, 30.0, 0.0, 0.0, 25.0));
-        listLunchMeat.add(new Food("15", "Tôm Hấp", 1, "150g", 150.0, 30.0, 0.0, 0.0, 2.0));
-        listLunchMeat.add(new Food("16", "Đậu Phụ", 1, "100g", 76.0, 8.0, 1.9, 0.3, 4.8));
-        setupRecyclerView(rvLunchMeat, listLunchMeat, food -> selLunchMeat = food);
-
-        listLunchVeggie = new ArrayList<>();
-        listLunchVeggie.add(new Food("17", "Cà Chua Bi", 2, "10 quả", 30.0, 1.0, 6.0, 1.5, 0.2));
-        listLunchVeggie.add(new Food("18", "Bắp Cải", 2, "100g", 25.0, 1.3, 5.8, 2.5, 0.1));
-        listLunchVeggie.add(new Food("19", "Cải Ngọt", 2, "100g", 21.0, 2.0, 3.0, 2.0, 0.2));
-        listLunchVeggie.add(new Food("20", "Nấm Mỡ", 2, "100g", 22.0, 3.1, 3.3, 1.0, 0.3));
-        setupRecyclerView(rvLunchVeggie, listLunchVeggie, food -> selLunchVeggie = food);
-
-        listLunchCarb = new ArrayList<>();
-        listLunchCarb.add(new Food("21", "Gạo Lứt", 3, "1 bát", 216.0, 5.0, 45.0, 3.5, 1.8));
-        listLunchCarb.add(new Food("22", "Khoai Tây", 3, "1 củ", 161.0, 4.3, 37.0, 3.8, 0.2));
-        listLunchCarb.add(new Food("23", "Bún Tươi", 3, "1 bát", 130.0, 1.5, 30.0, 0.5, 0.2));
-        listLunchCarb.add(new Food("24", "Cơm Trắng", 3, "1 bát", 205.0, 4.0, 45.0, 0.6, 0.4));
-        setupRecyclerView(rvLunchCarb, listLunchCarb, food -> selLunchCarb = food);
-    }
-
-    private void setupDinnerData() {
-        listDinnerMeat = new ArrayList<>();
-        listDinnerMeat.add(new Food("25", "Cá Hồi", 1, "150g", 312.0, 30.0, 0.0, 0.0, 20.0));
-        listDinnerMeat.add(new Food("26", "Gà Nướng", 1, "150g", 250.0, 40.0, 0.0, 0.0, 9.0));
-        listDinnerMeat.add(new Food("27", "Thịt Bò", 1, "150g", 375.0, 39.0, 0.0, 0.0, 22.0));
-        listDinnerMeat.add(new Food("28", "Trứng Cút", 1, "10 quả", 158.0, 13.0, 0.0, 0.0, 11.0));
-        setupRecyclerView(rvDinnerMeat, listDinnerMeat, food -> selDinnerMeat = food);
-
-        listDinnerVeggie = new ArrayList<>();
-        listDinnerVeggie.add(new Food("29", "Cần Tây", 2, "100g", 14.0, 0.7, 3.0, 1.6, 0.2));
-        listDinnerVeggie.add(new Food("30", "Dưa Chuột", 2, "1 quả", 16.0, 0.7, 4.0, 0.5, 0.1));
-        listDinnerVeggie.add(new Food("31", "Đậu Cô Ve", 2, "100g", 31.0, 1.8, 7.0, 3.4, 0.2));
-        listDinnerVeggie.add(new Food("32", "Rau Muống", 2, "100g", 19.0, 3.0, 3.0, 2.0, 0.2));
-        setupRecyclerView(rvDinnerVeggie, listDinnerVeggie, food -> selDinnerVeggie = food);
-
-        listDinnerCarb = new ArrayList<>();
-        listDinnerCarb.add(new Food("33", "Táo", 3, "1 quả", 95.0, 0.5, 25.0, 4.4, 0.3));
-        listDinnerCarb.add(new Food("34", "Ngô Luộc", 3, "1 bắp", 86.0, 3.0, 19.0, 2.0, 1.0));
-        listDinnerCarb.add(new Food("35", "Cam", 3, "1 quả", 47.0, 0.9, 12.0, 2.4, 0.1));
-        listDinnerCarb.add(new Food("36", "Bánh Mì", 3, "1 ổ", 265.0, 9.0, 49.0, 2.0, 3.0));
-        setupRecyclerView(rvDinnerCarb, listDinnerCarb, food -> selDinnerCarb = food);
     }
 
     private void setupBottomNavigation() {

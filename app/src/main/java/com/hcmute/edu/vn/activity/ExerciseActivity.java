@@ -98,29 +98,40 @@ public class ExerciseActivity extends AppCompatActivity {
 
         Exercise currentExercise = exerciseList.get(currentIndex);
 
+        // 1. Set tên bài tập
         if (currentExercise.getName() != null) {
             tvExerciseName.setText(currentExercise.getName().toUpperCase());
         }
 
+        // 2. Xử lý hiển thị Reps/Thời gian và Nút Pause
         if (currentExercise.getBaseRecommendedReps() != null) {
-            tvTimer.setText(currentExercise.getBaseRecommendedReps()); 
-        }
+            String repsData = currentExercise.getBaseRecommendedReps();
+            tvTimer.setText(repsData);
 
-        try {
-            String imageString = currentExercise.getImageUrl();
-            if (imageString != null && !imageString.isEmpty()) {
-                int imageResId = Integer.parseInt(imageString);
-                ivExercise.setImageResource(imageResId);
+            // Kiểm tra: Nếu chuỗi có chứa dấu ":" (ví dụ 00:30) thì là đếm giờ -> Hiện nút Pause
+            // Ngược lại (ví dụ 15, 12) thì là đếm số lần (Reps) -> Ẩn nút Pause
+            if (repsData.contains(":")) {
+                btnPause.setVisibility(View.VISIBLE);
             } else {
-                ivExercise.setImageResource(R.drawable.workout_1);
+                btnPause.setVisibility(View.INVISIBLE);
             }
-        } catch (Exception e) {
-            ivExercise.setImageResource(R.drawable.workout_1);
+        } else {
+            // Đề phòng trường hợp dữ liệu null
+            btnPause.setVisibility(View.INVISIBLE);
         }
 
+        // 3. Load ảnh bằng Glide
+        com.bumptech.glide.Glide.with(this)
+                .load(currentExercise.getImageUrl()) // Lấy link ảnh từ Supabase
+                .placeholder(R.drawable.workout_1)   // Ảnh chờ trong lúc load mạng
+                .error(R.drawable.workout_1)         // Ảnh mặc định nếu link hỏng/không có link
+                .into(ivExercise);
+
+        // 4. Set số thứ tự bài tập
         String progressText = (currentIndex + 1) + " / " + exerciseList.size();
         tvExerciseProgress.setText(progressText);
 
+        // 5. Ẩn/Hiện nút Next, Previous ở đầu/cuối danh sách
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
         btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
     }
