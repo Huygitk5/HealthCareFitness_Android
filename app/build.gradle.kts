@@ -52,5 +52,4 @@ dependencies {
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     // Thêm thư viện tải ảnh Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
-
 }
