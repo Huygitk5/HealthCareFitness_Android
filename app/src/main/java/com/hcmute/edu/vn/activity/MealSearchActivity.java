@@ -149,40 +149,50 @@ public class MealSearchActivity extends AppCompatActivity {
             return;
         }
 
-        Food selectedFood = selectedFoods.get(0);
-
-        UserDailyMeal newMeal = new UserDailyMeal(
-                userId,
-                targetDate,
-                targetMealType,
-                selectedFood.getId(),
-                1.0
-        );
-
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.addDailyMeal(newMeal).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(MealSearchActivity.this, "Đã thêm thành công!", Toast.LENGTH_SHORT).show();
-                    setResult(RESULT_OK);
-                    finish();
-                } else {
-                    // 2. IN RA LỖI CHI TIẾT TỪ SUPABASE
-                    try {
-                        String errorDetails = response.errorBody().string();
-                        android.util.Log.e("SUPABASE_ERROR", "Lỗi chi tiết: " + errorDetails);
-                        Toast.makeText(MealSearchActivity.this, "Lỗi Database: " + errorDetails, Toast.LENGTH_LONG).show();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
 
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                Toast.makeText(MealSearchActivity.this, "Lỗi kết nối mạng!", Toast.LENGTH_SHORT).show();
-            }
-        });
+        int totalFoods = selectedFoods.size();
+        int[] completedCount = {0};
+
+        for (Food selectedFood : selectedFoods) {
+            UserDailyMeal newMeal = new UserDailyMeal(
+                    userId,
+                    targetDate,
+                    targetMealType,
+                    selectedFood.getId(),
+                    1.0
+            );
+
+            apiService.addDailyMeal(newMeal).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    completedCount[0]++;
+                    if (!response.isSuccessful()) {
+                        try {
+                            String errorDetails = response.errorBody().string();
+                            android.util.Log.e("SUPABASE_ERROR", "Lỗi chi tiết: " + errorDetails);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    checkCompletionAndFinish(completedCount[0], totalFoods);
+                }
+
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    completedCount[0]++;
+                    checkCompletionAndFinish(completedCount[0], totalFoods);
+                }
+            });
+        }
+    }
+
+    private void checkCompletionAndFinish(int currentCount, int totalFoods) {
+        if (currentCount == totalFoods) {
+            Toast.makeText(MealSearchActivity.this, "Đã thêm " + totalFoods + " món thành công!", Toast.LENGTH_SHORT).show();
+            setResult(RESULT_OK);
+            finish();
+        }
     }
 }
