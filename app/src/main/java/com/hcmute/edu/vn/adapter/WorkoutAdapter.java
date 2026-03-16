@@ -17,6 +17,7 @@ import com.hcmute.edu.vn.activity.ExerciseListActivity;
 import com.hcmute.edu.vn.model.WorkoutDay;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.WorkoutDayExercise;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,10 +40,20 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
         WorkoutDay item = mList.get(position);
         if (item == null) return;
 
-        String title = item.getName() != null ? item.getName() : "Ngày Tập";
-        holder.tvTitle.setText(title);
+        int dayOrder = item.getDayOrder() != null ? item.getDayOrder() : (position + 1);
+        String displayTitle = "Ngày " + dayOrder;
+        holder.tvTitle.setText(displayTitle);
 
-        boolean isRestDay = title.toLowerCase().contains("nghỉ");
+        if (position == 0) {
+            holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
+            holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
+        } else {
+            holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
+            holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
+        }
+
+        String originalName = item.getName() != null ? item.getName() : "";
+        boolean isRestDay = originalName.toLowerCase().contains("nghỉ") || item.getExercises() == null || item.getExercises().isEmpty();
 
         if (isRestDay) {
             holder.tvSub.setText("Nghỉ ngơi");
@@ -53,7 +64,6 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.tvSub.setText("Danh sách bài tập");
             holder.ivRest.setVisibility(View.GONE);
 
-            // KỸ THUẬT BYPASS: Đóng gói bài tập gửi thẳng qua trang sau!
             View.OnClickListener clickListener = v -> {
                 Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
                 ArrayList<Exercise> exercisesToPass = new ArrayList<>();
@@ -69,22 +79,17 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
                     }
                 }
 
-                // Gửi danh sách và gửi luôn cả tên ngày để hiển thị
                 intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
-                intent.putExtra("EXTRA_DAY_TITLE", title);
+                intent.putExtra("EXTRA_DAY_TITLE", displayTitle);
                 v.getContext().startActivity(intent);
             };
 
             holder.itemView.setOnClickListener(clickListener);
 
             if (position == 0) {
-                holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
-                holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
                 holder.btnStart.setVisibility(View.VISIBLE);
                 holder.btnStart.setOnClickListener(clickListener);
             } else {
-                holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
-                holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
                 holder.btnStart.setVisibility(View.GONE);
             }
         }
