@@ -108,6 +108,22 @@ public class NutritionActivity extends AppCompatActivity {
         );
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isAllergyDirty = pref.getBoolean("ALLERGY_DIRTY", true);
+
+        if (isAllergyDirty) {
+            new android.os.Handler().postDelayed(() -> {
+                loadUserAllergies();
+            }, 300);
+
+            pref.edit().putBoolean("ALLERGY_DIRTY", false).apply();
+        }
+    }
+
     private void initViews() {
         rvCalendar = findViewById(R.id.rvCalendar);
 
