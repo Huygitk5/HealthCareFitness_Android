@@ -114,9 +114,11 @@ public class ExerciseListActivity extends AppCompatActivity {
                     try {
                         if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                             WorkoutDay day = response.body().get(0);
-
                             TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-                            if(tvDayTitle != null) tvDayTitle.setText(day.getName() != null ? day.getName() : "Bài tập");
+                            if(tvDayTitle != null) {
+                                int dayOrder = day.getDayOrder() != null ? day.getDayOrder() : 1;
+                                tvDayTitle.setText("Ngày " + dayOrder);
+                            }
 
                             List<Exercise> fetchedList = new ArrayList<>();
 
