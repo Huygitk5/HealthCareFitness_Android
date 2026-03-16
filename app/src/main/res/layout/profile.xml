@@ -65,14 +65,6 @@
                         android:textColor="#6C757D"
                         android:textSize="14sp" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_white_pill"
-                    android:padding="8dp"
-                    android:src="@android:drawable/ic_menu_edit"
-                    app:tint="#4DAA9A" />
             </LinearLayout>
 
             <LinearLayout
@@ -84,14 +76,15 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
                     android:layout_marginEnd="6dp"
+                    android:layout_marginVertical="4dp"
                     android:layout_weight="1"
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="16dp"
                     app:cardElevation="2dp"
                     app:strokeWidth="0dp">
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -122,6 +115,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginHorizontal="6dp"
+                    android:layout_marginVertical="4dp"
                     android:layout_weight="1"
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="16dp"
@@ -141,7 +135,15 @@
                             android:textColor="#9E9E9E"
                             android:textSize="12sp" />
 
-                        <TextView android:id="@+id/tvProfileWeight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="75kg" android:textColor="#212121" android:textSize="20sp" android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tvProfileWeight"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="75kg"
+                            android:textColor="#212121"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
@@ -149,6 +151,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginVertical="4dp"
                     android:layout_weight="1"
                     app:cardBackgroundColor="#FFFFFF"
                     app:cardCornerRadius="16dp"
@@ -168,35 +172,53 @@
                             android:textColor="#9E9E9E"
                             android:textSize="12sp" />
 
-                        <TextView android:id="@+id/tvProfileHeight" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="175cm" android:textColor="#212121" android:textSize="20sp" android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/tvProfileHeight"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="175cm"
+                            android:textColor="#212121"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
             </LinearLayout>
-            <TextView
-                android:layout_width="wrap_content"
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="12dp"
-                android:text="Hồ sơ y tế"
-                android:textColor="#212121"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-            <TextView
-                android:id="@+id/btnUpdateMedical"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginEnd="20dp"
-                android:layout_marginTop="8dp"
-                android:text="✎ Cập nhật hồ sơ y tế"
-                android:textColor="#009688"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                android:padding="8dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"/>
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="24dp"
+                    android:text="Hồ sơ y tế"
+                    android:textColor="#212121"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnUpdateMedical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="8dp"
+                    android:text="✎ Cập nhật hồ sơ y tế"
+                    android:textColor="#009688"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -313,12 +335,15 @@
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
-        android:layout_height="70dp"
+        android:layout_height="85dp"
+        android:paddingBottom="20dp"
         android:layout_alignParentBottom="true"
+        android:background="#FFFFFF"
         android:elevation="12dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:weightSum="5">
+
         <LinearLayout
             android:id="@+id/nav_home"
             android:layout_width="0dp"
@@ -328,18 +353,17 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_home"
                 app:tint="#9E9E9E" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Home"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -352,18 +376,17 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_nutriton"
                 app:tint="#9E9E9E" />
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Nutrition"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -376,8 +399,8 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_workout"
                 app:tint="#9E9E9E" />
 
@@ -387,7 +410,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Workout"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -400,8 +423,8 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_trainer"
                 app:tint="#9E9E9E" />
 
@@ -411,7 +434,7 @@
                 android:layout_marginTop="4dp"
                 android:text="Trainer"
                 android:textColor="#9E9E9E"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
@@ -424,8 +447,8 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
                 android:src="@drawable/ic_profile"
                 app:tint="#4DAA9A" />
 
@@ -435,8 +458,8 @@
                 android:layout_marginTop="4dp"
                 android:text="Profile"
                 android:textColor="#4DAA9A"
-                android:textSize="12sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
-    </LinearLayout> 
+    </LinearLayout>
 </RelativeLayout>
