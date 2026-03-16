@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.model.SignUpRequest;
+import com.hcmute.edu.vn.model.SignUpResponse;
 import com.hcmute.edu.vn.model.User;
 
 import java.util.List;

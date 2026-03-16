@@ -10,6 +10,9 @@
     app:cardBackgroundColor="#FFFFFF"
     app:cardCornerRadius="16dp"
     app:cardElevation="2dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     app:strokeColor="#E0E0E0"
     app:strokeWidth="1dp">
 
@@ -91,7 +94,7 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="end"
+            android:gravity="end|center_vertical"
             android:orientation="vertical">
 
             <TextView
@@ -109,6 +112,27 @@
                 android:text="Kcal"
                 android:textColor="#757575"
                 android:textSize="12sp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/btnAddFoodList"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginTop="8dp"
+                app:cardBackgroundColor="#4DAA9A"
+                app:cardCornerRadius="16dp"
+                app:strokeWidth="0dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:padding="6dp"
+                    android:src="@android:drawable/ic_input_add"
+                    app:tint="#FFFFFF" />
+            </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
