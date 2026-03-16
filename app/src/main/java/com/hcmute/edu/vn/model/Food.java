@@ -27,7 +27,6 @@ public class Food {
     private Double fatG;
     @SerializedName("image_url")
     private String imageUrl;
-
     @SerializedName("food_ingredients")
     private List<FoodIngredient> foodIngredients;
 

@@ -1,18 +1,25 @@
 package com.hcmute.edu.vn.model;
+
 import com.google.gson.annotations.SerializedName;
 
 public class Ingredient {
+
     @SerializedName("id")
-    private Integer id;
+    private String id;
 
     @SerializedName("name")
     private String name;
 
-    // Có thể thêm Macro của riêng nguyên liệu nếu cần
+    public Ingredient() {}
 
-    public Ingredient(Integer id, String name) {
+    public Ingredient(String id, String name) {
         this.id = id;
         this.name = name;
     }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+
     public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 }

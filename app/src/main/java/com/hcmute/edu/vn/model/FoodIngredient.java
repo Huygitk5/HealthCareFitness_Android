@@ -1,21 +1,38 @@
 package com.hcmute.edu.vn.model;
+
 import com.google.gson.annotations.SerializedName;
 
 public class FoodIngredient {
 
-    // ĐÂY RỒI! SỐ LƯỢNG NẰM Ở ĐÂY NÈ:
-    @SerializedName("quantity")
-    private String quantity; // Ví dụ: "100g", "2 muỗng", "1 vắt"
+    @SerializedName("food_id")
+    private String foodId;
 
-    // Thằng này sẽ "ôm" luôn cái chi tiết của nguyên liệu
-    @SerializedName("ingredients") // Phải khớp với alias bảng nguyên liệu trên Supabase
+    @SerializedName("ingredient_id")
+    private String ingredientId;
+
+    @SerializedName("quantity")
+    private double quantity;
+
+    @SerializedName("unit")
+    private String unit;
+
+    // Chứa thông tin nguyên liệu khi JOIN bảng
+    @SerializedName("ingredients")
     private Ingredient ingredient;
 
-    public FoodIngredient(String quantity, Ingredient ingredient) {
-        this.quantity = quantity;
-        this.ingredient = ingredient;
-    }
+    public FoodIngredient() {}
 
-    public String getQuantity() { return quantity; }
+    public String getFoodId() { return foodId; }
+    public String getIngredientId() { return ingredientId; }
+    public double getQuantity() { return quantity; }
+    public String getUnit() { return unit; }
     public Ingredient getIngredient() { return ingredient; }
+
+    // Hàm tiện ích: Trả về chuỗi đẹp. VD: "100 g", "2 muỗng"
+    public String getFormattedQuantity() {
+        String qtyString = (quantity == Math.floor(quantity))
+                ? String.valueOf((int) quantity)
+                : String.valueOf(quantity);
+        return qtyString + " " + (unit != null ? unit : "g");
+    }
 }
