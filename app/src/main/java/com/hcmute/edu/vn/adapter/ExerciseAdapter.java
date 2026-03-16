@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.Glide;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
 
@@ -33,14 +35,48 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         Exercise item = exerciseList.get(position);
 
         holder.tvName.setText(item.getName());
-
         holder.tvDuration.setText(item.getBaseRecommendedReps());
 
-        if (holder.ivThumb != null && item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            try {
-                int imageResId = Integer.parseInt(item.getImageUrl());
-                holder.ivThumb.setImageResource(imageResId);
-            } catch (NumberFormatException e) {
+        // ==========================================
+        // XỬ LÝ ẢNH: HỖ TRỢ CẢ LINK WEB (HTTPS) VÀ LOCAL (DRAWABLE)
+        // ==========================================
+        if (holder.ivThumb != null) {
+            String imageUrl = item.getImageUrl();
+
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                // KIỂM TRA: Nếu là đường link từ mạng Internet (Bắt đầu bằng http hoặc https)
+                if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+                    Glide.with(holder.itemView.getContext())
+                            .load(imageUrl)
+                            .centerCrop()
+                            .placeholder(R.mipmap.ic_launcher) // Ảnh hiển thị tạm trong lúc chờ tải
+                            .error(R.mipmap.ic_launcher)       // Ảnh hiển thị nếu tải link thất bại
+                            .diskCacheStrategy(DiskCacheStrategy.ALL) // Lưu cache để lần sau mở lẹ hơn
+                            .into(holder.ivThumb);
+                }
+                // NẾU KHÔNG PHẢI LINK MẠNG: Xử lý như file có sẵn trong máy (drawable)
+                else {
+                    String imageName = imageUrl;
+                    if (imageName.contains(".")) {
+                        imageName = imageName.substring(0, imageName.lastIndexOf('.'));
+                    }
+
+                    int imageResId = holder.itemView.getContext().getResources().getIdentifier(
+                            imageName,
+                            "drawable",
+                            holder.itemView.getContext().getPackageName()
+                    );
+
+                    if (imageResId != 0) {
+                        Glide.with(holder.itemView.getContext())
+                                .load(imageResId)
+                                .centerCrop()
+                                .into(holder.ivThumb);
+                    } else {
+                        holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
+                    }
+                }
+            } else {
                 holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
             }
         }
@@ -54,7 +90,7 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
 
     @Override
     public int getItemCount() {
-        return exerciseList.size();
+        return exerciseList != null ? exerciseList.size() : 0;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

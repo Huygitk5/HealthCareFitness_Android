@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -18,26 +20,35 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.model.UserWorkoutSession;
+import com.hcmute.edu.vn.model.WorkoutDay;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class WorkoutActivity extends AppCompatActivity {
     String username;
+    String userId; // Thêm biến lưu ID của user thật
 
-    // View cho phần Chọn Level Giáo Án
+    private String currentPlanId = "";
+
     private TextView tvBeginner, tvIntermediate, tvAdvanced;
     private TextView tvWorkoutPlanTitle;
     private ImageView ivWorkoutPlan;
     private CardView cardWorkoutPlan;
 
-    // View cho phần Today's Workout (Hôm nay tập gì)
     private TextView tvCurrentTime, tvTodayWorkoutTitle;
     private ImageView ivTodayWorkout;
     private CardView cardTodayWorkout;
 
-    // View cho phần Free Workout (Tập tự do)
     private CardView cardFreeWorkout;
 
     @Override
@@ -51,44 +62,31 @@ public class WorkoutActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.workout), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            float density = getResources().getDisplayMetrics().density;
 
-            // 1. Xử lý Padding cho ScrollView
             ScrollView mainScrollView = findViewById(R.id.mainScrollView);
             if (mainScrollView != null) {
-                int topPadding = systemBars.top + (int)(24 * density);
-                int bottomPadding = systemBars.bottom + (int)(86 * density);
-                mainScrollView.setPadding(0, topPadding, 0, bottomPadding);
+                int bottomNavHeightPx = (int) (80 * getResources().getDisplayMetrics().density);
+                mainScrollView.setPadding(0, systemBars.top, 0, systemBars.bottom + bottomNavHeightPx);
             }
 
-            // 2. Đẩy thanh Bottom Navigation lên trên thanh hệ thống
             View bottomNav = findViewById(R.id.bottomNav);
             if (bottomNav != null) {
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) bottomNav.getLayoutParams();
-                params.bottomMargin = systemBars.bottom + (int)(16 * density);
-                bottomNav.setLayoutParams(params);
+                bottomNav.setPadding(0, 0, 0, systemBars.bottom - 10);
             }
 
             return insets;
         });
 
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        // Lấy thông tin user đang đăng nhập từ SharedPreferences
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
+        userId = pref.getString("KEY_USER_ID", ""); // Lấy ID động
 
-        // 1. Ánh xạ toàn bộ view (Tránh lỗi NullPointerException)
         initViews();
-
-        // 2. Setup Logic cho Cụm Chọn Level
         setupLevelListeners();
-        selectLevel("BEGINNER"); // Mặc định mở lên chọn thẻ Beginner
-
-        // 3. Setup Logic cho Cụm "Hôm nay tập gì" (Next Day Logic)
+        selectLevel("BEGINNER");
         setupTodayWorkout();
-
-        // 4. Cài đặt các sự kiện click chuyển trang (CardView)
         setupClickListeners();
-
-        // 5. Cài đặt Bottom Navigation
         setupBottomNavigation();
     }
 
@@ -96,13 +94,12 @@ public class WorkoutActivity extends AppCompatActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
+        userId = pref.getString("KEY_USER_ID", "");
     }
 
-
     private void initViews() {
-        // Khởi tạo view cho Level
         tvBeginner = findViewById(R.id.tvBeginner);
         tvIntermediate = findViewById(R.id.tvIntermediate);
         tvAdvanced = findViewById(R.id.tvAdvanced);
@@ -110,66 +107,121 @@ public class WorkoutActivity extends AppCompatActivity {
         ivWorkoutPlan = findViewById(R.id.ivWorkoutPlan);
         cardWorkoutPlan = findViewById(R.id.cardWorkoutPlan);
 
-        // Khởi tạo view cho Today's Workout
         tvCurrentTime = findViewById(R.id.tvCurrentTime);
         tvTodayWorkoutTitle = findViewById(R.id.tvTodayWorkoutTitle);
         ivTodayWorkout = findViewById(R.id.ivTodayWorkout);
         cardTodayWorkout = findViewById(R.id.cardTodayWorkout);
 
-        // Khởi tạo view Free Workout
         cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
     }
 
     private void setupClickListeners() {
-        // Bấm vào Card Giáo Án -> Chuyển sang màn hình Chi tiết Giáo Án
         cardWorkoutPlan.setOnClickListener(v -> {
+            if (currentPlanId == null || currentPlanId.isEmpty() || currentPlanId.contains("TRÊN_SUPABASE")) {
+                Toast.makeText(WorkoutActivity.this, "Bạn cần thay thế ID Supabase trong code!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
+            intent.putExtra("PLAN_ID", currentPlanId);
             startActivity(intent);
         });
 
-        // Bấm vào Card Tập Tự Do -> Chuyển sang màn hình Lọc bài tập
         cardFreeWorkout.setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, EquipmentSelectionActivity.class);
             startActivity(intent);
         });
     }
 
-    // =========================================================
-    // LOGIC 1: TODAY'S WORKOUT (HÔM NAY TẬP GÌ)
-    // =========================================================
+    // --- LOGIC LẤY BÀI TẬP HÔM NAY ---
     private void setupTodayWorkout() {
-        // Cập nhật ngày tháng động
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
-        String currentDate = sdf.format(new Date());
-        tvCurrentTime.setText(currentDate);
+        tvCurrentTime.setText(sdf.format(new Date()));
 
-        // TODO: Giả lập Logic lấy ngày tập tiếp theo từ Database
-        int lastCompletedDay = 1; // Giả sử user vừa tập xong Ngày 1
-        int nextDayOrder = lastCompletedDay + 1; // Hệ thống tự nhảy sang Ngày 2
+        tvTodayWorkoutTitle.setText("Đang phân tích dữ liệu...");
 
-        if (nextDayOrder == 1) {
-            tvTodayWorkoutTitle.setText("Ngày 1: Ngực & Tay sau");
+        // Xử lý an toàn nếu user chưa đăng nhập hoặc không tìm thấy ID
+        if (userId == null || userId.isEmpty()) {
+            tvTodayWorkoutTitle.setText("Ngày 1: Khởi động & Làm quen");
             ivTodayWorkout.setImageResource(R.drawable.workout_1);
-        } else if (nextDayOrder == 2) {
-            tvTodayWorkoutTitle.setText("Ngày 2: Lưng & Bắp tay trước");
-            ivTodayWorkout.setImageResource(R.drawable.workout_2);
-        } else {
-            tvTodayWorkoutTitle.setText("Ngày " + nextDayOrder + ": Chân & Mông");
-            ivTodayWorkout.setImageResource(R.drawable.workout_3);
+            // Bạn có thể sửa chuỗi dưới đây thành ID Ngày 1 của gói Beginner trên Supabase
+            setupClickForTodayWorkout("14dd7725-ba8d-4151-8acd-efc8d0a54d8a");
+            return;
         }
 
-        // Sự kiện click bắt đầu tập
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        // Gọi API lấy lịch sử tập bằng userId động
+        String selectQuery = "*, workout_days(*)";
+        apiService.getUserWorkoutHistory("eq." + userId, selectQuery).enqueue(new Callback<List<UserWorkoutSession>>() {
+            @Override
+            public void onResponse(Call<List<UserWorkoutSession>> call, Response<List<UserWorkoutSession>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    List<UserWorkoutSession> sessions = response.body();
+                    UserWorkoutSession latestSession = sessions.get(sessions.size() - 1);
+                    String currentPlanId = latestSession.getPlanId();
+
+                    fetchNextDayDetails(apiService, currentPlanId, latestSession.getDayId());
+
+                } else {
+                    // Mới tải app, chưa tập lần nào
+                    tvTodayWorkoutTitle.setText("Ngày 1: Khởi động & Làm quen");
+                    ivTodayWorkout.setImageResource(R.drawable.workout_1);
+                    // Sửa chuỗi dưới đây thành ID Ngày 1 của gói Beginner trên Supabase
+                    setupClickForTodayWorkout("14dd7725-ba8d-4151-8acd-efc8d0a54d8a");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<UserWorkoutSession>> call, Throwable t) {
+                tvTodayWorkoutTitle.setText("Lỗi kết nối");
+            }
+        });
+    }
+
+    private void fetchNextDayDetails(SupabaseApiService apiService, String planId, String lastDayId) {
+        apiService.getExercisesForSpecificDay("eq." + lastDayId, "*").enqueue(new Callback<List<WorkoutDay>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    WorkoutDay lastDay = response.body().get(0);
+                    int nextDayOrder = lastDay.getDayOrder() + 1;
+
+                    apiService.getNextWorkoutDay("eq." + planId, "eq." + nextDayOrder, "*").enqueue(new Callback<List<WorkoutDay>>() {
+                        @Override
+                        public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
+                            if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                                WorkoutDay nextDay = response.body().get(0);
+
+                                tvTodayWorkoutTitle.setText("Ngày " + nextDay.getDayOrder() + ": " + nextDay.getName());
+                                ivTodayWorkout.setImageResource(R.drawable.workout_2);
+
+                                setupClickForTodayWorkout(nextDay.getId());
+                            } else {
+                                tvTodayWorkoutTitle.setText("Chúc mừng! Bạn đã hoàn thành Gói tập.");
+                                cardTodayWorkout.setOnClickListener(null);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {}
+                    });
+                }
+            }
+            @Override
+            public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {}
+        });
+    }
+
+    private void setupClickForTodayWorkout(String nextDayId) {
         cardTodayWorkout.setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
-            intent.putExtra("PLAN_ID", 1);
-            intent.putExtra("DAY_ORDER", nextDayOrder);
+            intent.putExtra("EXTRA_DAY_ID", nextDayId);
             startActivity(intent);
         });
     }
 
-    // =========================================================
-    // LOGIC 2: CHOOSE WORKOUT PLAN (CHỌN LEVEL)
-    // =========================================================
+    // --- LOGIC CHỌN LEVEL ---
     private void setupLevelListeners() {
         tvBeginner.setOnClickListener(v -> selectLevel("BEGINNER"));
         tvIntermediate.setOnClickListener(v -> selectLevel("INTERMEDIATE"));
@@ -180,18 +232,24 @@ public class WorkoutActivity extends AppCompatActivity {
         resetLevelButtons();
         switch (level) {
             case "BEGINNER":
+                currentPlanId = "a1111111-1111-1111-1111-111111111111";
+
                 tvBeginner.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvBeginner.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Khởi động & Làm quen");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv1);
                 break;
             case "INTERMEDIATE":
+                currentPlanId = "a2222222-2222-2222-2222-222222222222";
+
                 tvIntermediate.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvIntermediate.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Tăng cơ & Giảm mỡ");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv2);
                 break;
             case "ADVANCED":
+                currentPlanId = "05fea3e9-377e-4108-bee3-15a78150dc43";
+
                 tvAdvanced.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvAdvanced.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Đốt mỡ cường độ cao");
@@ -211,9 +269,6 @@ public class WorkoutActivity extends AppCompatActivity {
         tvAdvanced.setTextColor(Color.parseColor("#757575"));
     }
 
-    // =========================================================
-    // LOGIC 3: BOTTOM NAVIGATION
-    // =========================================================
     private void setupBottomNavigation() {
         LinearLayout navHome = findViewById(R.id.nav_home);
         navHome.setOnClickListener(v -> {

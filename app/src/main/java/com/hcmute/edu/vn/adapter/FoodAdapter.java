@@ -11,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Food;
@@ -49,7 +50,15 @@ public class FoodAdapter extends RecyclerView.Adapter<FoodAdapter.FoodViewHolder
 
         holder.tvFoodName.setText(food.getName());
         holder.tvFoodCalories.setText("(" + Math.round(food.getCalories()) + " Kcal)");
-        holder.imgFood.setImageResource(R.mipmap.ic_launcher_round);
+
+        // ==========================================================
+        // ĐÃ SỬA: Dùng Glide để tải ảnh từ URL thay vì gán chết icon
+        // ==========================================================
+        Glide.with(context)
+                .load(food.getImageUrl()) // Hàm này lấy đường link ảnh từ model Food của bạn. (Nếu biến của bạn tên khác như getImage() thì sửa lại cho khớp nhé).
+                .placeholder(R.mipmap.ic_launcher_round) // Ảnh hiển thị TẠM THỜI trong lúc chờ mạng tải ảnh thật
+                .error(R.mipmap.ic_launcher_round)       // Ảnh hiển thị NẾU link ảnh bị lỗi hoặc không có mạng
+                .into(holder.imgFood);
 
         // Hiệu ứng màu sắc
         if (selectedPosition == position) {

@@ -11,7 +11,7 @@ public class WorkoutPlan {
     private String name;
     @SerializedName("difficulty_level_id")
     private Integer difficultyLevelId;
-    @SerializedName("days")
+    @SerializedName("workout_days")
     private List<WorkoutDay> days;
 
     public WorkoutPlan(String id, String name, Integer difficultyLevelId, List<WorkoutDay> days) {

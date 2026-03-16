@@ -13,7 +13,7 @@ public class WorkoutDay {
     private String name;
     @SerializedName("day_order")
     private Integer dayOrder;
-    @SerializedName("exercises")
+    @SerializedName("workout_day_exercises")
     private List<WorkoutDayExercise> exercises;
 
     public WorkoutDay(String id, String planId, String name, Integer dayOrder, List<WorkoutDayExercise> exercises) {

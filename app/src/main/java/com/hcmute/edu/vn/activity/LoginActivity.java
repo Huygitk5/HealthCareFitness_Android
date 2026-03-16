@@ -14,9 +14,7 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
-import com.hcmute.edu.vn.activity.HomeActivity;
 import com.hcmute.edu.vn.model.User;
-import com.hcmute.edu.vn.activity.ProfileSetupActivity;
 
 import java.util.List;
 
@@ -70,6 +68,9 @@ public class LoginActivity extends AppCompatActivity {
                             // Lấy email thành công
                             String userEmail = response.body().get(0).getEmail();
 
+                            // Lấy object User hiện tại
+                            User currentUser = response.body().get(0);
+
                             // TIẾN HÀNH ĐĂNG NHẬP AUTH BẰNG EMAIL + PASSWORD
                             SignInRequest loginRequest = new SignInRequest(userEmail, password);
                             apiService.signInAuth(loginRequest).enqueue(new retrofit2.Callback<SignInResponse>() {
@@ -77,13 +78,14 @@ public class LoginActivity extends AppCompatActivity {
                                 public void onResponse(Call<SignInResponse> call, retrofit2.Response<SignInResponse> loginResponse) {
                                     btnSignIn.setEnabled(true);
                                     btnSignIn.setText("Sign In");
-                                    // Trong LoginActivity.java
+
                                     if (loginResponse.isSuccessful() && loginResponse.body() != null) {
-                                        // 1. Lưu username vào SharedPreferences    android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
                                         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                                        pref.edit().putString("KEY_USER", username).apply();
-                                        // 2. Lấy dữ liệu User đã fetch được từ bước đầu (apiService.getUserByUsername)
-                                        User currentUser = response.body().get(0);
+
+                                        pref.edit()
+                                                .putString("KEY_USER", username)
+                                                .putString("KEY_USER_ID", currentUser.getId())
+                                                .apply();
 
                                         Intent intent;
                                         // 3. KIỂM TRA: Nếu tên trống HOẶC chưa có chiều cao/cân nặng thì đi setup
