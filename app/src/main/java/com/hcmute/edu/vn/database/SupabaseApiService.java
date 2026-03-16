@@ -286,4 +286,32 @@ public interface SupabaseApiService {
     // Lưu bệnh mới
     @POST("user_medical_conditions")
     Call<Void> saveUserMedicalConditions(@Body java.util.List<UserMedicalConditionInsert> conditions);
+
+    // =================================================================================
+    // KẾ HOẠCH DINH DƯỠNG HÀNG NGÀY (DAILY MEAL PLANNER)
+    // =================================================================================
+
+    // 1. LẤY THỰC ĐƠN CỦA 1 NGÀY:
+    // Trả về tất cả các món ăn user đã chọn trong 1 ngày cụ thể (Bao gồm Sáng, Trưa, Tối).
+    // Có join với bảng foods để lấy luôn tên, calo, hình ảnh của món ăn.
+    @GET("user_daily_meals")
+    Call<List<com.hcmute.edu.vn.model.UserDailyMeal>> getDailyMeals(
+            @Query("user_id") String eqUserId, // Cú pháp: "eq.ID_CUA_USER"
+            @Query("date") String eqDate,      // Cú pháp: "eq.2026-03-16"
+            @Query("select") String select     // Bắt buộc truyền: "*, foods(*)"
+    );
+
+    // 2. THÊM MÓN ĂN VÀO BỮA:
+    // Thêm 1 món mới vào bữa Sáng/Trưa/Tối của 1 ngày cụ thể.
+    @POST("user_daily_meals")
+    Call<Void> addDailyMeal(
+            @Body com.hcmute.edu.vn.model.UserDailyMeal meal
+    );
+
+    // 3. XÓA MÓN ĂN KHỎI BỮA:
+    // Xóa món ăn dựa vào cái ID (uuid) của dòng dữ liệu trong bảng user_daily_meals.
+    @DELETE("user_daily_meals")
+    Call<Void> deleteDailyMeal(
+            @Query("id") String eqId // Cú pháp: "eq.ID_CUA_BẢN_GHI_MEAL"
+    );
 }

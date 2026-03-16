@@ -36,7 +36,16 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
         if (item.getIngredient() != null) {
             holder.tvName.setText(item.getIngredient().getName());
         }
-        holder.tvQuantity.setText(item.getQuantity() != null ? item.getQuantity() : "Tùy khẩu vị");
+
+        // ==========================================================
+        // ĐÃ SỬA Ở ĐÂY: Dùng hàm getFormattedQuantity() thay thế
+        // Nó sẽ tự động in ra chuỗi đẹp kiểu "100 g" hoặc "2 muỗng"
+        // ==========================================================
+        if (item.getFormattedQuantity() != null) {
+            holder.tvQuantity.setText(item.getFormattedQuantity());
+        } else {
+            holder.tvQuantity.setText("Tùy khẩu vị");
+        }
     }
 
     @Override
