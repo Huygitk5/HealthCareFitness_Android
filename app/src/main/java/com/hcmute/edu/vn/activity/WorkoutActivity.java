@@ -65,13 +65,12 @@ public class WorkoutActivity extends AppCompatActivity {
 
             ScrollView mainScrollView = findViewById(R.id.mainScrollView);
             if (mainScrollView != null) {
-                int bottomNavHeightPx = (int) (80 * getResources().getDisplayMetrics().density);
-                mainScrollView.setPadding(0, systemBars.top, 0, systemBars.bottom + bottomNavHeightPx);
+                mainScrollView.setPadding(0, systemBars.top, 0, systemBars.bottom);
             }
 
             View bottomNav = findViewById(R.id.bottomNav);
             if (bottomNav != null) {
-                bottomNav.setPadding(0, 0, 0, systemBars.bottom - 10);
+                bottomNav.setPadding(0, 0, 0, systemBars.bottom);
             }
 
             return insets;
