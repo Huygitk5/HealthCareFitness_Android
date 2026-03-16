@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFB">
-    <ScrollView
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottomNav"
@@ -39,12 +40,22 @@
                         android:layout_height="wrap_content"
                         android:layout_centerInParent="true"
                         android:gravity="center"
-                        android:text="Kế Hoạch Dinh Dưỡng"
                         android:paddingTop="24dp"
+                        android:text="Kế Hoạch Dinh Dưỡng"
                         android:textColor="#212121"
                         android:textSize="20sp"
                         android:textStyle="bold" />
                 </RelativeLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvCalendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -63,7 +74,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_centerInParent="true"
-                            android:progress="75"
+                            android:progress="0"
                             app:indicatorColor="#4DAA9A"
                             app:indicatorSize="100dp"
                             app:indicatorTrackGapSize="0dp"
@@ -82,7 +93,7 @@
                                 android:id="@+id/tvTotalCalories"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="1500"
+                                android:text="0"
                                 android:textColor="#212121"
                                 android:textSize="24sp"
                                 android:textStyle="bold" />
@@ -90,7 +101,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="/ 2,000 Kcal"
+                                android:text="/ 2000 Kcal"
                                 android:textColor="#757575"
                                 android:textSize="10sp" />
                         </LinearLayout>
@@ -115,35 +126,10 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Carb"
-                                    android:textColor="#757575"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
-
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Carb" android:textColor="#757575" android:textSize="14sp" android:textStyle="bold" />
                                 <com.google.android.material.progressindicator.LinearProgressIndicator
-                                    android:id="@+id/progressCarb"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginVertical="8dp"
-                                    android:progress="70"
-                                    app:indicatorColor="#4DAA9A"
-                                    app:indicatorTrackGapSize="0dp"
-                                    app:trackColor="#FFFFFF"
-                                    app:trackCornerRadius="4dp"
-                                    app:trackThickness="8dp" />
-
-                                <TextView
-                                    android:id="@+id/tvTotalCarb"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="180/250g"
-                                    android:textColor="#212121"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
+                                    android:id="@+id/progressCarb" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginVertical="8dp" android:progress="0" app:indicatorColor="#4DAA9A" app:trackColor="#FFFFFF" app:trackCornerRadius="4dp" app:trackThickness="8dp" />
+                                <TextView android:id="@+id/tvTotalCarb" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0/250g" android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -153,35 +139,10 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Protein"
-                                    android:textColor="#757575"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
-
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Protein" android:textColor="#757575" android:textSize="14sp" android:textStyle="bold" />
                                 <com.google.android.material.progressindicator.LinearProgressIndicator
-                                    android:id="@+id/progressProtein"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginVertical="8dp"
-                                    android:progress="75"
-                                    app:indicatorColor="#42A5F5"
-                                    app:indicatorTrackGapSize="0dp"
-                                    app:trackColor="#FFFFFF"
-                                    app:trackCornerRadius="4dp"
-                                    app:trackThickness="8dp" />
-
-                                <TextView
-                                    android:id="@+id/tvTotalProtein"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="90/120g"
-                                    android:textColor="#212121"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
+                                    android:id="@+id/progressProtein" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginVertical="8dp" android:progress="0" app:indicatorColor="#42A5F5" app:trackColor="#FFFFFF" app:trackCornerRadius="4dp" app:trackThickness="8dp" />
+                                <TextView android:id="@+id/tvTotalProtein" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0/120g" android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -190,35 +151,10 @@
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Fat"
-                                    android:textColor="#757575"
-                                    android:textSize="14sp"
-                                    android:textStyle="bold" />
-
+                                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Fat" android:textColor="#757575" android:textSize="14sp" android:textStyle="bold" />
                                 <com.google.android.material.progressindicator.LinearProgressIndicator
-                                    android:id="@+id/progressFat"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginVertical="8dp"
-                                    android:progress="76"
-                                    app:indicatorColor="#EF5350"
-                                    app:indicatorTrackGapSize="0dp"
-                                    app:trackColor="#FFFFFF"
-                                    app:trackCornerRadius="4dp"
-                                    app:trackThickness="8dp" />
-
-                                <TextView
-                                    android:id="@+id/tvTotalFat"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="50/65g"
-                                    android:textColor="#212121"
-                                    android:textSize="13sp"
-                                    android:textStyle="bold" />
+                                    android:id="@+id/progressFat" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginVertical="8dp" android:progress="0" app:indicatorColor="#EF5350" app:trackColor="#FFFFFF" app:trackCornerRadius="4dp" app:trackThickness="8dp" />
+                                <TextView android:id="@+id/tvTotalFat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0/65g" android:textColor="#212121" android:textSize="13sp" android:textStyle="bold" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -229,13 +165,12 @@
                             app:cardBackgroundColor="#FFF9C4"
                             app:cardCornerRadius="8dp"
                             app:cardElevation="2dp">
-
                             <TextView
                                 android:id="@+id/tvAllergiesWarning"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:padding="10dp"
-                                android:text="⚠️ Tránh: Đậu nành, Nước có gas, Mè trắng..."
+                                android:text="⚠️ Đang tải dữ liệu dị ứng..."
                                 android:textColor="#616161"
                                 android:textSize="13sp"
                                 android:textStyle="bold" />
@@ -246,524 +181,208 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginHorizontal="20dp"
-                android:background="@drawable/bg_badge_white"
-                android:elevation="2dp"
-                android:orientation="horizontal"
-                android:padding="4dp"
-                android:weightSum="3">
-
-                <TextView
-                    android:id="@+id/tabBreakfast"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_nav_active"
-                    android:gravity="center"
-                    android:text="Bữa Sáng"
-                    android:textColor="#FFFFFF"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tabLunch"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@android:color/transparent"
-                    android:gravity="center"
-                    android:text="Bữa Trưa"
-                    android:textColor="#757575"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tabDinner"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@android:color/transparent"
-                    android:gravity="center"
-                    android:text="Bữa Tối"
-                    android:textColor="#757575"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingTop="16dp">
 
-                <LinearLayout
-                    android:id="@+id/layoutBreakfast"
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="visible">
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
 
-                    <RelativeLayout
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Thịt &amp; Đạm"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreBfMeat"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvBreakfastMeat"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <RelativeLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Rau củ &amp; Chất xơ"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreBfVeggie"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvBreakfastVeggie"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                            android:layout_marginBottom="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:text="☀️ Bữa Sáng"
+                                android:textColor="#212121"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/btnAddBreakfast"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackground"
+                                android:text="+ Thêm món"
+                                android:textColor="#4DAA9A"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvBreakfast"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Tinh bột &amp; Trái cây"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreBfCarb"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvBreakfastCarb"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
-                </LinearLayout>
+                            android:nestedScrollingEnabled="false" />
 
-                <LinearLayout
-                    android:id="@+id/layoutLunch"
+                        <TextView
+                            android:id="@+id/tvEmptyBreakfast"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="12dp"
+                            android:text="Chưa có thực đơn"
+                            android:textColor="#9E9E9E"
+                            android:textSize="14sp"
+                            android:textStyle="italic" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
 
-                    <RelativeLayout
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Thịt &amp; Đạm"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreLunchMeat"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvLunchMeat"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <RelativeLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Rau củ &amp; Chất xơ"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreLunchVeggie"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvLunchVeggie"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                            android:layout_marginBottom="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:text="🌤️ Bữa Trưa"
+                                android:textColor="#212121"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/btnAddLunch"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackground"
+                                android:text="+ Thêm món"
+                                android:textColor="#4DAA9A"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvLunch"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Tinh bột &amp; Trái cây"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreLunchCarb"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvLunchCarb"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
-                </LinearLayout>
+                            android:nestedScrollingEnabled="false" />
 
-                <LinearLayout
-                    android:id="@+id/layoutDinner"
+                        <TextView
+                            android:id="@+id/tvEmptyLunch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="12dp"
+                            android:text="Chưa có thực đơn"
+                            android:textColor="#9E9E9E"
+                            android:textSize="14sp"
+                            android:textStyle="italic" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
 
-                    <RelativeLayout
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Thịt &amp; Đạm"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreDinnerMeat"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvDinnerMeat"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <RelativeLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Rau củ &amp; Chất xơ"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreDinnerVeggie"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvDinnerVeggie"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
+                            android:layout_marginBottom="12dp">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:text="🌙 Bữa Tối"
+                                android:textColor="#212121"
+                                android:textSize="18sp"
+                                android:textStyle="bold" />
+                            <TextView
+                                android:id="@+id/btnAddDinner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackground"
+                                android:text="+ Thêm món"
+                                android:textColor="#4DAA9A"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
 
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingHorizontal="20dp">
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvDinner"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="Tinh bột &amp; Trái cây"
-                            android:textColor="#424242"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnMoreDinnerCarb"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:text="Xem thêm"
-                            android:textColor="#4DAA9A"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </RelativeLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvDinnerCarb"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        android:paddingVertical="4dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_food_card" />
-                </LinearLayout>
+                            android:nestedScrollingEnabled="false" />
 
-            </FrameLayout>
+                        <TextView
+                            android:id="@+id/tvEmptyDinner"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingVertical="12dp"
+                            android:text="Chưa có thực đơn"
+                            android:textColor="#9E9E9E"
+                            android:textSize="14sp"
+                            android:textStyle="italic" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"
         android:layout_height="85dp"
-        android:paddingBottom="20dp"
         android:layout_alignParentBottom="true"
         android:background="#FFFFFF"
         android:elevation="12dp"
         android:gravity="center"
         android:orientation="horizontal"
+        android:paddingBottom="20dp"
         android:weightSum="5">
 
-        <LinearLayout
-            android:id="@+id/nav_home"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_home"
-                app:tint="#9E9E9E" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Home"
-                android:textColor="#9E9E9E"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/nav_nutrition"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_nutriton"
-                app:tint="#4DAA9A" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Nutrition"
-                android:textColor="#4DAA9A"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/nav_workout"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_workout"
-                app:tint="#9E9E9E" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Workout"
-                android:textColor="#9E9E9E"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/nav_trainer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_trainer"
-                app:tint="#9E9E9E" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Trainer"
-                android:textColor="#9E9E9E"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/nav_profile"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_profile"
-                app:tint="#9E9E9E" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Profile"
-                android:textColor="#9E9E9E"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+        <LinearLayout android:id="@+id/nav_home" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><ImageView android:layout_width="wrap_content" android:layout_height="28dp" android:src="@drawable/ic_home" app:tint="#9E9E9E" /><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Home" android:textColor="#9E9E9E" android:textSize="14sp" android:textStyle="bold" /></LinearLayout>
+        <LinearLayout android:id="@+id/nav_nutrition" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><ImageView android:layout_width="wrap_content" android:layout_height="28dp" android:src="@drawable/ic_nutriton" app:tint="#4DAA9A" /><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Nutrition" android:textColor="#4DAA9A" android:textSize="14sp" android:textStyle="bold" /></LinearLayout>
+        <LinearLayout android:id="@+id/nav_workout" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><ImageView android:layout_width="wrap_content" android:layout_height="28dp" android:src="@drawable/ic_workout" app:tint="#9E9E9E" /><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Workout" android:textColor="#9E9E9E" android:textSize="14sp" android:textStyle="bold" /></LinearLayout>
+        <LinearLayout android:id="@+id/nav_trainer" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><ImageView android:layout_width="wrap_content" android:layout_height="28dp" android:src="@drawable/ic_trainer" app:tint="#9E9E9E" /><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Trainer" android:textColor="#9E9E9E" android:textSize="14sp" android:textStyle="bold" /></LinearLayout>
+        <LinearLayout android:id="@+id/nav_profile" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical"><ImageView android:layout_width="wrap_content" android:layout_height="28dp" android:src="@drawable/ic_profile" app:tint="#9E9E9E" /><TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Profile" android:textColor="#9E9E9E" android:textSize="14sp" android:textStyle="bold" /></LinearLayout>
     </LinearLayout>
 </RelativeLayout>

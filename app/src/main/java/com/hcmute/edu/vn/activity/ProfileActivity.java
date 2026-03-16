@@ -191,6 +191,9 @@ public class ProfileActivity extends AppCompatActivity {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (insertList.isEmpty()) {
                     Toast.makeText(ProfileActivity.this, "Đã xóa toàn bộ bệnh lý!", Toast.LENGTH_SHORT).show();
+
+                    getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("ALLERGY_DIRTY", true).apply();
+
                     loadUserProfile();
                     return;
                 }
@@ -200,9 +203,11 @@ public class ProfileActivity extends AppCompatActivity {
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
                             Toast.makeText(ProfileActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
+
+                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("ALLERGY_DIRTY", true).apply();
+
                             loadUserProfile();
                         } else {
-                            // RA ĐA BẮT LỖI LƯU DỮ LIỆU
                             try {
                                 String err = response.errorBody() != null ? response.errorBody().string() : "Rỗng";
                                 Toast.makeText(ProfileActivity.this, "LỖI SUPABASE (LƯU): " + err, Toast.LENGTH_LONG).show();
