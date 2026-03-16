@@ -2,11 +2,15 @@ package com.hcmute.edu.vn.model;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class Food {
     @SerializedName("id")
     private String id;
     @SerializedName("name")
     private String name;
+    @SerializedName("instructions")
+    private String instructions;
     @SerializedName("category_id")
     private Integer categoryId;
     @SerializedName("serving_size")
@@ -23,6 +27,9 @@ public class Food {
     private Double fatG;
     @SerializedName("image_url")
     private String imageUrl;
+
+    @SerializedName("food_ingredients")
+    private List<FoodIngredient> foodIngredients;
 
     public Food(String id, String name, Integer categoryId, String servingSize, Double calories, Double proteinG, Double carbG, Double fiberG, Double fatG) {
         this.id = id;
@@ -114,5 +121,21 @@ public class Food {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public List<FoodIngredient> getFoodIngredients() {
+        return foodIngredients;
+    }
+
+    public void setFoodIngredients(List<FoodIngredient> foodIngredients) {
+        this.foodIngredients = foodIngredients;
+    }
+
+    public String getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
     }
 }

@@ -1,7 +1,7 @@
 package com.hcmute.edu.vn.database;
 
-import com.hcmute.edu.vn.activity.SignInRequest;
-import com.hcmute.edu.vn.activity.SignInResponse;
+import com.hcmute.edu.vn.model.SignInRequest;
+import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.Equipment;
 import com.hcmute.edu.vn.model.Exercise;
@@ -10,8 +10,8 @@ import com.hcmute.edu.vn.model.MealRecommendedFood;
 import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
-import com.hcmute.edu.vn.activity.SignUpRequest;
-import com.hcmute.edu.vn.activity.SignUpResponse;
+import com.hcmute.edu.vn.model.SignUpRequest;
+import com.hcmute.edu.vn.model.SignUpResponse;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
 import com.hcmute.edu.vn.model.UserWorkoutExerciseLog;
