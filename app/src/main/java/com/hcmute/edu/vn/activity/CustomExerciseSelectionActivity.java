@@ -77,6 +77,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         tvStep3Circle = findViewById(R.id.tvStep3Circle);
         tvStep3Title = findViewById(R.id.tvStep3Title);
     }
+
     private void setupStepIndicator() {
         // --- BƯỚC 1 (Đã hoàn thành) ---
         tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
@@ -86,9 +87,9 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
 
         // --- BƯỚC 2 (Đã hoàn thành) ---
         tvStep2Circle.setBackgroundResource(R.drawable.step_circle_selected);
-        tvStep2Circle.setTextColor(android.graphics.Color.WHITE); // Phải thêm dòng này
-        tvStep2Title.setTextColor(android.graphics.Color.parseColor("#589A8D")); // Phải thêm dòng này
-        tvStep2Title.setTypeface(null, android.graphics.Typeface.BOLD); // Phải thêm dòng này
+        tvStep2Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep2Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep2Title.setTypeface(null, android.graphics.Typeface.BOLD);
 
         // Bước 3: HIGHLIGHT
         tvStep3Circle.setBackgroundResource(R.drawable.step_circle_selected);
@@ -97,12 +98,8 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
         tvStep3Title.setTypeface(null, android.graphics.Typeface.BOLD);
     }
 
-
     private void setupUI() {
-//        TextView tvStepCount = findViewById(R.id.tvStepCount);
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
-
-//        tvStepCount.setText("BƯỚC 3/3");
         tvStepTitle.setText("Chọn bài tập phù hợp");
 
         rvSelection.setLayoutManager(new LinearLayoutManager(this));
@@ -117,7 +114,8 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     return;
                 }
 
-                Intent intent = new Intent(CustomExerciseSelectionActivity.this, ExerciseActivity.class);
+                // SỬA Ở ĐÂY: Chuyển sang ExerciseListActivity thay vì ExerciseActivity
+                Intent intent = new Intent(CustomExerciseSelectionActivity.this, ExerciseListActivity.class);
                 intent.putExtra("EXTRA_EXERCISE_LIST", finalSelectedList);
                 intent.putExtra("IS_FREE_WORKOUT", true);
                 startActivity(intent);
@@ -138,7 +136,6 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     List<Exercise> filteredList = new ArrayList<>();
 
                     for (Exercise ex : response.body()) {
-                        //Kiểm tra xem MuscleGroupId có nằm trong danh sách đã chọn không
                         boolean matchMuscle = (ex.getMuscleGroupId() != null && receivedMuscleIds.contains(ex.getMuscleGroupId()));
 
                         boolean matchEquipment = false;

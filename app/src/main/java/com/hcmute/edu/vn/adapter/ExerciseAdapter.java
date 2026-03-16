@@ -9,6 +9,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
 
@@ -33,14 +34,29 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         Exercise item = exerciseList.get(position);
 
         holder.tvName.setText(item.getName());
-
         holder.tvDuration.setText(item.getBaseRecommendedReps());
 
-        if (holder.ivThumb != null && item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            try {
-                int imageResId = Integer.parseInt(item.getImageUrl());
-                holder.ivThumb.setImageResource(imageResId);
-            } catch (NumberFormatException e) {
+        // Cập nhật load ảnh bằng Glide
+        if (holder.ivThumb != null) {
+            String imageUrl = item.getImageUrl();
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                if (imageUrl.startsWith("http")) {
+                    // Nếu là đường link từ mạng (Supabase)
+                    Glide.with(holder.itemView.getContext())
+                            .load(imageUrl)
+                            .placeholder(R.drawable.workout_1) // Ảnh mặc định khi đang tải
+                            .error(R.mipmap.ic_launcher)       // Ảnh lỗi nếu link die
+                            .into(holder.ivThumb);
+                } else {
+                    // Dữ liệu cũ (Local ID)
+                    try {
+                        int imageResId = Integer.parseInt(imageUrl);
+                        holder.ivThumb.setImageResource(imageResId);
+                    } catch (NumberFormatException e) {
+                        holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
+                    }
+                }
+            } else {
                 holder.ivThumb.setImageResource(R.mipmap.ic_launcher);
             }
         }

@@ -130,6 +130,15 @@ public interface SupabaseApiService {
             @Query("select") String select
     );
 
+    // Tìm buổi tập cho "Today plan"
+    @GET("workout_days")
+    Call<List<WorkoutDay>> getNextWorkoutDay(
+            @Query("plan_id") String eqPlanId,
+            @Query("day_order") String eqDayOrder,
+            @Query("select") String select
+    );
+
+
     // Bắt đầu một buổi tập mới của User
     @POST("user_workout_sessions")
     Call<Void> saveWorkoutSession(
