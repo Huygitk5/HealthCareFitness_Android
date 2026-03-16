@@ -88,8 +88,11 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         holder.btnAddFoodList.setOnClickListener(v -> {
             v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() -> {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
-                    selectedFoods.clear();
-                    selectedFoods.add(food);
+                    if (selectedFoods.contains(food)) {
+                        selectedFoods.remove(food);
+                    } else {
+                        selectedFoods.add(food);
+                    }
                     notifyDataSetChanged();
 
                     if (listener != null) {
