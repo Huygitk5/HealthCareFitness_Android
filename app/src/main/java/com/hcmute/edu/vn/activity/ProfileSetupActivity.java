@@ -54,6 +54,53 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
+        // --- TEXTWATCHER TỰ ĐỘNG ĐIỀN DẤU "/" NGAY LẬP TỨC ---
+        edtDOB.addTextChangedListener(new android.text.TextWatcher() {
+            private boolean isFormatting = false;
+            private boolean isDeleting = false;
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Nếu 'after' == 0 nghĩa là người dùng đang bấm nút xóa (Backspace)
+                isDeleting = after == 0;
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (isFormatting) return;
+                isFormatting = true;
+
+                // Xóa hết các ký tự không phải số
+                String digits = s.toString().replaceAll("[^\\d]", "");
+                StringBuilder formatted = new StringBuilder();
+
+                for (int i = 0; i < digits.length(); i++) {
+                    formatted.append(digits.charAt(i));
+                    // Chèn dấu "/" NẾU đã duyệt qua số thứ 2 hoặc thứ 4 (và chưa phải là số cuối cùng)
+                    if ((i == 1 || i == 3) && i < digits.length() - 1) {
+                        formatted.append("/");
+                    }
+                }
+
+                // LOGIC QUAN TRỌNG: Tự động chèn "/" ngay khi vừa gõ đủ 2 hoặc 4 số (VÀ không phải đang xóa)
+                if (!isDeleting && (digits.length() == 2 || digits.length() == 4)) {
+                    formatted.append("/");
+                }
+
+                // Cắt bỏ phần dư nếu gõ quá 10 ký tự
+                if (formatted.length() > 10) {
+                    formatted.delete(10, formatted.length());
+                }
+
+                edtDOB.setText(formatted.toString());
+                edtDOB.setSelection(formatted.length()); // Đẩy con trỏ nháy về cuối dòng
+
+                isFormatting = false;
+            }
+        });
         edtHeight = findViewById(R.id.edtHeight);
         edtWeight = findViewById(R.id.edtWeight);
         rgGender = findViewById(R.id.rgGender);
@@ -190,7 +237,29 @@ public class ProfileSetupActivity extends AppCompatActivity {
         try {
             double height = Double.parseDouble(heightStr);
             double weight = Double.parseDouble(weightStr);
+            if (targetWeightValue != null && !fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
+                String selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
 
+                double heightM = height / 100.0;
+                double targetBmi = targetWeightValue / (heightM * heightM);
+
+                // Nếu chọn Giảm mỡ
+                if (selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) {
+                    if (targetBmi < 18.5) {
+                        edtTargetWeight.setError("Cân nặng mục tiêu quá thấp! BMI sẽ rơi xuống mức thiếu cân (< 18.5). Hãy đổi sang mục tiêu Tăng cơ hoặc tăng mức cân nặng lên nhé!");
+                        edtTargetWeight.requestFocus();
+                        return; // Đạp phanh, chặn không cho gọi API lưu
+                    }
+                }
+                // Nếu chọn Tăng cơ
+                else if (selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) {
+                    if (targetBmi > 23.0) {
+                        edtTargetWeight.setError("Cân nặng mục tiêu quá cao! BMI sẽ vượt ngưỡng bình thường (> 23). Hãy điều chỉnh lại mức cân an toàn hơn nhé!");
+                        edtTargetWeight.requestFocus();
+                        return; // Đạp phanh, chặn không cho gọi API lưu
+                    }
+                }
+            }
             User updateData = new User();
             updateData.setName(fullName);
             updateData.setDateOfBirth(dobFormatted);
