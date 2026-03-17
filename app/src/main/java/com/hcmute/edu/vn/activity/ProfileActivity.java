@@ -4,7 +4,9 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,6 +45,11 @@ public class ProfileActivity extends AppCompatActivity {
     String currentUserId;
     List<Integer> currentConditionIds = new ArrayList<>(); // Lưu ID bệnh đang mắc để tick sẵn
 
+    TextView tvProfileGoal, tvProfileTargetWeight, btnEditGoal;
+    List<com.hcmute.edu.vn.model.FitnessGoal> fitnessGoalList = new ArrayList<>();
+    Integer currentGoalId = 1;
+    Float currentTargetWeight = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +75,10 @@ public class ProfileActivity extends AppCompatActivity {
         // Ánh xạ 2 cái thẻ CardView
         cardMedicalHistory = findViewById(R.id.cardMedicalHistory);
         cardAllergies = findViewById(R.id.cardAllergies);
+
+        tvProfileGoal = findViewById(R.id.tvProfileGoal);
+        tvProfileTargetWeight = findViewById(R.id.tvProfileTargetWeight);
+        btnEditGoal = findViewById(R.id.btnEditGoal);
 
         // ==============================================================
         // ĐÃ THÊM MỚI: Xử lý nút Switch Nhắc nhở uống nước
@@ -107,10 +118,131 @@ public class ProfileActivity extends AppCompatActivity {
             finish();
         });
 
+        // Bắt sự kiện bấm nút Thay đổi mục tiêu luyện tập
+        btnEditGoal.setOnClickListener(v -> showEditGoalDialog());
         // Nút Cập nhật y tế
         btnUpdateMedical.setOnClickListener(v -> showMedicalConditionDialog());
-
+        loadFitnessGoalsList();
         setupBottomNavigation();
+    }
+
+    // ==============================================================
+    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU
+    // ==============================================================
+    private void showEditGoalDialog() {
+        if (fitnessGoalList.isEmpty()) {
+            Toast.makeText(this, "Đang tải dữ liệu, vui lòng thử lại sau!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_edit_goal, null);
+        Spinner dialogSpinnerGoal = dialogView.findViewById(R.id.dialogSpinnerGoal);
+        LinearLayout dialogLayoutTarget = dialogView.findViewById(R.id.dialogLayoutTarget);
+        EditText dialogEdtTarget = dialogView.findViewById(R.id.dialogEdtTarget);
+        com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnDialogCancelGoal);
+        com.google.android.material.button.MaterialButton btnSave = dialogView.findViewById(R.id.btnDialogSaveGoal);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this).setView(dialogView).create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        // Đổ dữ liệu vào Spinner
+        List<String> goalNames = new ArrayList<>();
+        int selectedIndex = 0;
+        for (int i = 0; i < fitnessGoalList.size(); i++) {
+            goalNames.add(fitnessGoalList.get(i).getName());
+            if (fitnessGoalList.get(i).getId() == currentGoalId) {
+                selectedIndex = i; // Tìm vị trí mục tiêu hiện tại để set default
+            }
+        }
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_spinner_item, goalNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogSpinnerGoal.setAdapter(adapter);
+        dialogSpinnerGoal.setSelection(selectedIndex);
+
+        // Hiển thị cân nặng hiện tại (nếu có)
+        if (currentTargetWeight != null && currentTargetWeight > 0) {
+            dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
+        }
+
+        // Bắt sự kiện chọn Spinner để ẩn/hiện ô nhập cân nặng
+        dialogSpinnerGoal.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selectedName = goalNames.get(position).toLowerCase();
+                if (selectedName.contains("duy trì") || selectedName.contains("maintain")) {
+                    dialogLayoutTarget.setVisibility(View.GONE);
+                    dialogEdtTarget.setText("");
+                } else {
+                    dialogLayoutTarget.setVisibility(View.VISIBLE);
+                }
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+
+        // Bắt sự kiện Nút bấm
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            int newGoalId = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getId();
+            Float newTarget = null;
+
+            if (dialogLayoutTarget.getVisibility() == View.VISIBLE) {
+                String targetStr = dialogEdtTarget.getText().toString().trim();
+                if (!targetStr.isEmpty()) {
+                    try {
+                        newTarget = Float.parseFloat(targetStr);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+            }
+
+            // Gọi API Update (Chỉ update 2 trường này)
+            User updateData = new User();
+            updateData.setFitnessGoalId(newGoalId);
+            updateData.setTarget(newTarget);
+
+            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+            apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
+                        loadUserProfile(); // Tải lại thông tin để màn hình cập nhật UI
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+
+        dialog.show();
+    }
+
+    private void loadFitnessGoalsList() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.getAllFitnessGoals("*").enqueue(new Callback<List<com.hcmute.edu.vn.model.FitnessGoal>>() {
+            @Override
+            public void onResponse(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call, Response<List<com.hcmute.edu.vn.model.FitnessGoal>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    fitnessGoalList = response.body();
+                    if (username != null && !username.isEmpty()) {
+                        loadUserProfile(); // Tải xong Goal thì mới tải User để dịch được tên
+                    }
+                }
+            }
+            @Override
+            public void onFailure(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call, Throwable t) {}
+        });
     }
 
     // ==============================================================
@@ -183,6 +315,8 @@ public class ProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     User currentUser = response.body().get(0);
                     currentUserId = currentUser.getId();
+                    currentGoalId = currentUser.getFitnessGoalId();
+                    currentTargetWeight = currentUser.getTarget();
 
                     // Hiển thị thông tin cá nhân
                     txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName() : username);
@@ -195,6 +329,21 @@ public class ProfileActivity extends AppCompatActivity {
 
                     int age = calculateAge(currentUser.getDateOfBirth());
                     tvProfileAge.setText(age > 0 ? String.valueOf(age) : "--");
+
+                    String goalName = "Chưa thiết lập";
+                    for (com.hcmute.edu.vn.model.FitnessGoal g : fitnessGoalList) {
+                        if (g.getId() == currentGoalId) {
+                            goalName = g.getName();
+                            break;
+                        }
+                    }
+                    tvProfileGoal.setText(goalName);
+
+                    if (currentTargetWeight != null && currentTargetWeight > 0) {
+                        tvProfileTargetWeight.setText(currentTargetWeight + " kg");
+                    } else {
+                        tvProfileTargetWeight.setText("Duy trì");
+                    }
 
                     // HIỂN THỊ Y TẾ (SỬ DỤNG LOGIC POP-UP MỚI)
                     currentConditionIds.clear();
