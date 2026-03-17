@@ -31,6 +31,9 @@ public class User {
     @SerializedName("fitness_goal_id")
     private Integer fitnessGoalId;
 
+    @SerializedName("target")
+    private Float target;
+
     @SerializedName("created_at")
     private String createdAt;
 
@@ -99,5 +102,28 @@ public class User {
     }
     public void setUserMedicalConditions(List<UserMedicalCondition> userMedicalConditions) {
         this.userMedicalConditions = userMedicalConditions;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Float getTarget() {
+        return target;
+    }
+    public void setTarget(Float target) {
+        this.target = target;
+    }
+
+    public Integer getFitnessGoalId() {
+        return fitnessGoalId;
+    }
+
+    public void setFitnessGoalId(Integer fitnessGoalId) {
+        this.fitnessGoalId = fitnessGoalId;
     }
 }
