@@ -153,46 +153,100 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     // ==============================================================
-    // HÀM HELPER: XỬ LÝ RÚT GỌN CHUỖI VÀ TẠO POP-UP
+    // HÀM HELPER: XỬ LÝ RÚT GỌN CHUỖI VÀ GỌI POP-UP CHIP
     // ==============================================================
     private void setupCardDisplay(List<String> dataList, TextView textView, MaterialCardView cardView, String dialogTitle) {
         if (dataList.isEmpty()) {
             textView.setText("Không có");
-            cardView.setOnClickListener(null); // Không có gì thì không cho click
+            cardView.setOnClickListener(null);
             return;
         }
 
-        StringBuilder displayStr = new StringBuilder(); // Chuỗi ngắn (Max 3)
-        StringBuilder fullStr = new StringBuilder();    // Chuỗi dài (Full cho Dialog)
-
+        // Vẫn giữ logic tạo chuỗi rút gọn cho mặt ngoài của Thẻ
+        StringBuilder displayStr = new StringBuilder();
         for (int i = 0; i < dataList.size(); i++) {
-            String item = "• " + dataList.get(i) + "\n";
-            fullStr.append(item);
-
             if (i < 3) {
-                displayStr.append(item);
+                displayStr.append("• ").append(dataList.get(i)).append("\n");
             }
         }
-
         if (dataList.size() > 3) {
-            int extra = dataList.size() - 3;
-            displayStr.append("+ ").append(extra).append(" mục khác...");
+            displayStr.append("+ ").append(dataList.size() - 3).append(" mục khác...");
         }
-
         textView.setText(displayStr.toString().trim());
 
-        // Bắt sự kiện click vào Thẻ -> Mở Pop-up
-        String finalFullContent = fullStr.toString().trim();
-        cardView.setOnClickListener(v -> showDetailDialog(dialogTitle, finalFullContent));
+        // BẮT SỰ KIỆN MỞ DIALOG MỚI (Truyền luôn cái List vào)
+        boolean isAllergy = dialogTitle.toLowerCase().contains("dị ứng");
+        cardView.setOnClickListener(v -> showCustomChipDialog(dialogTitle, dataList, isAllergy));
     }
 
-    // HÀM HIỂN THỊ POP-UP CHI TIẾT
-    private void showDetailDialog(String title, String fullContent) {
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(title)
-                .setMessage(fullContent)
-                .setPositiveButton("ĐÓNG", (dialog, which) -> dialog.dismiss())
-                .show();
+    // ==============================================================
+    // HÀM VẼ DIALOG CUSTOM CHIP (ĐÃ CÓ CHIP GRADIENT)
+    // ==============================================================
+    private void showCustomChipDialog(String title, List<String> items, boolean isAllergy) {
+        // 1. Gắn file layout XML vừa tạo
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        com.google.android.material.chip.ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
+        MaterialButton btnDialogClose = dialogView.findViewById(R.id.btnDialogClose);
+
+        tvDialogTitle.setText(title);
+
+        // 2. Tạo Dialog
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        // Xóa phông đen để lộ lớp CardView bo góc phía sau (trong XML)
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        // 3. Vòng lặp vẽ từng cục "Chip" nhét vào ChipGroup
+        for (String itemName : items) {
+            // DÙNG TEXTVIEW THAY VÌ CHIP ĐỂ KHÔNG BỊ ÉP MÀU TÍM MẶC ĐỊNH
+            TextView chip = new TextView(this);
+            chip.setText(itemName);
+            chip.setTextSize(14f);
+            chip.setTypeface(null, android.graphics.Typeface.BOLD); // In đậm chữ cho giống Chip
+
+            // Tính toán kích thước bo viền (Padding) cho TextView to ra thành viên thuốc
+            int padX = (int) (16 * getResources().getDisplayMetrics().density);
+            int padY = (int) (8 * getResources().getDisplayMetrics().density);
+            chip.setPadding(padX, padY, padX, padY);
+
+            // TẠO NỀN GRADIENT
+            android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
+            chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+            chipGradient.setCornerRadius(100f); // Bo tròn lẳn 2 đầu
+
+            // Phối màu Gradient
+            if (isAllergy) {
+                // Gradient Dị ứng: Cam nhạt -> Cam đậm
+                chipGradient.setColors(new int[]{
+                        android.graphics.Color.parseColor("#FFE0B2"),
+                        android.graphics.Color.parseColor("#FFCCBC")
+                });
+                chip.setTextColor(android.graphics.Color.parseColor("#BF360C"));
+            } else {
+                // Gradient Bệnh lý: Xanh lơ nhạt -> Xanh ngọc bích
+                chipGradient.setColors(new int[]{
+                        android.graphics.Color.parseColor("#E0F2F1"),
+                        android.graphics.Color.parseColor("#B2DFDB")
+                });
+                chip.setTextColor(android.graphics.Color.parseColor("#004D40"));
+            }
+
+            // Gắn nền Gradient cho TextView
+            chip.setBackground(chipGradient);
+
+            // Nhét nó vào ChipGroup
+            chipGroupItems.addView(chip);
+        }
+
+        // 4. Bấm nút Đóng
+        btnDialogClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void showMedicalConditionDialog() {
