@@ -2,30 +2,38 @@ package com.hcmute.edu.vn.activity;
 
 import android.animation.ObjectAnimator;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.adapter.FoodAdapter;
+import com.hcmute.edu.vn.adapter.CalendarAdapter;
+import com.hcmute.edu.vn.adapter.DailyMealAdapter;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
-import com.hcmute.edu.vn.model.Food;
 import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserDailyMeal;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -33,40 +41,37 @@ import retrofit2.Response;
 
 public class NutritionActivity extends AppCompatActivity {
 
-    RecyclerView rvBreakfastMeat, rvBreakfastVeggie, rvBreakfastCarb;
-    RecyclerView rvLunchMeat, rvLunchVeggie, rvLunchCarb;
-    RecyclerView rvDinnerMeat, rvDinnerVeggie, rvDinnerCarb;
+    // === GIAO DIỆN MỚI ===
+    private RecyclerView rvCalendar;
+    private RecyclerView rvBreakfast, rvLunch, rvDinner;
+    private TextView tvEmptyBreakfast, tvEmptyLunch, tvEmptyDinner;
+    private TextView btnAddBreakfast, btnAddLunch, btnAddDinner;
 
-    // Các thành phần của Dashboard
-    CircularProgressIndicator progressCalories;
-    LinearProgressIndicator progressCarb, progressProtein, progressFat;
-    TextView tvTotalCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
+    // === DASHBOARD ===
+    private CircularProgressIndicator progressCalories;
+    private LinearProgressIndicator progressCarb, progressProtein, progressFat;
+    private TextView tvTotalCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
+    private TextView tvAllergiesWarning;
+    private androidx.cardview.widget.CardView cardAllergiesWarning;
 
-    // ĐÃ THÊM: Biến cho Khung cảnh báo dị ứng
-    TextView tvAllergiesWarning;
-    String username;
+    // === BIẾN DỮ LIỆU ===
+    private String username, userId;
+    private Date selectedDate; // Ngày đang được chọn trên lịch
+    private SimpleDateFormat apiDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
-    // Biến lưu trữ món ăn ĐANG ĐƯỢC CHỌN
-    Food selBfMeat, selBfVeggie, selBfCarb;
-    Food selLunchMeat, selLunchVeggie, selLunchCarb;
-    Food selDinnerMeat, selDinnerVeggie, selDinnerCarb;
+    private DailyMealAdapter breakfastAdapter, lunchAdapter, dinnerAdapter;
+    private List<UserDailyMeal> breakfastList = new ArrayList<>();
+    private List<UserDailyMeal> lunchList = new ArrayList<>();
+    private List<UserDailyMeal> dinnerList = new ArrayList<>();
 
-    // Lưu trữ danh sách để có thể chèn món mới vào
-    List<Food> listBfMeat, listBfVeggie, listBfCarb;
-    List<Food> listLunchMeat, listLunchVeggie, listLunchCarb;
-    List<Food> listDinnerMeat, listDinnerVeggie, listDinnerCarb;
+    // === MỤC TIÊU (TARGET) ===
+    private final double TARGET_CALORIES = 2000.0;
+    private final double TARGET_CARB = 250.0;
+    private final double TARGET_PROTEIN = 120.0;
+    private final double TARGET_FAT = 65.0;
 
-    // Biến cho thanh Tab chuyển đổi
-    TextView tabBreakfast, tabLunch, tabDinner;
-    LinearLayout layoutBreakfast, layoutLunch, layoutDinner;
-
-    // Mục tiêu (Target) trong ngày
-    final double TARGET_CALORIES = 2000.0;
-    final double TARGET_CARB = 250.0;
-    final double TARGET_PROTEIN = 120.0;
-    final double TARGET_FAT = 65.0;
-
-    private androidx.activity.result.ActivityResultLauncher<Intent> foodListLauncher;
+    // Lắng nghe khi thêm món mới xong thì reload lại dữ liệu
+    private ActivityResultLauncher<Intent> addMealLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,76 +81,64 @@ public class NutritionActivity extends AppCompatActivity {
         androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
-        // ĐÃ THÊM: Lấy username để lát nữa gọi API
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
+        userId = pref.getString("KEY_USER_ID", ""); // Lấy ID của User để truy vấn bảng Meal
+
+        selectedDate = new Date(); // Mặc định mở app lên là hôm nay
 
         initViews();
+        setupCalendar();
+        setupMealAdapters();
+        setupClickListeners();
 
-        loadDataFromApi();
-
-        // ĐÃ THÊM: Gọi API kéo dữ liệu Dị ứng của User
         loadUserAllergies();
+        loadMealsForSelectedDate(); // Tải thực đơn của hôm nay
 
         setupBottomNavigation();
-        calculateAndDisplayTotals();
 
-        // Lắng nghe dữ liệu trả về từ màn hình Xem thêm
-        foodListLauncher = registerForActivityResult(
-                new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+        // Nơi nhận tín hiệu quay về sau khi Thêm món xong
+        addMealLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
                 result -> {
-                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        Intent data = result.getData();
-                        String title = data.getStringExtra("CATEGORY_TITLE");
-
-                        // Tái tạo lại món ăn user vừa chọn
-                        Food newFood = new Food("999", data.getStringExtra("FOOD_NAME"), 1, "1 phần",
-                                data.getDoubleExtra("FOOD_CAL", 0), data.getDoubleExtra("FOOD_P", 0),
-                                data.getDoubleExtra("FOOD_C", 0), data.getDoubleExtra("FOOD_F", 0), 0.0);
-                        newFood.setImageUrl(data.getStringExtra("FOOD_IMAGE"));
-                        // Chèn món mới lên vị trí ĐẦU TIÊN của danh sách và chọn nó
-                        if (title != null) {
-                            if (title.contains("Thịt & Đạm (Bữa Sáng)")) addNewFoodToTop(rvBreakfastMeat, listBfMeat, newFood, f -> selBfMeat = f);
-                            else if (title.contains("Rau củ & Chất xơ (Bữa Sáng)")) addNewFoodToTop(rvBreakfastVeggie, listBfVeggie, newFood, f -> selBfVeggie = f);
-                            else if (title.contains("Tinh bột & Trái cây (Bữa Sáng)")) addNewFoodToTop(rvBreakfastCarb, listBfCarb, newFood, f -> selBfCarb = f);
-                            else if (title.contains("Thịt & Đạm (Bữa Trưa)")) addNewFoodToTop(rvLunchMeat, listLunchMeat, newFood, f -> selLunchMeat = f);
-                            else if (title.contains("Rau củ & Chất xơ (Bữa Trưa)")) addNewFoodToTop(rvLunchVeggie, listLunchVeggie, newFood, f -> selLunchVeggie = f);
-                            else if (title.contains("Tinh bột & Trái cây (Bữa Trưa)")) addNewFoodToTop(rvLunchCarb, listLunchCarb, newFood, f -> selLunchCarb = f);
-                            else if (title.contains("Thịt & Đạm (Bữa Tối)")) addNewFoodToTop(rvDinnerMeat, listDinnerMeat, newFood, f -> selDinnerMeat = f);
-                            else if (title.contains("Rau củ & Chất xơ (Bữa Tối)")) addNewFoodToTop(rvDinnerVeggie, listDinnerVeggie, newFood, f -> selDinnerVeggie = f);
-                            else if (title.contains("Tinh bột & Trái cây (Bữa Tối)")) addNewFoodToTop(rvDinnerCarb, listDinnerCarb, newFood, f -> selDinnerCarb = f);
-
-                            calculateAndDisplayTotals();
-                        }
+                    if (result.getResultCode() == RESULT_OK) {
+                        // Vừa thêm món xong -> Tải lại danh sách thức ăn của ngày đó
+                        loadMealsForSelectedDate();
                     }
                 }
         );
     }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
-        loadUserAllergies();
+
+        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isAllergyDirty = pref.getBoolean("ALLERGY_DIRTY", true);
+
+        if (isAllergyDirty) {
+            new android.os.Handler().postDelayed(() -> {
+                loadUserAllergies();
+            }, 300);
+
+            pref.edit().putBoolean("ALLERGY_DIRTY", false).apply();
+        }
     }
 
     private void initViews() {
-        rvBreakfastMeat = findViewById(R.id.rvBreakfastMeat);
-        rvBreakfastVeggie = findViewById(R.id.rvBreakfastVeggie);
-        rvBreakfastCarb = findViewById(R.id.rvBreakfastCarb);
+        rvCalendar = findViewById(R.id.rvCalendar);
 
-        rvLunchMeat = findViewById(R.id.rvLunchMeat);
-        rvLunchVeggie = findViewById(R.id.rvLunchVeggie);
-        rvLunchCarb = findViewById(R.id.rvLunchCarb);
+        rvBreakfast = findViewById(R.id.rvBreakfast);
+        rvLunch = findViewById(R.id.rvLunch);
+        rvDinner = findViewById(R.id.rvDinner);
 
-        rvDinnerMeat = findViewById(R.id.rvDinnerMeat);
-        rvDinnerVeggie = findViewById(R.id.rvDinnerVeggie);
-        rvDinnerCarb = findViewById(R.id.rvDinnerCarb);
+        tvEmptyBreakfast = findViewById(R.id.tvEmptyBreakfast);
+        tvEmptyLunch = findViewById(R.id.tvEmptyLunch);
+        tvEmptyDinner = findViewById(R.id.tvEmptyDinner);
+
+        btnAddBreakfast = findViewById(R.id.btnAddBreakfast);
+        btnAddLunch = findViewById(R.id.btnAddLunch);
+        btnAddDinner = findViewById(R.id.btnAddDinner);
 
         progressCalories = findViewById(R.id.progressCalories);
         tvTotalCalories = findViewById(R.id.tvTotalCalories);
@@ -155,217 +148,152 @@ public class NutritionActivity extends AppCompatActivity {
         tvTotalProtein = findViewById(R.id.tvTotalProtein);
         progressFat = findViewById(R.id.progressFat);
         tvTotalFat = findViewById(R.id.tvTotalFat);
-
-        // ĐÃ THÊM: Ánh xạ view
         tvAllergiesWarning = findViewById(R.id.tvAllergiesWarning);
-
-        findViewById(R.id.btnMoreBfMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Sáng)", 1));
-        findViewById(R.id.btnMoreBfVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Sáng)", 2));
-        findViewById(R.id.btnMoreBfCarb).setOnClickListener(v -> openFoodList("Tinh bột & Trái cây (Bữa Sáng)", 3));
-
-        findViewById(R.id.btnMoreLunchMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Trưa)", 1));
-        findViewById(R.id.btnMoreLunchVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Trưa)", 2));
-        findViewById(R.id.btnMoreLunchCarb).setOnClickListener(v -> openFoodList("Tinh bột & Trái cây (Bữa Trưa)", 3));
-
-        findViewById(R.id.btnMoreDinnerMeat).setOnClickListener(v -> openFoodList("Thịt & Đạm (Bữa Tối)", 1));
-        findViewById(R.id.btnMoreDinnerVeggie).setOnClickListener(v -> openFoodList("Rau củ & Chất xơ (Bữa Tối)", 2));
-        findViewById(R.id.btnMoreDinnerCarb).setOnClickListener(v -> openFoodList("Tinh bột & Trái cây (Bữa Tối)", 3));
-
-        // Ánh xạ Tab chuyển đổi
-        tabBreakfast = findViewById(R.id.tabBreakfast);
-        tabLunch = findViewById(R.id.tabLunch);
-        tabDinner = findViewById(R.id.tabDinner);
-
-        layoutBreakfast = findViewById(R.id.layoutBreakfast);
-        layoutLunch = findViewById(R.id.layoutLunch);
-        layoutDinner = findViewById(R.id.layoutDinner);
-
-        // Bắt sự kiện Click chuyển Tab
-        tabBreakfast.setOnClickListener(v -> switchTab(0));
-        tabLunch.setOnClickListener(v -> switchTab(1));
-        tabDinner.setOnClickListener(v -> switchTab(2));
-
-        // Khởi tạo các list rỗng để tránh NullPointerException khi app vừa mở
-        listBfMeat = new ArrayList<>(); listBfVeggie = new ArrayList<>(); listBfCarb = new ArrayList<>();
-        listLunchMeat = new ArrayList<>(); listLunchVeggie = new ArrayList<>(); listLunchCarb = new ArrayList<>();
-        listDinnerMeat = new ArrayList<>(); listDinnerVeggie = new ArrayList<>(); listDinnerCarb = new ArrayList<>();
+        cardAllergiesWarning = findViewById(R.id.cardAllergiesWarning);
     }
 
     // ===============================================
-    // HÀM LẤY DANH SÁCH DỊ ỨNG CỦA USER TỪ API
+    // THANH CHỌN NGÀY (LỊCH 7 NGÀY)
     // ===============================================
-    private void loadUserAllergies() {
-        if (username == null || username.isEmpty()) return;
+    private void setupCalendar() {
+        List<Date> dates = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
 
-        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
+        // Tạo danh sách 7 ngày (Từ hôm nay đến 6 ngày tới)
+        for (int i = 0; i < 7; i++) {
+            dates.add(calendar.getTime());
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
 
-        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    User currentUser = response.body().get(0);
-                    StringBuilder allergyStr = new StringBuilder();
-
-                    // Chạy vòng lặp lọc ra các bệnh có type là "allergy"
-                    if (currentUser.getUserMedicalConditions() != null) {
-                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
-                            MedicalCondition mc = umc.getMedicalCondition();
-                            if (mc != null && "allergy".equalsIgnoreCase(mc.getType())) {
-                                allergyStr.append(mc.getName()).append(", ");
-                            }
-                        }
-                    }
-
-                    // Cập nhật lên màn hình
-                    if (allergyStr.length() > 0) {
-                        String finalStr = allergyStr.substring(0, allergyStr.length() - 2);
-                        tvAllergiesWarning.setText("⚠️ Tránh: " + finalStr);
-                    } else {
-                        tvAllergiesWarning.setText("⚠️ Tránh: Không có");
-                    }
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<User>> call, Throwable t) {
-                tvAllergiesWarning.setText("⚠️ Tránh: Lỗi kết nối mạng");
-            }
+        CalendarAdapter calendarAdapter = new CalendarAdapter(this, dates, date -> {
+            selectedDate = date; // Đổi ngày đang chọn
+            loadMealsForSelectedDate(); // Tải lại thực đơn của ngày mới
         });
+
+        rvCalendar.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        rvCalendar.setAdapter(calendarAdapter);
     }
 
     // ===============================================
-    // HÀM TẢI DỮ LIỆU MÓN ĂN TỪ SUPABASE
+    // CÀI ĐẶT 3 DANH SÁCH BỮA ĂN
     // ===============================================
-    private void loadDataFromApi() {
+    private void setupMealAdapters() {
+        DailyMealAdapter.OnMealDeleteListener deleteListener = meal -> deleteMealFromDatabase(meal);
+
+        breakfastAdapter = new DailyMealAdapter(this, breakfastList, deleteListener);
+        lunchAdapter = new DailyMealAdapter(this, lunchList, deleteListener);
+        dinnerAdapter = new DailyMealAdapter(this, dinnerList, deleteListener);
+
+        // Tắt tính năng cuộn lồng nhau để NestedScrollView cha hoạt động mượt
+        rvBreakfast.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
+        rvLunch.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
+        rvDinner.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
+
+        rvBreakfast.setAdapter(breakfastAdapter);
+        rvLunch.setAdapter(lunchAdapter);
+        rvDinner.setAdapter(dinnerAdapter);
+    }
+
+    // ===============================================
+    // BẮT SỰ KIỆN NÚT [+] THÊM MÓN
+    // ===============================================
+    private void setupClickListeners() {
+        btnAddBreakfast.setOnClickListener(v -> openMealSearch("BREAKFAST"));
+        btnAddLunch.setOnClickListener(v -> openMealSearch("LUNCH"));
+        btnAddDinner.setOnClickListener(v -> openMealSearch("DINNER"));
+    }
+
+    private void openMealSearch(String mealType) {
+        // TẠM THỜI MÌNH SẼ TRUYỀN SANG MÀN HÌNH TÌM KIẾM (Sẽ tạo ở bước sau)
+        Intent intent = new Intent(NutritionActivity.this, MealSearchActivity.class);
+        intent.putExtra("EXTRA_DATE", apiDateFormat.format(selectedDate));
+        intent.putExtra("EXTRA_MEAL_TYPE", mealType);
+        addMealLauncher.launch(intent);
+    }
+
+    // ===============================================
+    // LẤY DỮ LIỆU THỰC ĐƠN TRONG NGÀY
+    // ===============================================
+    private void loadMealsForSelectedDate() {
+        if (userId == null || userId.isEmpty()) return;
+
+        String formattedDate = apiDateFormat.format(selectedDate);
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // 1. Tải danh sách Thịt & Đạm (Category = 1)
-        apiService.getFoodsByCategory("eq.1", "*").enqueue(new Callback<List<Food>>() {
+        apiService.getDailyMeals("eq." + userId, "eq." + formattedDate, "*, foods(*)").enqueue(new Callback<List<UserDailyMeal>>() {
             @Override
-            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
+            public void onResponse(Call<List<UserDailyMeal>> call, Response<List<UserDailyMeal>> response) {
+                breakfastList.clear();
+                lunchList.clear();
+                dinnerList.clear();
+
                 if (response.isSuccessful() && response.body() != null) {
-                    List<Food> meats = response.body();
-                    // Tạo bản sao độc lập cho 3 bữa
-                    listBfMeat = new ArrayList<>(meats);
-                    listLunchMeat = new ArrayList<>(meats);
-                    listDinnerMeat = new ArrayList<>(meats);
-
-                    setupRecyclerView(rvBreakfastMeat, listBfMeat, food -> selBfMeat = food);
-                    setupRecyclerView(rvLunchMeat, listLunchMeat, food -> selLunchMeat = food);
-                    setupRecyclerView(rvDinnerMeat, listDinnerMeat, food -> selDinnerMeat = food);
+                    // Phân loại thức ăn vào đúng bữa
+                    for (UserDailyMeal meal : response.body()) {
+                        if ("BREAKFAST".equalsIgnoreCase(meal.getMealType())) breakfastList.add(meal);
+                        else if ("LUNCH".equalsIgnoreCase(meal.getMealType())) lunchList.add(meal);
+                        else if ("DINNER".equalsIgnoreCase(meal.getMealType())) dinnerList.add(meal);
+                    }
                 }
-            }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
-        });
 
-        // 2. Tải danh sách Rau Củ & Chất xơ (Category = 2)
-        apiService.getFoodsByCategory("eq.2", "*").enqueue(new Callback<List<Food>>() {
+                // Cập nhật Giao diện
+                updateMealUI();
+                // Tính toán Macro dựa trên đống thức ăn này
+                calculateAndDisplayTotals(response.body());
+            }
+
             @Override
-            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Food> veggies = response.body();
-                    listBfVeggie = new ArrayList<>(veggies);
-                    listLunchVeggie = new ArrayList<>(veggies);
-                    listDinnerVeggie = new ArrayList<>(veggies);
-
-                    setupRecyclerView(rvBreakfastVeggie, listBfVeggie, food -> selBfVeggie = food);
-                    setupRecyclerView(rvLunchVeggie, listLunchVeggie, food -> selLunchVeggie = food);
-                    setupRecyclerView(rvDinnerVeggie, listDinnerVeggie, food -> selDinnerVeggie = food);
-                }
+            public void onFailure(Call<List<UserDailyMeal>> call, Throwable t) {
+                Toast.makeText(NutritionActivity.this, "Lỗi kết nối tải thực đơn", Toast.LENGTH_SHORT).show();
             }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
-        });
-
-        // 3. Tải danh sách Tinh bột & Trái cây (Category = 3)
-        apiService.getFoodsByCategory("eq.3", "*").enqueue(new Callback<List<Food>>() {
-            @Override
-            public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    List<Food> carbs = response.body();
-                    listBfCarb = new ArrayList<>(carbs);
-                    listLunchCarb = new ArrayList<>(carbs);
-                    listDinnerCarb = new ArrayList<>(carbs);
-
-                    setupRecyclerView(rvBreakfastCarb, listBfCarb, food -> selBfCarb = food);
-                    setupRecyclerView(rvLunchCarb, listLunchCarb, food -> selLunchCarb = food);
-                    setupRecyclerView(rvDinnerCarb, listDinnerCarb, food -> selDinnerCarb = food);
-                }
-            }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
         });
     }
 
-    private void openFoodList(String title, int categoryId) {
-        Intent intent = new Intent(NutritionActivity.this, FoodListActivity.class);
-        intent.putExtra("CATEGORY_TITLE", title);
-        intent.putExtra("CATEGORY_ID", categoryId);
-        foodListLauncher.launch(intent);
+    private void updateMealUI() {
+        breakfastAdapter.updateList(breakfastList);
+        lunchAdapter.updateList(lunchList);
+        dinnerAdapter.updateList(dinnerList);
+
+        // Ẩn/Hiện chữ "Chưa có thực đơn"
+        tvEmptyBreakfast.setVisibility(breakfastList.isEmpty() ? View.VISIBLE : View.GONE);
+        tvEmptyLunch.setVisibility(lunchList.isEmpty() ? View.VISIBLE : View.GONE);
+        tvEmptyDinner.setVisibility(dinnerList.isEmpty() ? View.VISIBLE : View.GONE);
     }
 
     // ===============================================
-    // HÀM XỬ LÝ CHUYỂN ĐỔI TAB BỮA ĂN
+    // XÓA MÓN ĂN VÀ TÍNH LẠI MACRO
     // ===============================================
-    private void switchTab(int tabIndex) {
-        tabBreakfast.setBackgroundResource(android.R.color.transparent);
-        tabBreakfast.setTextColor(android.graphics.Color.parseColor("#757575"));
-
-        tabLunch.setBackgroundResource(android.R.color.transparent);
-        tabLunch.setTextColor(android.graphics.Color.parseColor("#757575"));
-
-        tabDinner.setBackgroundResource(android.R.color.transparent);
-        tabDinner.setTextColor(android.graphics.Color.parseColor("#757575"));
-
-        layoutBreakfast.setVisibility(android.view.View.GONE);
-        layoutLunch.setVisibility(android.view.View.GONE);
-        layoutDinner.setVisibility(android.view.View.GONE);
-
-        if (tabIndex == 0) {
-            tabBreakfast.setBackgroundResource(R.drawable.bg_nav_active);
-            tabBreakfast.setTextColor(android.graphics.Color.WHITE);
-            layoutBreakfast.setVisibility(android.view.View.VISIBLE);
-
-        } else if (tabIndex == 1) {
-            tabLunch.setBackgroundResource(R.drawable.bg_nav_active);
-            tabLunch.setTextColor(android.graphics.Color.WHITE);
-            layoutLunch.setVisibility(android.view.View.VISIBLE);
-
-        } else if (tabIndex == 2) {
-            tabDinner.setBackgroundResource(R.drawable.bg_nav_active);
-            tabDinner.setTextColor(android.graphics.Color.WHITE);
-            layoutDinner.setVisibility(android.view.View.VISIBLE);
-        }
-    }
-
-    // ===============================================
-    // HÀM HELPER XỬ LÝ CHÈN MÓN MỚI LÊN ĐẦU DANH SÁCH
-    // ===============================================
-    private void addNewFoodToTop(RecyclerView rv, List<Food> list, Food newFood, OnFoodUpdate callback) {
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).getName().equals(newFood.getName())) {
-                list.remove(i);
-                break;
+    private void deleteMealFromDatabase(UserDailyMeal meal) {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.deleteDailyMeal("eq." + meal.getId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(NutritionActivity.this, "Đã xóa món ăn!", Toast.LENGTH_SHORT).show();
+                    loadMealsForSelectedDate(); // Tải lại danh sách
+                }
             }
-        }
-        list.add(0, newFood);
-        setupRecyclerView(rv, list, callback);
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(NutritionActivity.this, "Xóa thất bại!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private void calculateAndDisplayTotals() {
+    private void calculateAndDisplayTotals(List<UserDailyMeal> allMealsForToday) {
         double totalCal = 0, totalCarb = 0, totalProtein = 0, totalFat = 0;
 
-        Food[] selectedFoods = {
-                selBfMeat, selBfVeggie, selBfCarb,
-                selLunchMeat, selLunchVeggie, selLunchCarb,
-                selDinnerMeat, selDinnerVeggie, selDinnerCarb
-        };
+        if (allMealsForToday != null) {
+            for (UserDailyMeal meal : allMealsForToday) {
+                if (meal.getFood() != null) {
 
-        for (Food f : selectedFoods) {
-            if (f != null) {
-                totalCal += f.getCalories() != null ? f.getCalories() : 0;
-                totalCarb += f.getCarbG() != null ? f.getCarbG() : 0;
-                totalProtein += f.getProteinG() != null ? f.getProteinG() : 0;
-                totalFat += f.getFatG() != null ? f.getFatG() : 0;
+                    double qty = meal.getQuantityMultiplier();
+
+                    totalCal += (meal.getFood().getCalories() != null ? meal.getFood().getCalories() : 0) * qty;
+                    totalCarb += (meal.getFood().getCarbG() != null ? meal.getFood().getCarbG() : 0) * qty;
+                    totalProtein += (meal.getFood().getProteinG() != null ? meal.getFood().getProteinG() : 0) * qty;
+                    totalFat += (meal.getFood().getFatG() != null ? meal.getFood().getFatG() : 0) * qty;
+                }
             }
         }
 
@@ -392,24 +320,85 @@ public class NutritionActivity extends AppCompatActivity {
         animation.start();
     }
 
-    public interface OnFoodUpdate {
-        void onUpdate(Food food);
+    // ===============================================
+    // CÁC HÀM CŨ GIỮ NGUYÊN (Dị ứng, Thanh điều hướng)
+    // ===============================================
+    // ===============================================
+    // HÀM LẤY DANH SÁCH DỊ ỨNG VÀ HIỂN THỊ (CÓ RÚT GỌN)
+    // ===============================================
+    private void loadUserAllergies() {
+        if (username == null || username.isEmpty()) return;
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    User currentUser = response.body().get(0);
+                    List<String> allergyList = new ArrayList<>();
+
+                    if (currentUser.getUserMedicalConditions() != null) {
+                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
+                            MedicalCondition mc = umc.getMedicalCondition();
+                            if (mc != null) {
+                                String type = mc.getType();
+                                // Lọc riêng phần Dị ứng
+                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
+                                    allergyList.add(mc.getName());
+                                }
+                            }
+                        }
+                    }
+
+                    // Gọi hàm thiết lập giao diện
+                    setupWarningDisplay(allergyList);
+                }
+            }
+            @Override public void onFailure(Call<List<User>> call, Throwable t) {}
+        });
     }
 
-    private void setupRecyclerView(RecyclerView recyclerView, List<Food> foodList, OnFoodUpdate callback) {
-        FoodAdapter adapter = new FoodAdapter(this, foodList, food -> {
-            callback.onUpdate(food);
-            calculateAndDisplayTotals(); // Tính toán khi user click
-        });
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        recyclerView.setAdapter(adapter);
-
-        // QUAN TRỌNG: Nếu có data, chọn món đầu tiên và TÍNH TOÁN LUÔN
-        if (!foodList.isEmpty()) {
-            callback.onUpdate(foodList.get(0));
-            calculateAndDisplayTotals(); // Thêm dòng này để dashboard chạy ngay khi load xong data
+    // HÀM HELPER: RÚT GỌN CHUỖI VÀ TẠO SỰ KIỆN CLICK
+    private void setupWarningDisplay(List<String> dataList) {
+        if (dataList.isEmpty()) {
+            tvAllergiesWarning.setText("⚠️ Tránh: Không có");
+            cardAllergiesWarning.setOnClickListener(null); // Không có gì thì khóa click
+            return;
         }
+
+        StringBuilder displayStr = new StringBuilder();
+        StringBuilder fullStr = new StringBuilder();
+
+        for (int i = 0; i < dataList.size(); i++) {
+            String item = "• " + dataList.get(i) + "\n";
+            fullStr.append(item);
+
+            if (i < 3) {
+                displayStr.append(item);
+            }
+        }
+
+        if (dataList.size() > 3) {
+            int extra = dataList.size() - 3;
+            displayStr.append("+ ").append(extra).append(" mục khác...");
+        }
+
+        tvAllergiesWarning.setText("⚠️ Tránh:\n" + displayStr.toString().trim());
+
+        // Bắt sự kiện mở Pop-up
+        String finalFullContent = fullStr.toString().trim();
+        cardAllergiesWarning.setOnClickListener(v -> showDetailDialog("Thực phẩm cần tránh", finalFullContent));
+    }
+
+    // HÀM TẠO POP-UP (MATERIAL DIALOG)
+    private void showDetailDialog(String title, String fullContent) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(title)
+                .setMessage(fullContent)
+                .setPositiveButton("ĐÓNG", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void setupBottomNavigation() {

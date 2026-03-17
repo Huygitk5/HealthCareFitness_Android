@@ -13,6 +13,8 @@ public class MedicalCondition {
     private String type; // 'allergy', 'disease', 'history'
     @SerializedName("restricted_foods")
     private List<Food> restrictedFoods;
+    @SerializedName("condition_restricted_ingredients")
+    private List<ConditionRestrictedIngredient> restrictedIngredients;
 
     public MedicalCondition(Integer id, String name, String type, List<Food> restrictedFoods) {
         this.id = id;
@@ -51,5 +53,13 @@ public class MedicalCondition {
 
     public void setRestrictedFoods(List<Food> restrictedFoods) {
         this.restrictedFoods = restrictedFoods;
+    }
+
+    public List<ConditionRestrictedIngredient> getRestrictedIngredients() {
+        return restrictedIngredients;
+    }
+
+    public void setRestrictedIngredients(List<ConditionRestrictedIngredient> restrictedIngredients) {
+        this.restrictedIngredients = restrictedIngredients;
     }
 }

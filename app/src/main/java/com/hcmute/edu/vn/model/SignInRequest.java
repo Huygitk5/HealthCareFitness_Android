@@ -1,4 +1,4 @@
-package com.hcmute.edu.vn.activity;
+package com.hcmute.edu.vn.model;
 import com.google.gson.annotations.SerializedName;
 
 public class SignInRequest {

@@ -1,5 +1,7 @@
 package com.hcmute.edu.vn.adapter;
 
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.activity.FoodDetailActivity;
 import com.hcmute.edu.vn.model.Food;
 
 import java.util.ArrayList;
@@ -23,7 +26,6 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
     private List<Food> selectedFoods = new ArrayList<>();
     private OnFoodSelectionListener listener;
 
-    // Interface để báo cho Activity biết số lượng món ăn đang được chọn
     public interface OnFoodSelectionListener {
         void onSelectionChanged(int selectedCount);
     }
@@ -33,7 +35,6 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         this.listener = listener;
     }
 
-    // Hàm để lấy danh sách các món ăn đã được người dùng tick chọn
     public List<Food> getSelectedFoods() {
         return selectedFoods;
     }
@@ -47,13 +48,11 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        // 1. Reset kích thước về 1f để chống lỗi kẹt giao diện khi cuộn
         holder.itemView.setScaleX(1f);
         holder.itemView.setScaleY(1f);
 
         Food food = foodList.get(position);
 
-        // Gắn dữ liệu văn bản
         holder.tvFoodNameList.setText(food.getName());
         holder.tvServingSize.setText(food.getServingSize() != null ? food.getServingSize() : "1 phần");
         holder.tvFoodCaloList.setText(String.valueOf(Math.round(food.getCalories())));
@@ -63,44 +62,54 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         holder.tvMacroF.setText("F: " + Math.round(food.getFatG()) + "g");
 
         com.bumptech.glide.Glide.with(holder.itemView.getContext())
-                .load(food.getImageUrl()) // Nhớ check lại tên hàm getImageUrl() trong model Food
-                .placeholder(R.mipmap.ic_launcher_round) // Ảnh chờ lúc đang tải mạng
-                .error(R.mipmap.ic_launcher_round)       // Ảnh báo lỗi nếu link hỏng
+                .load(food.getImageUrl())
+                .placeholder(R.mipmap.ic_launcher_round)
+                .error(R.mipmap.ic_launcher_round)
                 .into(holder.imgFoodList);
-        // Kiểm tra xem món này có đang nằm trong danh sách "được tick chọn" không
+
         boolean isSelected = selectedFoods.contains(food);
 
-        // 2. LOGIC HIỂN THỊ HIGHLIGHT (Y hệt màn hình Workout)
+        // LOGIC HIỂN THỊ HIGHLIGHT
         if (isSelected) {
             holder.cardFoodVertical.setStrokeWidth(4);
-            holder.cardFoodVertical.setStrokeColor(Color.parseColor("#589A8D")); // Xanh đậm
-            holder.cardFoodVertical.setCardBackgroundColor(Color.parseColor("#F1F8F7")); // Nền xanh nhạt
+            holder.cardFoodVertical.setStrokeColor(Color.parseColor("#589A8D"));
+            holder.cardFoodVertical.setCardBackgroundColor(Color.parseColor("#F1F8F7"));
             holder.tvFoodNameList.setTextColor(Color.parseColor("#589A8D"));
         } else {
             holder.cardFoodVertical.setStrokeWidth(2);
-            holder.cardFoodVertical.setStrokeColor(Color.parseColor("#E0E0E0")); // Xám nhạt
+            holder.cardFoodVertical.setStrokeColor(Color.parseColor("#E0E0E0"));
             holder.cardFoodVertical.setCardBackgroundColor(Color.WHITE);
             holder.tvFoodNameList.setTextColor(Color.parseColor("#212121"));
         }
 
-        // 3. Hiệu ứng click Nhún - Nảy
-        holder.itemView.setOnClickListener(v -> {
-            v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).withEndAction(() -> {
-
+        // =======================================================
+        // 1. SỰ KIỆN: BẤM VÀO NÚT [+] VỚI HIỆU ỨNG NHÚN NẢY
+        // =======================================================
+        holder.btnAddFoodList.setOnClickListener(v -> {
+            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() -> {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
-
-                    // ĐÃ SỬA: Xóa sạch danh sách cũ trước khi thêm món mới vào (Chỉ chọn 1)
-                    selectedFoods.clear();
-                    selectedFoods.add(food);
-
+                    if (selectedFoods.contains(food)) {
+                        selectedFoods.remove(food);
+                    } else {
+                        selectedFoods.add(food);
+                    }
                     notifyDataSetChanged();
 
                     if (listener != null) {
                         listener.onSelectionChanged(selectedFoods.size());
                     }
-
                 }).start();
             }).start();
+        });
+
+        // =======================================================
+        // 2. SỰ KIỆN: BẤM VÀO THẺ ĐỂ XEM CHI TIẾT
+        // =======================================================
+        holder.itemView.setOnClickListener(v -> {
+            Context context = v.getContext();
+            Intent intent = new Intent(context, FoodDetailActivity.class);
+            intent.putExtra("FOOD_ID", food.getId()); // Gửi ID món ăn
+            context.startActivity(intent);
         });
     }
 
@@ -110,7 +119,7 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView cardFoodVertical;
+        MaterialCardView cardFoodVertical, btnAddFoodList; // Khai báo thêm nút [+]
         ShapeableImageView imgFoodList;
         TextView tvFoodNameList, tvServingSize, tvMacroP, tvMacroC, tvMacroF, tvFoodCaloList;
 
@@ -124,6 +133,7 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
             tvMacroC = itemView.findViewById(R.id.tvMacroC);
             tvMacroF = itemView.findViewById(R.id.tvMacroF);
             tvFoodCaloList = itemView.findViewById(R.id.tvFoodCaloList);
+            btnAddFoodList = itemView.findViewById(R.id.btnAddFoodList); // Ánh xạ nút [+]
         }
     }
 }

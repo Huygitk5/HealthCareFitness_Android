@@ -17,19 +17,19 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:progress="33" />
 
+    <!-- Thay thế đoạn TextView id/tvStepCount bằng đoạn này -->
+
     <ImageButton
         android:id="@+id/btnBack"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginStart="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="12dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_arrow_back_breakfast"
-        app:tint="#333333"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/stepProgressBar" />
+        app:layout_constraintTop_toBottomOf="@id/stepProgressBar"
+        app:tint="#333333" />
 
-    <!-- Thay thế đoạn TextView id/tvStepCount bằng đoạn này -->
     <LinearLayout
         android:id="@+id/stepIndicatorContainer"
         android:layout_width="0dp"
