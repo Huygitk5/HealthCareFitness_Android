@@ -97,6 +97,9 @@ public class NutritionActivity extends AppCompatActivity {
 
         setupBottomNavigation();
 
+        com.google.android.material.floatingactionbutton.FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
+        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
+
         // Nơi nhận tín hiệu quay về sau khi Thêm món xong
         addMealLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
