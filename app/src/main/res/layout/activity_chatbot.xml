@@ -11,7 +11,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="0dp"
         app:cardElevation="6dp"
         app:strokeWidth="0dp">
@@ -19,6 +18,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:background="@drawable/bg_header_gradient"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="16dp">
@@ -32,8 +32,6 @@
                 android:focusable="true"
                 android:src="@drawable/ic_back"
                 app:tint="#212121" />
-
-
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -254,6 +252,15 @@
 
         </LinearLayout>
     </LinearLayout>
+
+    <ImageView
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_above="@id/bottomContainer"
+        android:layout_below="@id/topBar"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/ic_chatbot"
+        android:alpha="0.1" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvMessages"
