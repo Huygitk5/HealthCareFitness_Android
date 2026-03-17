@@ -188,8 +188,8 @@
             android:id="@+id/spinnerFitnessGoal"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:background="@drawable/bg_input_rounded"
             android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_input_rounded"
             android:paddingStart="10dp" />
 
         <LinearLayout
