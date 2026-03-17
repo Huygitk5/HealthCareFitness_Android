@@ -70,7 +70,7 @@ public class WorkoutActivity extends AppCompatActivity {
 
             View bottomNav = findViewById(R.id.bottomNav);
             if (bottomNav != null) {
-                bottomNav.setPadding(0, 0, 0, systemBars.bottom);
+                bottomNav.setPadding(0, 0, 0, systemBars.bottom-10);
             }
 
             return insets;

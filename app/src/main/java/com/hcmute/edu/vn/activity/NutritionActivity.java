@@ -360,23 +360,21 @@ public class NutritionActivity extends AppCompatActivity {
         });
     }
 
-    // HÀM HELPER: RÚT GỌN CHUỖI VÀ TẠO SỰ KIỆN CLICK
+    // ==============================================================
+    // HÀM HELPER: RÚT GỌN CHUỖI VÀ GỌI POP-UP CHIP (ĐÃ CẬP NHẬT)
+    // ==============================================================
     private void setupWarningDisplay(List<String> dataList) {
         if (dataList.isEmpty()) {
-            tvAllergiesWarning.setText("⚠️ Tránh: Không có");
+            tvAllergiesWarning.setText("⚠️ Cần tránh: Không có");
             cardAllergiesWarning.setOnClickListener(null); // Không có gì thì khóa click
             return;
         }
 
         StringBuilder displayStr = new StringBuilder();
-        StringBuilder fullStr = new StringBuilder();
 
         for (int i = 0; i < dataList.size(); i++) {
-            String item = "• " + dataList.get(i) + "\n";
-            fullStr.append(item);
-
             if (i < 3) {
-                displayStr.append(item);
+                displayStr.append("• ").append(dataList.get(i)).append("\n");
             }
         }
 
@@ -385,22 +383,80 @@ public class NutritionActivity extends AppCompatActivity {
             displayStr.append("+ ").append(extra).append(" mục khác...");
         }
 
-        tvAllergiesWarning.setText("⚠️ Tránh:\n" + displayStr.toString().trim());
+        tvAllergiesWarning.setText("⚠️ Cần tránh:\n" + displayStr.toString().trim());
 
-        // Bắt sự kiện mở Pop-up
-        String finalFullContent = fullStr.toString().trim();
-        cardAllergiesWarning.setOnClickListener(v -> showDetailDialog("Thực phẩm cần tránh", finalFullContent));
+        // BẮT SỰ KIỆN MỞ DIALOG MỚI (Truyền thẳng List vào, isAllergy = true)
+        cardAllergiesWarning.setOnClickListener(v -> showCustomChipDialog("Thực phẩm cần tránh", dataList, true));
     }
 
-    // HÀM TẠO POP-UP (MATERIAL DIALOG)
-    private void showDetailDialog(String title, String fullContent) {
-        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                .setTitle(title)
-                .setMessage(fullContent)
-                .setPositiveButton("ĐÓNG", (dialog, which) -> dialog.dismiss())
-                .show();
-    }
+    // ==============================================================
+    // HÀM VẼ DIALOG CUSTOM CHIP (COPY TỪ PROFILE SANG)
+    // ==============================================================
+    private void showCustomChipDialog(String title, List<String> items, boolean isAllergy) {
+        // 1. Gắn file layout XML
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        com.google.android.material.chip.ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
+        com.google.android.material.button.MaterialButton btnDialogClose = dialogView.findViewById(R.id.btnDialogClose);
 
+        tvDialogTitle.setText(title);
+
+        // 2. Tạo Dialog và làm trong suốt viền đen
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        // 3. Vòng lặp vẽ từng cục "Chip" nhét vào ChipGroup
+        for (String itemName : items) {
+            // DÙNG TEXTVIEW THAY VÌ CHIP ĐỂ KHÔNG BỊ ÉP MÀU TÍM MẶC ĐỊNH
+            TextView chip = new TextView(this);
+            chip.setText(itemName);
+            chip.setTextSize(14f);
+            chip.setTypeface(null, android.graphics.Typeface.BOLD); // In đậm chữ cho giống Chip
+
+            // Tính toán kích thước bo viền (Padding) cho TextView to ra thành viên thuốc
+            int padX = (int) (16 * getResources().getDisplayMetrics().density);
+            int padY = (int) (8 * getResources().getDisplayMetrics().density);
+            chip.setPadding(padX, padY, padX, padY);
+
+            // TẠO NỀN GRADIENT
+            android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
+            chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+            chipGradient.setCornerRadius(100f); // Bo tròn lẳn 2 đầu
+
+            // Phối màu Gradient
+            if (isAllergy) {
+                // Gradient Dị ứng: Cam nhạt -> Cam đậm
+                chipGradient.setColors(new int[]{
+                        android.graphics.Color.parseColor("#FFE0B2"),
+                        android.graphics.Color.parseColor("#FFCCBC")
+                });
+                chip.setTextColor(android.graphics.Color.parseColor("#BF360C"));
+            } else {
+                // Gradient Bệnh lý: Xanh lơ nhạt -> Xanh ngọc bích
+                chipGradient.setColors(new int[]{
+                        android.graphics.Color.parseColor("#E0F2F1"),
+                        android.graphics.Color.parseColor("#B2DFDB")
+                });
+                chip.setTextColor(android.graphics.Color.parseColor("#004D40"));
+            }
+
+            // Gắn nền Gradient cho TextView
+            chip.setBackground(chipGradient);
+
+            // Nhét nó vào ChipGroup
+            chipGroupItems.addView(chip);
+        }
+
+        // 4. Bấm nút Đóng
+        btnDialogClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
+    }
     private void setupBottomNavigation() {
         LinearLayout navHome = findViewById(R.id.nav_home);
         LinearLayout navWorkout = findViewById(R.id.nav_workout);
