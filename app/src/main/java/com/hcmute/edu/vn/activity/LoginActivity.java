@@ -14,6 +14,8 @@ import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.model.SignInRequest;
+import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.User;
 
 import java.util.List;
