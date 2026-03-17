@@ -50,8 +50,8 @@ public class ProfileActivity extends AppCompatActivity {
     Integer currentGoalId = 1;
     Float currentTargetWeight = null;
 
-    // ĐÃ THÊM: Biến lưu trữ chiều cao để tính BMI trong Dialog
     Double currentHeight = 0.0;
+    Double currentWeight = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +119,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     // ==============================================================
-    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU (ĐÃ THÊM LOGIC CHẶN LỖI BMI)
+    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU (ĐÃ TÍCH HỢP 3 RÀO CHẮN BẢO VỆ)
     // ==============================================================
     private void showEditGoalDialog() {
         if (fitnessGoalList.isEmpty()) {
@@ -176,6 +176,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnSave.setOnClickListener(v -> {
             int newGoalId = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getId();
             Float newTarget = null;
+            String selectedGoalName = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getName().toLowerCase();
 
             if (dialogLayoutTarget.getVisibility() == View.VISIBLE) {
                 String targetStr = dialogEdtTarget.getText().toString().trim();
@@ -186,34 +187,71 @@ public class ProfileActivity extends AppCompatActivity {
                         Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
                         return;
                     }
+                } else {
+                    dialogEdtTarget.setError("Vui lòng nhập cân nặng mục tiêu!");
+                    dialogEdtTarget.requestFocus();
+                    return;
                 }
             }
 
-            // =====================================================
-            // ĐÃ THÊM: LOGIC KIỂM TRA CHỈ SỐ BMI AN TOÀN
-            // =====================================================
-            if (newTarget != null && currentHeight != null && currentHeight > 0) {
-                String selectedGoalName = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getName().toLowerCase();
+            // ===============================================================
+            // LOGIC 3 RÀO CHẮN BMI (Sử dụng từ khóa an toàn: giảm, tăng, duy trì)
+            // ===============================================================
+            if (currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
                 double heightM = currentHeight / 100.0;
-                double targetBmi = newTarget / (heightM * heightM);
+                double currentBmi = currentWeight / (heightM * heightM);
 
-                if (selectedGoalName.contains("giảm") || selectedGoalName.contains("lose")) {
-                    if (targetBmi < 18.5) {
-                        dialogEdtTarget.setError("Cân nặng mục tiêu quá thấp! BMI sẽ rơi xuống mức thiếu cân (< 18.5).");
-                        dialogEdtTarget.requestFocus();
-                        return; // Chặn không cho lưu
+                boolean isLose = selectedGoalName.contains("giảm") || selectedGoalName.contains("lose");
+                boolean isGain = selectedGoalName.contains("tăng") || selectedGoalName.contains("gain") || selectedGoalName.contains("build");
+                boolean isMaintain = selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain");
+
+                // --- RÀO CHẮN 1: TÍNH HỢP LÝ CỦA MỤC TIÊU VỚI THỂ TRẠNG HIỆN TẠI ---
+                if (isLose && currentBmi < 18.5) {
+                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (isGain && currentBmi > 23.0) {
+                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (isMaintain && (currentBmi < 18.5 || currentBmi > 23.0)) {
+                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                // --- RÀO CHẮN 2 & 3: KIỂM TRA MỨC CÂN NẶNG ĐÍCH HỢP LÝ ---
+                if (newTarget != null && !isMaintain) {
+                    double targetBmi = newTarget / (heightM * heightM);
+
+                    if (isLose) {
+                        if (newTarget >= currentWeight) {
+                            dialogEdtTarget.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                        if (targetBmi < 18.5) {
+                            dialogEdtTarget.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
                     }
-                } else if (selectedGoalName.contains("tăng") || selectedGoalName.contains("gain")) {
-                    if (targetBmi > 23.0) {
-                        dialogEdtTarget.setError("Cân nặng mục tiêu quá cao! BMI sẽ vượt ngưỡng bình thường (> 23).");
-                        dialogEdtTarget.requestFocus();
-                        return; // Chặn không cho lưu
+                    else if (isGain) {
+                        if (newTarget <= currentWeight) {
+                            dialogEdtTarget.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                        if (targetBmi > 23.0) {
+                            dialogEdtTarget.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
                     }
                 }
             }
-            // =====================================================
+            // ===============================================================
 
-            // Nếu vượt qua cửa ải Validation thì mới gọi API Update
+            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
             User updateData = new User();
             updateData.setFitnessGoalId(newGoalId);
             updateData.setTarget(newTarget);
@@ -327,8 +365,8 @@ public class ProfileActivity extends AppCompatActivity {
                     currentGoalId = currentUser.getFitnessGoalId();
                     currentTargetWeight = currentUser.getTarget();
 
-                    // ĐÃ THÊM: Lưu lại chiều cao để dùng tính BMI
                     currentHeight = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                    currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
 
                     txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName() : username);
                     txtEmail.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
