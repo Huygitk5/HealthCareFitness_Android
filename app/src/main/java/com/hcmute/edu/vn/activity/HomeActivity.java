@@ -112,11 +112,8 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        // Click FAB mở Chatbot
-        fabChatbot.setOnClickListener(v -> {
-            Intent chatbotIntent = new Intent(HomeActivity.this, ChatbotActivity.class);
-            startActivity(chatbotIntent);
-        });
+        // Click và kéo thả FAB Chatbot (Helper)
+        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
 
         // =========================================================
         // SETUP RECYCLER VIEW CHO ACTIVITIES (Bài tập)
