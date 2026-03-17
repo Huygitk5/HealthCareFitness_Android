@@ -1,5 +1,6 @@
 package com.hcmute.edu.vn.activity;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -64,9 +65,39 @@ public class ProfileActivity extends AppCompatActivity {
         btnUpdateMedical = findViewById(R.id.btnUpdateMedical);
         btnLogout = findViewById(R.id.btnLogout);
 
-        // ĐÃ THÊM: Ánh xạ 2 cái thẻ CardView để lát bắt sự kiện click
+        // Ánh xạ 2 cái thẻ CardView
         cardMedicalHistory = findViewById(R.id.cardMedicalHistory);
         cardAllergies = findViewById(R.id.cardAllergies);
+
+        // ==============================================================
+        // ĐÃ THÊM MỚI: Xử lý nút Switch Nhắc nhở uống nước
+        // ==============================================================
+        androidx.appcompat.widget.SwitchCompat switchWater = findViewById(R.id.switchWaterReminder);
+
+        // Khôi phục trạng thái nút Switch từ lần mở app trước
+        boolean isWaterReminderOn = pref.getBoolean("WATER_REMINDER", false);
+        switchWater.setChecked(isWaterReminderOn);
+
+        // Bắt sự kiện khi người dùng gạt nút
+        switchWater.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // Lưu trạng thái mới vào SharedPreferences
+            pref.edit().putBoolean("WATER_REMINDER", isChecked).apply();
+
+            if (isChecked) {
+                // Nếu là Android 13 trở lên, phải xin quyền gửi thông báo
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+                    }
+                }
+                setupWaterReminder(true);
+                Toast.makeText(this, "Đã bật nhắc nhở uống nước!", Toast.LENGTH_SHORT).show();
+            } else {
+                setupWaterReminder(false);
+                Toast.makeText(this, "Đã tắt nhắc nhở uống nước", Toast.LENGTH_SHORT).show();
+            }
+        });
+        // ==============================================================
 
         btnLogout.setOnClickListener(v -> {
             Intent loginIntent = new Intent(ProfileActivity.this, com.hcmute.edu.vn.activity.LoginActivity.class);
@@ -80,6 +111,56 @@ public class ProfileActivity extends AppCompatActivity {
         btnUpdateMedical.setOnClickListener(v -> showMedicalConditionDialog());
 
         setupBottomNavigation();
+    }
+
+    // ==============================================================
+    // HÀM CÀI ĐẶT NHẮC NHỞ UỐNG NƯỚC (CÁCH 2 TIẾNG TỪ 6H SÁNG)
+    // ==============================================================
+    private void setupWaterReminder(boolean isEnable) {
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WaterReminderReceiver.class); // Đảm bảo đúng package
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        if (!isEnable) {
+            // Nếu TẮT -> Hủy báo thức
+            if (alarmManager != null) {
+                alarmManager.cancel(pendingIntent);
+            }
+            return;
+        }
+
+        // BẬT -> Tính toán thời gian của mốc chẵn tiếp theo (6, 8, 10, 12... 22)
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
+
+        // Thuật toán tìm giờ chẵn tiếp theo
+        int nextHour = currentHour + (currentHour % 2 == 0 ? 2 : 1);
+
+        if (nextHour < 6) {
+            nextHour = 6; // Đêm khuya thì dời sang 6h sáng hôm nay
+        } else if (nextHour > 22) {
+            nextHour = 6; // Đã qua 22h thì dời sang 6h sáng hôm sau
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        calendar.set(Calendar.HOUR_OF_DAY, nextHour);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        // Cài đặt lặp lại mỗi 2 tiếng (1000ms * 60s * 60m * 2h)
+        long intervalMillis = 2 * 60 * 60 * 1000;
+
+        if (alarmManager != null) {
+            // Dùng setRepeating để máy tự động lặp lại báo thức
+            alarmManager.setRepeating(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    intervalMillis,
+                    pendingIntent
+            );
+        }
     }
 
     @Override

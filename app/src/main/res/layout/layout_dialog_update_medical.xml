@@ -50,7 +50,6 @@
                 app:tabTextColor="#9E9E9E"
                 app:tabMode="fixed"
                 app:tabGravity="fill" />
-
         </com.google.android.material.card.MaterialCardView>
 
         <ScrollView
