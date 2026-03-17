@@ -34,6 +34,10 @@ public class User {
     @SerializedName("created_at")
     private String createdAt;
 
+    @SerializedName("target")
+    private String target;
+
+
     // Thêm biến để chứa danh sách Bệnh / Dị ứng của User
     @SerializedName("user_medical_conditions")
     private List<UserMedicalCondition> userMedicalConditions;
