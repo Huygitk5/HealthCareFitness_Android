@@ -69,7 +69,8 @@
             android:layout_height="55dp"
             android:background="@drawable/bg_input_rounded"
             android:hint="dd/mm/yyyy"
-            android:inputType="date"
+            android:inputType="number"
+            android:maxLength="10"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:layout_marginBottom="15dp"/>
@@ -188,8 +189,8 @@
             android:id="@+id/spinnerFitnessGoal"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:background="@drawable/bg_input_rounded"
             android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_input_rounded"
             android:paddingStart="10dp" />
 
         <LinearLayout
