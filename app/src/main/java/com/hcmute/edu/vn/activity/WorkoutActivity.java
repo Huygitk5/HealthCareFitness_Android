@@ -87,6 +87,9 @@ public class WorkoutActivity extends AppCompatActivity {
         setupTodayWorkout();
         setupClickListeners();
         setupBottomNavigation();
+//
+//        com.google.android.material.floatingactionbutton.FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
+//        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
     }
 
     @Override
