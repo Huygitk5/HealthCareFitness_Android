@@ -66,7 +66,7 @@ public class ChatbotActivity extends AppCompatActivity {
         setContentView(R.layout.activity_chatbot);
 
         View topBar = findViewById(R.id.topBar);
-        View inputBox = findViewById(R.id.inputBox);
+        View inputBox = findViewById(R.id.bottomContainer);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -78,6 +78,9 @@ public class ChatbotActivity extends AppCompatActivity {
             }
             return insets;
         });
+
+        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
 
         initViews();
         setupRecyclerView();
