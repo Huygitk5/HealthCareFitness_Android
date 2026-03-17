@@ -237,29 +237,65 @@ public class ProfileSetupActivity extends AppCompatActivity {
         try {
             double height = Double.parseDouble(heightStr);
             double weight = Double.parseDouble(weightStr);
-            if (targetWeightValue != null && !fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
+            if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
                 String selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
 
                 double heightM = height / 100.0;
-                double targetBmi = targetWeightValue / (heightM * heightM);
+                double currentBmi = weight / (heightM * heightM);
 
-                // Nếu chọn Giảm mỡ
-                if (selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) {
-                    if (targetBmi < 18.5) {
-                        edtTargetWeight.setError("Cân nặng mục tiêu quá thấp! BMI sẽ rơi xuống mức thiếu cân (< 18.5). Hãy đổi sang mục tiêu Tăng cơ hoặc tăng mức cân nặng lên nhé!");
-                        edtTargetWeight.requestFocus();
-                        return; // Đạp phanh, chặn không cho gọi API lưu
-                    }
+                // --- RÀO CHẮN 1: KIỂM TRA TÍNH HỢP LÝ CỦA MỤC TIÊU DỰA TRÊN THỂ TRẠNG HIỆN TẠI ---
+                if ((selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) && currentBmi < 18.5) {
+                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
                 }
-                // Nếu chọn Tăng cơ
-                else if (selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) {
-                    if (targetBmi > 23.0) {
-                        edtTargetWeight.setError("Cân nặng mục tiêu quá cao! BMI sẽ vượt ngưỡng bình thường (> 23). Hãy điều chỉnh lại mức cân an toàn hơn nhé!");
-                        edtTargetWeight.requestFocus();
-                        return; // Đạp phanh, chặn không cho gọi API lưu
+
+                if ((selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) && currentBmi > 23.0) {
+                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
+                }
+
+                if ((selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain")) && (currentBmi < 18.5 || currentBmi > 23.0)) {
+                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
+                }
+
+                // --- RÀO CHẮN 2 & 3: KIỂM TRA CÂN NẶNG ĐÍCH (Chỉ áp dụng khi không phải là Giữ dáng) ---
+                if (targetWeightValue != null && (!selectedGoalName.contains("duy trì") && !selectedGoalName.contains("maintain"))) {
+                    double targetBmi = targetWeightValue / (heightM * heightM);
+
+                    // Nếu chọn Giảm mỡ
+                    if (selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) {
+                        if (targetWeightValue >= weight) {
+                            edtTargetWeight.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                        if (targetBmi < 18.5) {
+                            edtTargetWeight.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                    }
+                    // Nếu chọn Tăng cơ
+                    else if (selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) {
+                        if (targetWeightValue <= weight) {
+                            edtTargetWeight.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                        if (targetBmi > 23.0) {
+                            edtTargetWeight.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
                     }
                 }
             }
+            // ===============================================================
+
             User updateData = new User();
             updateData.setName(fullName);
             updateData.setDateOfBirth(dobFormatted);
@@ -294,11 +330,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                     // ===============================================================
                                     // BƯỚC 3: TÍNH VÀ LƯU BMI VÀO DATABASE CHO BIỂU ĐỒ
                                     // ===============================================================
-                                    double heightM = height / 100.0;
-                                    double newBmi = weight / (heightM * heightM);
                                     String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
-
-                                    BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, newBmi, currentDateFull);
+                                    double currentBmi = weight / ((height / 100.0) * (height / 100.0));
+                                    BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, currentBmi, currentDateFull);
 
                                     apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
                                         @Override
