@@ -52,6 +52,7 @@ public class NutritionActivity extends AppCompatActivity {
     private LinearProgressIndicator progressCarb, progressProtein, progressFat;
     private TextView tvTotalCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
     private TextView tvAllergiesWarning;
+    private androidx.cardview.widget.CardView cardAllergiesWarning;
 
     // === BIẾN DỮ LIỆU ===
     private String username, userId;
@@ -148,6 +149,7 @@ public class NutritionActivity extends AppCompatActivity {
         progressFat = findViewById(R.id.progressFat);
         tvTotalFat = findViewById(R.id.tvTotalFat);
         tvAllergiesWarning = findViewById(R.id.tvAllergiesWarning);
+        cardAllergiesWarning = findViewById(R.id.cardAllergiesWarning);
     }
 
     // ===============================================
@@ -321,32 +323,82 @@ public class NutritionActivity extends AppCompatActivity {
     // ===============================================
     // CÁC HÀM CŨ GIỮ NGUYÊN (Dị ứng, Thanh điều hướng)
     // ===============================================
+    // ===============================================
+    // HÀM LẤY DANH SÁCH DỊ ỨNG VÀ HIỂN THỊ (CÓ RÚT GỌN)
+    // ===============================================
     private void loadUserAllergies() {
         if (username == null || username.isEmpty()) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.getUserByUsername("eq." + username, "*, user_medical_conditions(*, medical_conditions(*))").enqueue(new Callback<List<User>>() {
+
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     User currentUser = response.body().get(0);
-                    StringBuilder allergyStr = new StringBuilder();
+                    List<String> allergyList = new ArrayList<>();
+
                     if (currentUser.getUserMedicalConditions() != null) {
                         for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
                             MedicalCondition mc = umc.getMedicalCondition();
-                            if (mc != null && "allergy".equalsIgnoreCase(mc.getType())) {
-                                allergyStr.append(mc.getName()).append(", ");
+                            if (mc != null) {
+                                String type = mc.getType();
+                                // Lọc riêng phần Dị ứng
+                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
+                                    allergyList.add(mc.getName());
+                                }
                             }
                         }
                     }
-                    if (allergyStr.length() > 0) {
-                        tvAllergiesWarning.setText("⚠️ Tránh: " + allergyStr.substring(0, allergyStr.length() - 2));
-                    } else {
-                        tvAllergiesWarning.setText("⚠️ Tránh: Không có");
-                    }
+
+                    // Gọi hàm thiết lập giao diện
+                    setupWarningDisplay(allergyList);
                 }
             }
             @Override public void onFailure(Call<List<User>> call, Throwable t) {}
         });
+    }
+
+    // HÀM HELPER: RÚT GỌN CHUỖI VÀ TẠO SỰ KIỆN CLICK
+    private void setupWarningDisplay(List<String> dataList) {
+        if (dataList.isEmpty()) {
+            tvAllergiesWarning.setText("⚠️ Tránh: Không có");
+            cardAllergiesWarning.setOnClickListener(null); // Không có gì thì khóa click
+            return;
+        }
+
+        StringBuilder displayStr = new StringBuilder();
+        StringBuilder fullStr = new StringBuilder();
+
+        for (int i = 0; i < dataList.size(); i++) {
+            String item = "• " + dataList.get(i) + "\n";
+            fullStr.append(item);
+
+            if (i < 3) {
+                displayStr.append(item);
+            }
+        }
+
+        if (dataList.size() > 3) {
+            int extra = dataList.size() - 3;
+            displayStr.append("+ ").append(extra).append(" mục khác...");
+        }
+
+        tvAllergiesWarning.setText("⚠️ Tránh:\n" + displayStr.toString().trim());
+
+        // Bắt sự kiện mở Pop-up
+        String finalFullContent = fullStr.toString().trim();
+        cardAllergiesWarning.setOnClickListener(v -> showDetailDialog("Thực phẩm cần tránh", finalFullContent));
+    }
+
+    // HÀM TẠO POP-UP (MATERIAL DIALOG)
+    private void showDetailDialog(String title, String fullContent) {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(title)
+                .setMessage(fullContent)
+                .setPositiveButton("ĐÓNG", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void setupBottomNavigation() {
