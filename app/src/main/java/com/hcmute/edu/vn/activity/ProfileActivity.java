@@ -249,6 +249,9 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    // ==============================================================
+    // HÀM HIỂN THỊ DIALOG CẬP NHẬT Y TẾ (CÓ CHIA TAB)
+    // ==============================================================
     private void showMedicalConditionDialog() {
         if (currentUserId == null) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
@@ -258,33 +261,117 @@ public class ProfileActivity extends AppCompatActivity {
             public void onResponse(Call<List<MedicalCondition>> call, Response<List<MedicalCondition>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<MedicalCondition> allConditions = response.body();
-                    String[] conditionNames = new String[allConditions.size()];
-                    boolean[] checkedItems = new boolean[allConditions.size()];
 
-                    for (int i = 0; i < allConditions.size(); i++) {
-                        conditionNames[i] = allConditions.get(i).getName() + ("allergy".equals(allConditions.get(i).getType()) ? " (Dị ứng)" : " (Bệnh lý)");
-                        checkedItems[i] = currentConditionIds.contains(allConditions.get(i).getId());
+                    // 1. Lấy giao diện XML Dialog lớn
+                    android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_update_medical, null);
+
+                    com.google.android.material.tabs.TabLayout tabLayoutMedical = dialogView.findViewById(R.id.tabLayoutMedical);
+                    LinearLayout llAllergiesContainer = dialogView.findViewById(R.id.llAllergiesContainer);
+                    LinearLayout llDiseasesContainer = dialogView.findViewById(R.id.llDiseasesContainer);
+                    MaterialButton btnCancelUpdate = dialogView.findViewById(R.id.btnCancelUpdate);
+                    MaterialButton btnSaveUpdate = dialogView.findViewById(R.id.btnSaveUpdate);
+
+                    // THÊM 2 TAB VÀO THANH ĐIỀU HƯỚNG
+                    tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Dị ứng"));
+                    tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Bệnh lý"));
+
+                    // 2. Tạo Dialog
+                    android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ProfileActivity.this)
+                            .setView(dialogView)
+                            .create();
+
+                    if (dialog.getWindow() != null) {
+                        dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
                     }
 
-                    new android.app.AlertDialog.Builder(ProfileActivity.this)
-                            .setTitle("Cập nhật tình trạng sức khỏe")
-                            .setMultiChoiceItems(conditionNames, checkedItems, (dialog, which, isChecked) -> checkedItems[which] = isChecked)
-                            .setPositiveButton("Lưu", (dialog, which) -> {
-                                List<UserMedicalConditionInsert> insertList = new ArrayList<>();
-                                for (int i = 0; i < allConditions.size(); i++) {
-                                    if (checkedItems[i]) {
-                                        insertList.add(new UserMedicalConditionInsert(currentUserId, allConditions.get(i).getId()));
-                                    }
-                                }
-                                saveMedicalConditions(apiService, insertList);
-                            })
-                            .setNegativeButton("Hủy", null)
-                            .show();
+                    // 3. Vòng lặp vẽ các Thẻ (Card) bệnh lý và chia hộp
+                    List<com.google.android.material.checkbox.MaterialCheckBox> checkBoxesList = new ArrayList<>();
+
+                    for (MedicalCondition condition : allConditions) {
+                        // Tránh truyền 'null' vào ViewParent để layout không bị vỡ kích thước
+                        View itemView = getLayoutInflater().inflate(R.layout.item_medical_condition, llAllergiesContainer, false);
+
+                        TextView tvName = itemView.findViewById(R.id.tvConditionName);
+                        TextView tvType = itemView.findViewById(R.id.tvConditionType);
+                        com.google.android.material.checkbox.MaterialCheckBox checkBox = itemView.findViewById(R.id.cbCondition);
+                        MaterialCardView cardView = (MaterialCardView) itemView;
+
+                        tvName.setText(condition.getName());
+                        checkBox.setTag(condition.getId());
+
+                        // Phân loại và nhét thẻ vào đúng Hộp chứa
+                        boolean isAllergy = "allergy".equals(condition.getType());
+                        if (isAllergy) {
+                            tvType.setText("DỊ ỨNG");
+                            tvType.setTextColor(android.graphics.Color.parseColor("#FF7043"));
+                            llAllergiesContainer.addView(itemView); // Nhét vào hộp Dị ứng
+                        } else {
+                            tvType.setText("BỆNH LÝ");
+                            tvType.setTextColor(android.graphics.Color.parseColor("#26A69A"));
+                            llDiseasesContainer.addView(itemView); // Nhét vào hộp Bệnh lý
+                        }
+
+                        // Set trạng thái tick sẵn và màu sắc
+                        if (currentConditionIds.contains(condition.getId())) {
+                            checkBox.setChecked(true);
+                            cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
+                            cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
+                        }
+
+                        // Sự kiện click sáng thẻ
+                        cardView.setOnClickListener(v -> {
+                            boolean isChecked = !checkBox.isChecked();
+                            checkBox.setChecked(isChecked);
+
+                            if(isChecked) {
+                                cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
+                                cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
+                            } else {
+                                cardView.setStrokeColor(android.graphics.Color.parseColor("#E0E0E0"));
+                                cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#F8FAFB"));
+                            }
+                        });
+
+                        checkBoxesList.add(checkBox);
+                    }
+
+                    // 4. BẮT SỰ KIỆN CHUYỂN TAB ĐỂ ẨN/HIỆN HỘP CHỨA
+                    tabLayoutMedical.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
+                        @Override
+                        public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
+                            if (tab.getPosition() == 0) { // Bấm Tab 1 (Dị ứng)
+                                llAllergiesContainer.setVisibility(View.VISIBLE);
+                                llDiseasesContainer.setVisibility(View.GONE);
+                            } else { // Bấm Tab 2 (Bệnh lý)
+                                llAllergiesContainer.setVisibility(View.GONE);
+                                llDiseasesContainer.setVisibility(View.VISIBLE);
+                            }
+                        }
+                        @Override public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                        @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
+                    });
+
+                    // 5. Sự kiện Lưu và Hủy
+                    btnCancelUpdate.setOnClickListener(v -> dialog.dismiss());
+
+                    btnSaveUpdate.setOnClickListener(v -> {
+                        List<UserMedicalConditionInsert> insertList = new ArrayList<>();
+                        for (com.google.android.material.checkbox.MaterialCheckBox cb : checkBoxesList) {
+                            if (cb.isChecked()) {
+                                Integer conditionId = (Integer) cb.getTag();
+                                insertList.add(new UserMedicalConditionInsert(currentUserId, conditionId));
+                            }
+                        }
+                        saveMedicalConditions(apiService, insertList);
+                        dialog.dismiss();
+                    });
+
+                    dialog.show();
                 }
             }
             @Override
             public void onFailure(Call<List<MedicalCondition>> call, Throwable t) {
-                Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải danh sách bệnh!", Toast.LENGTH_SHORT).show();
             }
         });
     }

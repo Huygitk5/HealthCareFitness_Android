@@ -1,43 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#FFFFFF"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:layout_margin="16dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp">
 
-    <TextView
-        android:id="@+id/tvDialogTitle"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="Chi tiết"
-        android:textColor="#212121"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupItems"
+        <TextView
+            android:id="@+id/tvDialogTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:chipSpacingHorizontal="8dp"
-            app:chipSpacingVertical="8dp" />
+            android:layout_marginBottom="12dp"
+            android:gravity="center"
+            android:text="Chi tiết"
+            android:textColor="#212121"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-    </ScrollView>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="16dp"
+            android:background="#E0E0E0" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnDialogClose"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end"
-        android:layout_marginTop="16dp"
-        android:text="ĐÓNG"
-        android:textColor="#009688"
-        android:textStyle="bold" />
-</LinearLayout>
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fadeScrollbars="false">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp" />
+
+        </ScrollView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogClose"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="16dp"
+            android:text="ĐÓNG"
+            android:textColor="#009688"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
