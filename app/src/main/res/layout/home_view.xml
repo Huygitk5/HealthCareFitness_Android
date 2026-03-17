@@ -555,6 +555,19 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabChatbot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/bottomNav"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="24dp"
+        android:src="@drawable/ic_chat"
+        app:tint="@color/white"
+        android:backgroundTint="#4DAA9A"
+        android:contentDescription="Chat with AI" />
+
     <LinearLayout
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"

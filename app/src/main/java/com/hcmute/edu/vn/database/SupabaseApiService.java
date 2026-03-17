@@ -314,4 +314,10 @@ public interface SupabaseApiService {
     Call<Void> deleteDailyMeal(
             @Query("id") String eqId // Cú pháp: "eq.ID_CUA_BẢN_GHI_MEAL"
     );
+
+    // Lấy fitness goal
+    @GET("fitness_goals")
+    Call<List<com.hcmute.edu.vn.model.FitnessGoal>> getAllFitnessGoals(
+            @Query("select") String select
+    );
 }
