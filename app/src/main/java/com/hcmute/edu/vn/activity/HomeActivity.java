@@ -23,6 +23,7 @@ import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
@@ -59,6 +60,7 @@ public class HomeActivity extends AppCompatActivity {
     List<BmiLog> currentBmiLogs = new ArrayList<>();
     LinearLayout btnUpdateBMI;
     User currentUser;
+    FloatingActionButton fabChatbot;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +87,7 @@ public class HomeActivity extends AppCompatActivity {
         btnChartWeek = findViewById(R.id.btnChartWeek);
         btnChartMonth = findViewById(R.id.btnChartMonth);
         lineChartBMI = findViewById(R.id.lineChartBMI);
+        fabChatbot = findViewById(R.id.fabChatbot);
 
         setupChartAppearance();
 
@@ -107,6 +110,12 @@ public class HomeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(HomeActivity.this, "Bạn có 0 thông báo mới", Toast.LENGTH_SHORT).show();
             }
+        });
+
+        // Click FAB mở Chatbot
+        fabChatbot.setOnClickListener(v -> {
+            Intent chatbotIntent = new Intent(HomeActivity.this, ChatbotActivity.class);
+            startActivity(chatbotIntent);
         });
 
         // =========================================================

@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -66,6 +67,10 @@
         <activity android:name=".activity.FoodDetailActivity" android:exported="false" />
         <activity android:name=".activity.MealSearchActivity" android:exported="false"/>
         <receiver android:name=".receiver.WaterReminderReceiver" android:exported="false" />
+
+        <activity android:name="com.hcmute.edu.vn.activity.ChatbotActivity" android:exported="false" />
+
+        <receiver android:name="com.hcmute.edu.vn.receiver.WorkoutReminderReceiver" android:exported="false" />
 
     </application>
 
