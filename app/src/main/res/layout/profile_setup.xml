@@ -175,6 +175,49 @@
                 android:textSize="16dp"
                 android:buttonTint="#2196F3"/>
         </RadioGroup>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mục tiêu của bạn là gì?"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/spinnerFitnessGoal"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:background="@drawable/bg_input_rounded"
+            android:layout_marginBottom="16dp"
+            android:paddingStart="10dp" />
+
+        <LinearLayout
+            android:id="@+id/layoutTargetWeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"> <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cân nặng mong muốn (kg)"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/edtTargetWeight"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:background="@drawable/bg_input_rounded"
+                android:hint="VD: 60.5"
+                android:inputType="numberDecimal"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp"/>
+        </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnComplete"
