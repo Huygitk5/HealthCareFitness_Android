@@ -4,7 +4,9 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,12 +38,20 @@ public class ProfileActivity extends AppCompatActivity {
 
     TextView txtName, txtEmail, tvProfileAge, tvProfileWeight, tvProfileHeight;
     TextView tvMedicalHistory, tvAllergies, btnUpdateMedical;
-    MaterialCardView cardMedicalHistory, cardAllergies; // ĐÃ THÊM: Ánh xạ 2 thẻ
+    MaterialCardView cardMedicalHistory, cardAllergies;
     MaterialButton btnLogout;
 
     String username;
     String currentUserId;
-    List<Integer> currentConditionIds = new ArrayList<>(); // Lưu ID bệnh đang mắc để tick sẵn
+    List<Integer> currentConditionIds = new ArrayList<>();
+
+    TextView tvProfileGoal, tvProfileTargetWeight, btnEditGoal;
+    List<com.hcmute.edu.vn.model.FitnessGoal> fitnessGoalList = new ArrayList<>();
+    Integer currentGoalId = 1;
+    Float currentTargetWeight = null;
+
+    Double currentHeight = 0.0;
+    Double currentWeight = 0.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,26 +75,22 @@ public class ProfileActivity extends AppCompatActivity {
         btnUpdateMedical = findViewById(R.id.btnUpdateMedical);
         btnLogout = findViewById(R.id.btnLogout);
 
-        // Ánh xạ 2 cái thẻ CardView
         cardMedicalHistory = findViewById(R.id.cardMedicalHistory);
         cardAllergies = findViewById(R.id.cardAllergies);
 
-        // ==============================================================
-        // ĐÃ THÊM MỚI: Xử lý nút Switch Nhắc nhở uống nước
-        // ==============================================================
-        androidx.appcompat.widget.SwitchCompat switchWater = findViewById(R.id.switchWaterReminder);
+        tvProfileGoal = findViewById(R.id.tvProfileGoal);
+        tvProfileTargetWeight = findViewById(R.id.tvProfileTargetWeight);
+        btnEditGoal = findViewById(R.id.btnEditGoal);
 
-        // Khôi phục trạng thái nút Switch từ lần mở app trước
+        // Xử lý nút Switch Nhắc nhở uống nước
+        androidx.appcompat.widget.SwitchCompat switchWater = findViewById(R.id.switchWaterReminder);
         boolean isWaterReminderOn = pref.getBoolean("WATER_REMINDER", false);
         switchWater.setChecked(isWaterReminderOn);
 
-        // Bắt sự kiện khi người dùng gạt nút
         switchWater.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Lưu trạng thái mới vào SharedPreferences
             pref.edit().putBoolean("WATER_REMINDER", isChecked).apply();
 
             if (isChecked) {
-                // Nếu là Android 13 trở lên, phải xin quyền gửi thông báo
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                     if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                         requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
@@ -97,7 +103,6 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(this, "Đã tắt nhắc nhở uống nước", Toast.LENGTH_SHORT).show();
             }
         });
-        // ==============================================================
 
         btnLogout.setOnClickListener(v -> {
             Intent loginIntent = new Intent(ProfileActivity.this, com.hcmute.edu.vn.activity.LoginActivity.class);
@@ -107,40 +112,218 @@ public class ProfileActivity extends AppCompatActivity {
             finish();
         });
 
-        // Nút Cập nhật y tế
+        btnEditGoal.setOnClickListener(v -> showEditGoalDialog());
         btnUpdateMedical.setOnClickListener(v -> showMedicalConditionDialog());
-
+        loadFitnessGoalsList();
         setupBottomNavigation();
     }
 
     // ==============================================================
-    // HÀM CÀI ĐẶT NHẮC NHỞ UỐNG NƯỚC (CÁCH 2 TIẾNG TỪ 6H SÁNG)
+    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU (ĐÃ TÍCH HỢP 3 RÀO CHẮN BẢO VỆ)
     // ==============================================================
+    private void showEditGoalDialog() {
+        if (fitnessGoalList.isEmpty()) {
+            Toast.makeText(this, "Đang tải dữ liệu, vui lòng thử lại sau!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_edit_goal, null);
+        Spinner dialogSpinnerGoal = dialogView.findViewById(R.id.dialogSpinnerGoal);
+        LinearLayout dialogLayoutTarget = dialogView.findViewById(R.id.dialogLayoutTarget);
+        EditText dialogEdtTarget = dialogView.findViewById(R.id.dialogEdtTarget);
+        com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnDialogCancelGoal);
+        com.google.android.material.button.MaterialButton btnSave = dialogView.findViewById(R.id.btnDialogSaveGoal);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this).setView(dialogView).create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        List<String> goalNames = new ArrayList<>();
+        int selectedIndex = 0;
+        for (int i = 0; i < fitnessGoalList.size(); i++) {
+            goalNames.add(fitnessGoalList.get(i).getName());
+            if (fitnessGoalList.get(i).getId() == currentGoalId) {
+                selectedIndex = i;
+            }
+        }
+
+        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_spinner_item, goalNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogSpinnerGoal.setAdapter(adapter);
+        dialogSpinnerGoal.setSelection(selectedIndex);
+
+        if (currentTargetWeight != null && currentTargetWeight > 0) {
+            dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
+        }
+
+        dialogSpinnerGoal.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+                String selectedName = goalNames.get(position).toLowerCase();
+                if (selectedName.contains("duy trì") || selectedName.contains("maintain")) {
+                    dialogLayoutTarget.setVisibility(View.GONE);
+                    dialogEdtTarget.setText("");
+                } else {
+                    dialogLayoutTarget.setVisibility(View.VISIBLE);
+                }
+            }
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+        });
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnSave.setOnClickListener(v -> {
+            int newGoalId = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getId();
+            Float newTarget = null;
+            String selectedGoalName = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getName().toLowerCase();
+
+            if (dialogLayoutTarget.getVisibility() == View.VISIBLE) {
+                String targetStr = dialogEdtTarget.getText().toString().trim();
+                if (!targetStr.isEmpty()) {
+                    try {
+                        newTarget = Float.parseFloat(targetStr);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                } else {
+                    dialogEdtTarget.setError("Vui lòng nhập cân nặng mục tiêu!");
+                    dialogEdtTarget.requestFocus();
+                    return;
+                }
+            }
+
+            // ===============================================================
+            // LOGIC 3 RÀO CHẮN BMI (Sử dụng từ khóa an toàn: giảm, tăng, duy trì)
+            // ===============================================================
+            if (currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
+                double heightM = currentHeight / 100.0;
+                double currentBmi = currentWeight / (heightM * heightM);
+
+                boolean isLose = selectedGoalName.contains("giảm") || selectedGoalName.contains("lose");
+                boolean isGain = selectedGoalName.contains("tăng") || selectedGoalName.contains("gain") || selectedGoalName.contains("build");
+                boolean isMaintain = selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain");
+
+                // --- RÀO CHẮN 1: TÍNH HỢP LÝ CỦA MỤC TIÊU VỚI THỂ TRẠNG HIỆN TẠI ---
+                if (isLose && currentBmi < 18.5) {
+                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (isGain && currentBmi > 23.0) {
+                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                if (isMaintain && (currentBmi < 18.5 || currentBmi > 23.0)) {
+                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                // --- RÀO CHẮN 2 & 3: KIỂM TRA MỨC CÂN NẶNG ĐÍCH HỢP LÝ ---
+                if (newTarget != null && !isMaintain) {
+                    double targetBmi = newTarget / (heightM * heightM);
+
+                    if (isLose) {
+                        if (newTarget >= currentWeight) {
+                            dialogEdtTarget.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                        if (targetBmi < 18.5) {
+                            dialogEdtTarget.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                    }
+                    else if (isGain) {
+                        if (newTarget <= currentWeight) {
+                            dialogEdtTarget.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                        if (targetBmi > 23.0) {
+                            dialogEdtTarget.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            dialogEdtTarget.requestFocus();
+                            return;
+                        }
+                    }
+                }
+            }
+            // ===============================================================
+
+            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
+            User updateData = new User();
+            updateData.setFitnessGoalId(newGoalId);
+            updateData.setTarget(newTarget);
+
+            btnSave.setText("Đang lưu...");
+            btnSave.setEnabled(false);
+
+            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+            apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+                @Override
+                public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful()) {
+                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
+                        loadUserProfile();
+                        dialog.dismiss();
+                    } else {
+                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                        btnSave.setText("LƯU");
+                        btnSave.setEnabled(true);
+                    }
+                }
+                @Override
+                public void onFailure(Call<Void> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                    btnSave.setText("LƯU");
+                    btnSave.setEnabled(true);
+                }
+            });
+        });
+
+        dialog.show();
+    }
+
+    private void loadFitnessGoalsList() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.getAllFitnessGoals("*").enqueue(new Callback<List<com.hcmute.edu.vn.model.FitnessGoal>>() {
+            @Override
+            public void onResponse(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call, Response<List<com.hcmute.edu.vn.model.FitnessGoal>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    fitnessGoalList = response.body();
+                    if (username != null && !username.isEmpty()) {
+                        loadUserProfile();
+                    }
+                }
+            }
+            @Override
+            public void onFailure(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call, Throwable t) {}
+        });
+    }
+
     private void setupWaterReminder(boolean isEnable) {
         android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WaterReminderReceiver.class); // Đảm bảo đúng package
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WaterReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         if (!isEnable) {
-            // Nếu TẮT -> Hủy báo thức
             if (alarmManager != null) {
                 alarmManager.cancel(pendingIntent);
             }
             return;
         }
 
-        // BẬT -> Tính toán thời gian của mốc chẵn tiếp theo (6, 8, 10, 12... 22)
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         int currentHour = calendar.get(Calendar.HOUR_OF_DAY);
 
-        // Thuật toán tìm giờ chẵn tiếp theo
         int nextHour = currentHour + (currentHour % 2 == 0 ? 2 : 1);
 
         if (nextHour < 6) {
-            nextHour = 6; // Đêm khuya thì dời sang 6h sáng hôm nay
+            nextHour = 6;
         } else if (nextHour > 22) {
-            nextHour = 6; // Đã qua 22h thì dời sang 6h sáng hôm sau
+            nextHour = 6;
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
 
@@ -149,11 +332,9 @@ public class ProfileActivity extends AppCompatActivity {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
-        // Cài đặt lặp lại mỗi 2 tiếng (1000ms * 60s * 60m * 2h)
         long intervalMillis = 2 * 60 * 60 * 1000;
 
         if (alarmManager != null) {
-            // Dùng setRepeating để máy tự động lặp lại báo thức
             alarmManager.setRepeating(
                     android.app.AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
@@ -173,8 +354,6 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void loadUserProfile() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-
-        // Bỏ Alias, gọi thẳng tên bảng để GSON không bị lú
         String selectQuery = "*, user_medical_conditions(*, medical_conditions(*))";
 
         apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
@@ -183,12 +362,16 @@ public class ProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     User currentUser = response.body().get(0);
                     currentUserId = currentUser.getId();
+                    currentGoalId = currentUser.getFitnessGoalId();
+                    currentTargetWeight = currentUser.getTarget();
 
-                    // Hiển thị thông tin cá nhân
+                    currentHeight = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                    currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+
                     txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName() : username);
                     txtEmail.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
 
-                    double heightCm = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+                    double heightCm = currentHeight;
                     double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
                     tvProfileHeight.setText(heightCm > 0 ? heightCm + " cm" : "-- cm");
                     tvProfileWeight.setText(weightKg > 0 ? weightKg + " kg" : "-- kg");
@@ -196,7 +379,21 @@ public class ProfileActivity extends AppCompatActivity {
                     int age = calculateAge(currentUser.getDateOfBirth());
                     tvProfileAge.setText(age > 0 ? String.valueOf(age) : "--");
 
-                    // HIỂN THỊ Y TẾ (SỬ DỤNG LOGIC POP-UP MỚI)
+                    String goalName = "Chưa thiết lập";
+                    for (com.hcmute.edu.vn.model.FitnessGoal g : fitnessGoalList) {
+                        if (g.getId() == currentGoalId) {
+                            goalName = g.getName();
+                            break;
+                        }
+                    }
+                    tvProfileGoal.setText(goalName);
+
+                    if (currentTargetWeight != null && currentTargetWeight > 0) {
+                        tvProfileTargetWeight.setText(currentTargetWeight + " kg");
+                    } else {
+                        tvProfileTargetWeight.setText("Duy trì");
+                    }
+
                     currentConditionIds.clear();
                     List<String> allergyList = new ArrayList<>();
                     List<String> historyList = new ArrayList<>();
@@ -217,7 +414,6 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     }
 
-                    // Gọi hàm Helper để thiết lập giao diện và Pop-up
                     setupCardDisplay(allergyList, tvAllergies, cardAllergies, "Thực phẩm dị ứng");
                     setupCardDisplay(historyList, tvMedicalHistory, cardMedicalHistory, "Tiền sử bệnh");
 
@@ -233,9 +429,6 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    // ==============================================================
-    // HÀM HELPER: XỬ LÝ RÚT GỌN CHUỖI VÀ GỌI POP-UP CHIP
-    // ==============================================================
     private void setupCardDisplay(List<String> dataList, TextView textView, MaterialCardView cardView, String dialogTitle) {
         if (dataList.isEmpty()) {
             textView.setText("Không có");
@@ -243,7 +436,6 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // Vẫn giữ logic tạo chuỗi rút gọn cho mặt ngoài của Thẻ
         StringBuilder displayStr = new StringBuilder();
         for (int i = 0; i < dataList.size(); i++) {
             if (i < 3) {
@@ -255,16 +447,11 @@ public class ProfileActivity extends AppCompatActivity {
         }
         textView.setText(displayStr.toString().trim());
 
-        // BẮT SỰ KIỆN MỞ DIALOG MỚI (Truyền luôn cái List vào)
         boolean isAllergy = dialogTitle.toLowerCase().contains("dị ứng");
         cardView.setOnClickListener(v -> showCustomChipDialog(dialogTitle, dataList, isAllergy));
     }
 
-    // ==============================================================
-    // HÀM VẼ DIALOG CUSTOM CHIP (ĐÃ CÓ CHIP GRADIENT)
-    // ==============================================================
     private void showCustomChipDialog(String title, List<String> items, boolean isAllergy) {
-        // 1. Gắn file layout XML vừa tạo
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
         TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
         com.google.android.material.chip.ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
@@ -272,44 +459,35 @@ public class ProfileActivity extends AppCompatActivity {
 
         tvDialogTitle.setText(title);
 
-        // 2. Tạo Dialog
         android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
 
-        // Xóa phông đen để lộ lớp CardView bo góc phía sau (trong XML)
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
 
-        // 3. Vòng lặp vẽ từng cục "Chip" nhét vào ChipGroup
         for (String itemName : items) {
-            // DÙNG TEXTVIEW THAY VÌ CHIP ĐỂ KHÔNG BỊ ÉP MÀU TÍM MẶC ĐỊNH
             TextView chip = new TextView(this);
             chip.setText(itemName);
             chip.setTextSize(14f);
-            chip.setTypeface(null, android.graphics.Typeface.BOLD); // In đậm chữ cho giống Chip
+            chip.setTypeface(null, android.graphics.Typeface.BOLD);
 
-            // Tính toán kích thước bo viền (Padding) cho TextView to ra thành viên thuốc
             int padX = (int) (16 * getResources().getDisplayMetrics().density);
             int padY = (int) (8 * getResources().getDisplayMetrics().density);
             chip.setPadding(padX, padY, padX, padY);
 
-            // TẠO NỀN GRADIENT
             android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
             chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
-            chipGradient.setCornerRadius(100f); // Bo tròn lẳn 2 đầu
+            chipGradient.setCornerRadius(100f);
 
-            // Phối màu Gradient
             if (isAllergy) {
-                // Gradient Dị ứng: Cam nhạt -> Cam đậm
                 chipGradient.setColors(new int[]{
                         android.graphics.Color.parseColor("#FFE0B2"),
                         android.graphics.Color.parseColor("#FFCCBC")
                 });
                 chip.setTextColor(android.graphics.Color.parseColor("#BF360C"));
             } else {
-                // Gradient Bệnh lý: Xanh lơ nhạt -> Xanh ngọc bích
                 chipGradient.setColors(new int[]{
                         android.graphics.Color.parseColor("#E0F2F1"),
                         android.graphics.Color.parseColor("#B2DFDB")
@@ -317,22 +495,14 @@ public class ProfileActivity extends AppCompatActivity {
                 chip.setTextColor(android.graphics.Color.parseColor("#004D40"));
             }
 
-            // Gắn nền Gradient cho TextView
             chip.setBackground(chipGradient);
-
-            // Nhét nó vào ChipGroup
             chipGroupItems.addView(chip);
         }
 
-        // 4. Bấm nút Đóng
         btnDialogClose.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
     }
 
-    // ==============================================================
-    // HÀM HIỂN THỊ DIALOG CẬP NHẬT Y TẾ (CÓ CHIA TAB)
-    // ==============================================================
     private void showMedicalConditionDialog() {
         if (currentUserId == null) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
@@ -343,7 +513,6 @@ public class ProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     List<MedicalCondition> allConditions = response.body();
 
-                    // 1. Lấy giao diện XML Dialog lớn
                     android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_update_medical, null);
 
                     com.google.android.material.tabs.TabLayout tabLayoutMedical = dialogView.findViewById(R.id.tabLayoutMedical);
@@ -352,11 +521,9 @@ public class ProfileActivity extends AppCompatActivity {
                     MaterialButton btnCancelUpdate = dialogView.findViewById(R.id.btnCancelUpdate);
                     MaterialButton btnSaveUpdate = dialogView.findViewById(R.id.btnSaveUpdate);
 
-                    // THÊM 2 TAB VÀO THANH ĐIỀU HƯỚNG
                     tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Dị ứng"));
                     tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Bệnh lý"));
 
-                    // 2. Tạo Dialog
                     android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ProfileActivity.this)
                             .setView(dialogView)
                             .create();
@@ -365,11 +532,9 @@ public class ProfileActivity extends AppCompatActivity {
                         dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
                     }
 
-                    // 3. Vòng lặp vẽ các Thẻ (Card) bệnh lý và chia hộp
                     List<com.google.android.material.checkbox.MaterialCheckBox> checkBoxesList = new ArrayList<>();
 
                     for (MedicalCondition condition : allConditions) {
-                        // Tránh truyền 'null' vào ViewParent để layout không bị vỡ kích thước
                         View itemView = getLayoutInflater().inflate(R.layout.item_medical_condition, llAllergiesContainer, false);
 
                         TextView tvName = itemView.findViewById(R.id.tvConditionName);
@@ -380,26 +545,23 @@ public class ProfileActivity extends AppCompatActivity {
                         tvName.setText(condition.getName());
                         checkBox.setTag(condition.getId());
 
-                        // Phân loại và nhét thẻ vào đúng Hộp chứa
                         boolean isAllergy = "allergy".equals(condition.getType());
                         if (isAllergy) {
                             tvType.setText("DỊ ỨNG");
                             tvType.setTextColor(android.graphics.Color.parseColor("#FF7043"));
-                            llAllergiesContainer.addView(itemView); // Nhét vào hộp Dị ứng
+                            llAllergiesContainer.addView(itemView);
                         } else {
                             tvType.setText("BỆNH LÝ");
                             tvType.setTextColor(android.graphics.Color.parseColor("#26A69A"));
-                            llDiseasesContainer.addView(itemView); // Nhét vào hộp Bệnh lý
+                            llDiseasesContainer.addView(itemView);
                         }
 
-                        // Set trạng thái tick sẵn và màu sắc
                         if (currentConditionIds.contains(condition.getId())) {
                             checkBox.setChecked(true);
                             cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
                             cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
                         }
 
-                        // Sự kiện click sáng thẻ
                         cardView.setOnClickListener(v -> {
                             boolean isChecked = !checkBox.isChecked();
                             checkBox.setChecked(isChecked);
@@ -416,14 +578,13 @@ public class ProfileActivity extends AppCompatActivity {
                         checkBoxesList.add(checkBox);
                     }
 
-                    // 4. BẮT SỰ KIỆN CHUYỂN TAB ĐỂ ẨN/HIỆN HỘP CHỨA
                     tabLayoutMedical.addOnTabSelectedListener(new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
                         @Override
                         public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                            if (tab.getPosition() == 0) { // Bấm Tab 1 (Dị ứng)
+                            if (tab.getPosition() == 0) {
                                 llAllergiesContainer.setVisibility(View.VISIBLE);
                                 llDiseasesContainer.setVisibility(View.GONE);
-                            } else { // Bấm Tab 2 (Bệnh lý)
+                            } else {
                                 llAllergiesContainer.setVisibility(View.GONE);
                                 llDiseasesContainer.setVisibility(View.VISIBLE);
                             }
@@ -432,7 +593,6 @@ public class ProfileActivity extends AppCompatActivity {
                         @Override public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {}
                     });
 
-                    // 5. Sự kiện Lưu và Hủy
                     btnCancelUpdate.setOnClickListener(v -> dialog.dismiss());
 
                     btnSaveUpdate.setOnClickListener(v -> {

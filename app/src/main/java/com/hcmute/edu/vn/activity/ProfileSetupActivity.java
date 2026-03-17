@@ -54,6 +54,53 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
+        // --- TEXTWATCHER TỰ ĐỘNG ĐIỀN DẤU "/" NGAY LẬP TỨC ---
+        edtDOB.addTextChangedListener(new android.text.TextWatcher() {
+            private boolean isFormatting = false;
+            private boolean isDeleting = false;
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Nếu 'after' == 0 nghĩa là người dùng đang bấm nút xóa (Backspace)
+                isDeleting = after == 0;
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
+                if (isFormatting) return;
+                isFormatting = true;
+
+                // Xóa hết các ký tự không phải số
+                String digits = s.toString().replaceAll("[^\\d]", "");
+                StringBuilder formatted = new StringBuilder();
+
+                for (int i = 0; i < digits.length(); i++) {
+                    formatted.append(digits.charAt(i));
+                    // Chèn dấu "/" NẾU đã duyệt qua số thứ 2 hoặc thứ 4 (và chưa phải là số cuối cùng)
+                    if ((i == 1 || i == 3) && i < digits.length() - 1) {
+                        formatted.append("/");
+                    }
+                }
+
+                // LOGIC QUAN TRỌNG: Tự động chèn "/" ngay khi vừa gõ đủ 2 hoặc 4 số (VÀ không phải đang xóa)
+                if (!isDeleting && (digits.length() == 2 || digits.length() == 4)) {
+                    formatted.append("/");
+                }
+
+                // Cắt bỏ phần dư nếu gõ quá 10 ký tự
+                if (formatted.length() > 10) {
+                    formatted.delete(10, formatted.length());
+                }
+
+                edtDOB.setText(formatted.toString());
+                edtDOB.setSelection(formatted.length()); // Đẩy con trỏ nháy về cuối dòng
+
+                isFormatting = false;
+            }
+        });
         edtHeight = findViewById(R.id.edtHeight);
         edtWeight = findViewById(R.id.edtWeight);
         rgGender = findViewById(R.id.rgGender);
@@ -190,6 +237,64 @@ public class ProfileSetupActivity extends AppCompatActivity {
         try {
             double height = Double.parseDouble(heightStr);
             double weight = Double.parseDouble(weightStr);
+            if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
+                String selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
+
+                double heightM = height / 100.0;
+                double currentBmi = weight / (heightM * heightM);
+
+                // --- RÀO CHẮN 1: KIỂM TRA TÍNH HỢP LÝ CỦA MỤC TIÊU DỰA TRÊN THỂ TRẠNG HIỆN TẠI ---
+                if ((selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) && currentBmi < 18.5) {
+                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
+                }
+
+                if ((selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) && currentBmi > 23.0) {
+                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
+                }
+
+                if ((selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain")) && (currentBmi < 18.5 || currentBmi > 23.0)) {
+                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
+                    spinnerFitnessGoal.requestFocus();
+                    return;
+                }
+
+                // --- RÀO CHẮN 2 & 3: KIỂM TRA CÂN NẶNG ĐÍCH (Chỉ áp dụng khi không phải là Giữ dáng) ---
+                if (targetWeightValue != null && (!selectedGoalName.contains("duy trì") && !selectedGoalName.contains("maintain"))) {
+                    double targetBmi = targetWeightValue / (heightM * heightM);
+
+                    // Nếu chọn Giảm mỡ
+                    if (selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) {
+                        if (targetWeightValue >= weight) {
+                            edtTargetWeight.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                        if (targetBmi < 18.5) {
+                            edtTargetWeight.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                    }
+                    // Nếu chọn Tăng cơ
+                    else if (selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) {
+                        if (targetWeightValue <= weight) {
+                            edtTargetWeight.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                        if (targetBmi > 23.0) {
+                            edtTargetWeight.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
+                            edtTargetWeight.requestFocus();
+                            return;
+                        }
+                    }
+                }
+            }
+            // ===============================================================
 
             User updateData = new User();
             updateData.setName(fullName);
@@ -225,11 +330,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                     // ===============================================================
                                     // BƯỚC 3: TÍNH VÀ LƯU BMI VÀO DATABASE CHO BIỂU ĐỒ
                                     // ===============================================================
-                                    double heightM = height / 100.0;
-                                    double newBmi = weight / (heightM * heightM);
                                     String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
-
-                                    BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, newBmi, currentDateFull);
+                                    double currentBmi = weight / ((height / 100.0) * (height / 100.0));
+                                    BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, currentBmi, currentDateFull);
 
                                     apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
                                         @Override
