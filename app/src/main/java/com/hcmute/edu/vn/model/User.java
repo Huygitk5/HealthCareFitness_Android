@@ -37,10 +37,17 @@ public class User {
     @SerializedName("created_at")
     private String createdAt;
 
-
-    // Thêm biến để chứa danh sách Bệnh / Dị ứng của User
     @SerializedName("user_medical_conditions")
     private List<UserMedicalCondition> userMedicalConditions;
+
+    @SerializedName("current_daily_calories")
+    private Double currentDailyCalories; // Mức calo mục tiêu của tuần hiện tại
+
+    @SerializedName("current_workout_plan_id")
+    private String currentWorkoutPlanId; // ID của Gói tập tuần này đang theo
+
+    @SerializedName("target_date")
+    private String targetDate; // Ngày dự kiến đạt được mục tiêu (YYYY-MM-DD)
 
     // --- CONSTRUCTOR ---
     public User() {}
@@ -126,5 +133,29 @@ public class User {
 
     public void setFitnessGoalId(Integer fitnessGoalId) {
         this.fitnessGoalId = fitnessGoalId;
+    }
+
+    public Double getCurrentDailyCalories() {
+        return currentDailyCalories;
+    }
+
+    public void setCurrentDailyCalories(Double currentDailyCalories) {
+        this.currentDailyCalories = currentDailyCalories;
+    }
+
+    public String getCurrentWorkoutPlanId() {
+        return currentWorkoutPlanId;
+    }
+
+    public void setCurrentWorkoutPlanId(String currentWorkoutPlanId) {
+        this.currentWorkoutPlanId = currentWorkoutPlanId;
+    }
+
+    public String getTargetDate() {
+        return targetDate;
+    }
+
+    public void setTargetDate(String targetDate) {
+        this.targetDate = targetDate;
     }
 }
