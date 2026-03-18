@@ -299,7 +299,7 @@
         android:elevation="12dp"
         android:gravity="center"
         android:orientation="horizontal"
-        android:weightSum="5"
+        android:weightSum="4"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -364,6 +364,7 @@
             android:clickable="true"
             android:focusable="true"
             android:background="?attr/selectableItemBackground">
+
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="28dp"
@@ -375,31 +376,6 @@
                 android:layout_marginTop="4dp"
                 android:text="Workout"
                 android:textColor="#4DAA9A"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/nav_trainer"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackground">
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="28dp"
-                android:src="@drawable/ic_trainer"
-                app:tint="#9E9E9E" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Trainer"
-                android:textColor="#9E9E9E"
                 android:textSize="14sp"
                 android:textStyle="bold" />
         </LinearLayout>
