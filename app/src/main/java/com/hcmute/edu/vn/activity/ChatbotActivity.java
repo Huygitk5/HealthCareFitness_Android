@@ -69,13 +69,23 @@ public class ChatbotActivity extends AppCompatActivity {
         View inputBox = findViewById(R.id.bottomContainer);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            // Lấy kích thước của cả System Bars (thanh trạng thái) VÀ Bàn phím (ime)
+            androidx.core.graphics.Insets insetsToApply = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+
             if (topBar != null) {
-                topBar.setPadding(topBar.getPaddingLeft(), systemBars.top + topBar.getPaddingTop(), topBar.getPaddingRight(), topBar.getPaddingBottom());
+                // Né camera (tai thỏ) ở phía trên
+                topBar.setPadding(0, insetsToApply.top, 0, 0);
             }
             if (inputBox != null) {
-                inputBox.setPadding(inputBox.getPaddingLeft(), inputBox.getPaddingTop(), inputBox.getPaddingRight(), systemBars.bottom + inputBox.getPaddingBottom());
+                // Đẩy toàn bộ khu vực nhập chat lên đúng bằng độ cao của bàn phím
+                inputBox.setPadding(0, 0, 0, insetsToApply.bottom);
             }
+
+            // Tự động cuộn RecyclerView xuống tin nhắn cuối cùng khi bàn phím bật lên
+            if (messageAdapter != null && messageList.size() > 0) {
+                rvMessages.scrollToPosition(messageList.size() - 1);
+            }
+
             return insets;
         });
 
