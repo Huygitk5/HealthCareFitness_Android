@@ -1,5 +1,6 @@
 package com.hcmute.edu.vn.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.view.MotionEvent;
@@ -19,6 +20,7 @@ public class ChatbotHelper {
      * @param bottomMarginDp    Khoảng cách an toàn từ đáy cha (dp), ví dụ 72dp để tránh bottom nav
      * @param horizontalMarginDp Khoảng cách an toàn từ trái/phải (dp), ví dụ 16dp
      */
+    @SuppressLint("ClickableViewAccessibility")
     public static void setupChatbotFAB(Context context, FloatingActionButton fabChatbot,
                                        int topMarginDp, int bottomMarginDp, int horizontalMarginDp) {
         if (fabChatbot == null) return;
