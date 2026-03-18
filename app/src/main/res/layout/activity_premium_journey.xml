@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4F7F6"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="40dp">
+
+        <View
+            android:id="@+id/heroBackground"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_premium_hero"
+            android:elevation="8dp"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvStreak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/bg_badge_white"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text="🔥 12 Day Streak"
+            android:textColor="#2F7F73"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:elevation="10dp"
+            app:layout_constraintStart_toStartOf="@id/heroBackground"
+            app:layout_constraintTop_toTopOf="@id/heroBackground" />
+
+        <TextView
+            android:id="@+id/tvHeroTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="16dp"
+            android:text="Your Journey:\nBuild Muscle"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:elevation="10dp"
+            app:layout_constraintStart_toStartOf="@id/heroBackground"
+            app:layout_constraintTop_toBottomOf="@id/tvStreak" />
+
+        <ProgressBar
+            android:id="@+id/pbOverallProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="0dp"
+            android:layout_height="10dp"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="20dp"
+            android:max="100"
+            android:progress="45"
+            android:progressDrawable="@drawable/bg_white_pill"
+            android:progressTint="#FFFFFF"
+            android:elevation="10dp"
+            app:layout_constraintEnd_toEndOf="@id/heroBackground"
+            app:layout_constraintStart_toStartOf="@id/heroBackground"
+            app:layout_constraintTop_toBottomOf="@id/tvHeroTitle" />
+
+        <TextView
+            android:id="@+id/tvProgressFraction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="14 / 30 days completed"
+            android:textColor="#E0F2F1"
+            android:textSize="13sp"
+            android:elevation="10dp"
+            app:layout_constraintStart_toStartOf="@id/pbOverallProgress"
+            app:layout_constraintTop_toBottomOf="@id/pbOverallProgress" />
+
+        <TextView
+            android:id="@+id/tvTodayHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="32dp"
+            android:text="Today's Mission"
+            android:textColor="#1A1A1A"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/heroBackground" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cvTodayWorkout"
+            android:layout_width="match_parent"
+            android:layout_height="180dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="6dp"
+            app:layout_constraintTop_toBottomOf="@id/tvTodayHeader">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:id="@+id/ivTodayBg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/gym_tmp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#80000000" /> <TextView
+                android:id="@+id/tvTodaySub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="20dp"
+                android:text="DAY 15"
+                android:textColor="#4DAA9A"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvTodayName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="100dp"
+                    android:text="Upper Body Power &amp; Core"
+                    android:textColor="#FFFFFF"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="@id/tvTodaySub"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvTodaySub" />
+
+                <TextView
+                    android:id="@+id/tvTodayStats"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="⏱ 45 min  |  🔥 320 kcal"
+                    android:textColor="#E0E0E0"
+                    android:textSize="13sp"
+                    app:layout_constraintStart_toStartOf="@id/tvTodaySub"
+                    app:layout_constraintTop_toBottomOf="@id/tvTodayName" />
+
+                <ProgressBar
+                    android:id="@+id/pbTodayCircular"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_marginEnd="20dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/bg_circular_progress"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvTodayPercent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0%"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="@id/pbTodayCircular"
+                    app:layout_constraintEnd_toEndOf="@id/pbTodayCircular"
+                    app:layout_constraintStart_toStartOf="@id/pbTodayCircular"
+                    app:layout_constraintTop_toTopOf="@id/pbTodayCircular" />
+
+                <Button
+                    android:id="@+id/btnTodayAction"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_marginBottom="16dp"
+                    android:backgroundTint="#4DAA9A"
+                    android:text="START"
+                    android:textColor="#FFFFFF"
+                    app:cornerRadius="20dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="@id/tvTodaySub" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cvInsights"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="24dp"
+            app:cardBackgroundColor="#E8F5F3"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:layout_constraintTop_toBottomOf="@id/cvTodayWorkout">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:text="💡 Insight: You're in the top 10% of users this week. Keep this pace to reach your goal by next month!"
+                android:textColor="#00695C"
+                android:textSize="14sp"
+                app:drawableStartCompat="@drawable/ic_nutriton"
+                android:drawablePadding="12dp"/>
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/tvTimelineHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="32dp"
+            android:text="Your Timeline"
+            android:textColor="#1A1A1A"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/cvInsights" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvWorkoutDays"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            app:layout_constraintTop_toBottomOf="@id/tvTimelineHeader" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutCustomWorkout"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/bg_dashed_card"
+            app:layout_constraintTop_toBottomOf="@id/rvWorkoutDays">
+
+            <ImageView
+                android:id="@+id/ivCustomIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="24dp"
+                android:src="@drawable/ic_workout_setting"
+                app:tint="#4DAA9A"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvCustomTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Create Custom Routine"
+                android:textColor="#212121"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/tvCustomSub"
+                app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <TextView
+                android:id="@+id/tvCustomSub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="Build your own set of exercises"
+                android:textColor="#757575"
+                android:textSize="13sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
+                app:layout_constraintTop_toBottomOf="@id/tvCustomTitle" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>
