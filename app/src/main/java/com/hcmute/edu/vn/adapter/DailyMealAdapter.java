@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,17 +22,19 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
 
     private Context context;
     private List<UserDailyMeal> mealList;
-    private OnMealDeleteListener deleteListener;
+    private OnMealItemListener listener; // Đổi tên biến
 
     // Interface để báo cho Activity biết user muốn xóa món nào
-    public interface OnMealDeleteListener {
+    // ĐÃ SỬA: Gom chung sự kiện Xóa và Thay đổi vào 1 Interface
+    public interface OnMealItemListener {
         void onDeleteClick(UserDailyMeal meal);
+        void onSwapClick(UserDailyMeal meal); // Thêm dòng này
     }
 
-    public DailyMealAdapter(Context context, List<UserDailyMeal> mealList, OnMealDeleteListener deleteListener) {
+    public DailyMealAdapter(Context context, List<UserDailyMeal> mealList, OnMealItemListener listener) {
         this.context = context;
         this.mealList = mealList;
-        this.deleteListener = deleteListener;
+        this.listener = listener;
     }
 
     @NonNull
@@ -63,17 +66,34 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
             holder.tvMealFoodCalo.setText("0");
         }
 
-        // ĐÃ SỬA: Dùng getQuantityMultiplier() thay cho getQuantity()
-        String quantityText = (meal.getQuantityMultiplier() == Math.floor(meal.getQuantityMultiplier()))
-                ? String.valueOf((int)meal.getQuantityMultiplier())
-                : String.valueOf(meal.getQuantityMultiplier());
+        // =======================================================
+        // 1. Ép kiểu sang số nguyên (int) để làm tròn số phần ăn
+        // =======================================================
+        double qty = meal.getQuantityMultiplier();
+        String quantityText = (qty == Math.floor(qty))
+                ? String.valueOf((int)qty)
+                : String.valueOf(qty);
         holder.tvMealFoodQuantity.setText(quantityText + " phần");
 
-        // Sự kiện xóa món ăn
+        // Sự kiện xóa món ăn (Giữ nguyên)
         holder.btnDeleteMealFood.setOnClickListener(v -> {
-            if (deleteListener != null) {
-                deleteListener.onDeleteClick(meal);
-            }
+            if (listener != null) listener.onDeleteClick(meal);
+        });
+
+        // =======================================================
+        // SỰ KIỆN MỚI: Bấm nút Thay đổi món
+        // =======================================================
+        holder.btnSwapMealFood.setOnClickListener(v -> {
+            if (listener != null) listener.onSwapClick(meal);
+        });
+
+        // =======================================================
+        // 2. SỰ KIỆN MỚI: Bấm vào thẻ món ăn để xem chi tiết
+        // =======================================================
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, com.hcmute.edu.vn.activity.FoodDetailActivity.class);
+            intent.putExtra("FOOD_ID", meal.getFoodId());
+            context.startActivity(intent);
         });
     }
 
@@ -90,7 +110,7 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ShapeableImageView imgMealFood;
         TextView tvMealFoodName, tvMealFoodQuantity, tvMealFoodCalo;
-        ImageButton btnDeleteMealFood;
+        ImageButton btnDeleteMealFood, btnSwapMealFood;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -99,6 +119,7 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
             tvMealFoodQuantity = itemView.findViewById(R.id.tvMealFoodQuantity);
             tvMealFoodCalo = itemView.findViewById(R.id.tvMealFoodCalo);
             btnDeleteMealFood = itemView.findViewById(R.id.btnDeleteMealFood);
+            btnSwapMealFood = itemView.findViewById(R.id.btnSwapMealFood);
         }
     }
 }

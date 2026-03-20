@@ -30,9 +30,10 @@ public class CalendarAdapter extends RecyclerView.Adapter<CalendarAdapter.ViewHo
         void onDateSelected(Date date);
     }
 
-    public CalendarAdapter(Context context, List<Date> dateList, OnDateSelectedListener listener) {
+    public CalendarAdapter(Context context, List<Date> dateList, int initialSelectedPosition, OnDateSelectedListener listener) {
         this.context = context;
         this.dateList = dateList;
+        this.selectedPosition = initialSelectedPosition; // Nhận vị trí từ Activity truyền vào
         this.listener = listener;
     }
 

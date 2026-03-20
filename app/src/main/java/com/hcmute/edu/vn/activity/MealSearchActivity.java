@@ -263,9 +263,11 @@ public class MealSearchActivity extends AppCompatActivity {
 
     private void saveSelectedMealsToDatabase() {
         if (adapter == null) return;
-        List<Food> selectedFoods = adapter.getSelectedFoods();
 
-        if (selectedFoods.isEmpty()) {
+        // 1. Lấy dữ liệu dạng Map (Món ăn -> Số phần)
+        java.util.Map<Food, Double> selectedFoodsMap = adapter.getSelectedFoodsMap();
+
+        if (selectedFoodsMap.isEmpty()) {
             Toast.makeText(this, "Vui lòng chọn ít nhất 1 món ăn!", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -277,18 +279,24 @@ public class MealSearchActivity extends AppCompatActivity {
 
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        int totalFoods = selectedFoods.size();
+        int totalFoods = selectedFoodsMap.size();
         int[] completedCount = {0};
 
-        for (Food selectedFood : selectedFoods) {
+        // 2. Lặp qua Map để lấy Món ăn và Số lượng phần ăn
+        for (java.util.Map.Entry<Food, Double> entry : selectedFoodsMap.entrySet()) {
+            Food selectedFood = entry.getKey();
+            Double quantity = entry.getValue();
+
+            // 3. Tạo Object truyền lên Supabase với số lượng (quantity) chuẩn
             UserDailyMeal newMeal = new UserDailyMeal(
                     userId,
                     targetDate,
                     targetMealType,
                     selectedFood.getId(),
-                    1.0
+                    quantity // Truyền số lượng thực tế user đã chọn (0.5, 1.0, 1.5...)
             );
 
+            // 4. Bắn API lưu
             apiService.addDailyMeal(newMeal).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {

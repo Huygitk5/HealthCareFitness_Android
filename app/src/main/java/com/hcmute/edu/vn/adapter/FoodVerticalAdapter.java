@@ -18,7 +18,9 @@ import com.hcmute.edu.vn.activity.FoodDetailActivity;
 import com.hcmute.edu.vn.model.Food;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapter.ViewHolder> {
 
@@ -35,8 +37,10 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         this.listener = listener;
     }
 
-    public List<Food> getSelectedFoods() {
-        return selectedFoods;
+    private Map<Food, Double> selectedFoodsMap = new HashMap<>();
+
+    public Map<Food, Double> getSelectedFoodsMap() {
+        return selectedFoodsMap;
     }
 
     @NonNull
@@ -67,15 +71,18 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
                 .error(R.mipmap.ic_launcher_round)
                 .into(holder.imgFoodList);
 
-        boolean isSelected = selectedFoods.contains(food);
+        boolean isSelected = selectedFoodsMap.containsKey(food);
 
         // LOGIC HIỂN THỊ HIGHLIGHT
         if (isSelected) {
+            double qty = selectedFoodsMap.get(food);
+            holder.tvFoodNameList.setText(food.getName() + " (x" + qty + ")"); // Thêm chữ x1.5 cho rõ
             holder.cardFoodVertical.setStrokeWidth(4);
             holder.cardFoodVertical.setStrokeColor(Color.parseColor("#589A8D"));
             holder.cardFoodVertical.setCardBackgroundColor(Color.parseColor("#F1F8F7"));
             holder.tvFoodNameList.setTextColor(Color.parseColor("#589A8D"));
         } else {
+            holder.tvFoodNameList.setText(food.getName());
             holder.cardFoodVertical.setStrokeWidth(2);
             holder.cardFoodVertical.setStrokeColor(Color.parseColor("#E0E0E0"));
             holder.cardFoodVertical.setCardBackgroundColor(Color.WHITE);
@@ -86,20 +93,20 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         // 1. SỰ KIỆN: BẤM VÀO NÚT [+] VỚI HIỆU ỨNG NHÚN NẢY
         // =======================================================
         holder.btnAddFoodList.setOnClickListener(v -> {
-            v.animate().scaleX(0.85f).scaleY(0.85f).setDuration(100).withEndAction(() -> {
-                v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
-                    if (selectedFoods.contains(food)) {
-                        selectedFoods.remove(food);
-                    } else {
-                        selectedFoods.add(food);
-                    }
-                    notifyDataSetChanged();
+            String[] options = {"0.5 phần", "1.0 phần", "1.5 phần", "2.0 phần", "Bỏ chọn món này"};
 
-                    if (listener != null) {
-                        listener.onSelectionChanged(selectedFoods.size());
-                    }
-                }).start();
-            }).start();
+            new android.app.AlertDialog.Builder(v.getContext())
+                    .setTitle("Chọn số lượng cho " + food.getName())
+                    .setItems(options, (dialog, which) -> {
+                        if (which == 4) {
+                            selectedFoodsMap.remove(food); // Chọn dòng cuối -> Bỏ chọn
+                        } else {
+                            double qty = 0.5 * (which + 1); // which 0->0.5, 1->1.0...
+                            selectedFoodsMap.put(food, qty);
+                        }
+                        notifyItemChanged(position); // Update giao diện thẻ này
+                        if (listener != null) listener.onSelectionChanged(selectedFoodsMap.size());
+                    }).show();
         });
 
         // =======================================================
