@@ -1,5 +1,6 @@
 package com.hcmute.edu.vn.activity;
 
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -197,6 +198,16 @@ public class HomeActivity extends AppCompatActivity {
 
         btnUpdateBMI = findViewById(R.id.btnUpdateBMI);
         btnUpdateBMI.setOnClickListener(v -> showUpdateBMIDialog());
+        setupDailyWeightReminder();
+        if (getIntent() != null && getIntent().getBooleanExtra("OPEN_UPDATE_BMI", false)) {
+            // Đợi 1 giây để app gọi API lấy currentUser xong rồi mới bật Pop-up
+            new android.os.Handler().postDelayed(() -> {
+                showUpdateBMIDialog();
+            }, 1000);
+
+            // Xóa tín hiệu đi để nếu người dùng xoay màn hình, pop-up không bị bật lại liên tục
+            getIntent().removeExtra("OPEN_UPDATE_BMI");
+        }
     }
 
     @Override
@@ -662,5 +673,33 @@ public class HomeActivity extends AppCompatActivity {
         Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
         dialog.dismiss();
         loadUserData();
+    }
+
+    // Thêm hàm này vào HomeActivity.java
+    private void setupDailyWeightReminder() {
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WeightReminderReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 200, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 7); // Hẹn 7h sáng
+        calendar.set(java.util.Calendar.MINUTE, 0);
+        calendar.set(java.util.Calendar.SECOND, 0);
+
+        // Nếu lúc đăng nhập đã qua 7h sáng thì dời chuông sang ngày hôm sau
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(java.util.Calendar.DAY_OF_YEAR, 1);
+        }
+
+        if (alarmManager != null) {
+            // Đặt lặp lại mỗi ngày (INTERVAL_DAY)
+            alarmManager.setRepeating(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    android.app.AlarmManager.INTERVAL_DAY,
+                    pendingIntent
+            );
+        }
     }
 }

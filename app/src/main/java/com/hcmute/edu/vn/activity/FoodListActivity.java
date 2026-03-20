@@ -127,9 +127,17 @@ public class FoodListActivity extends AppCompatActivity {
     private void setupListeners() {
         // Nút Back
         btnBackFromList.setOnClickListener(v -> {
+
+            // =======================================================
+            // ĐÃ SỬA: Gọi hàm getSelectedFoodsMap() thay vì hàm cũ
+            // =======================================================
+            java.util.Map<Food, Double> selectedMap = adapter.getSelectedFoodsMap();
+
             // Kiểm tra xem user có chọn món nào không
-            if (!adapter.getSelectedFoods().isEmpty()) {
-                Food selected = adapter.getSelectedFoods().get(0);
+            if (selectedMap != null && !selectedMap.isEmpty()) {
+
+                // Lấy món ăn đầu tiên mà user đã chọn trong Map ra
+                Food selected = selectedMap.keySet().iterator().next();
 
                 // Gói dữ liệu gửi về màn hình trước
                 Intent resultIntent = new Intent();

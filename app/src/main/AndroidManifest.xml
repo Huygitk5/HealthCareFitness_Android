@@ -70,11 +70,12 @@
         <activity android:name=".activity.FoodListActivity" android:exported="false" />
         <activity android:name=".activity.FoodDetailActivity" android:exported="false" />
         <activity android:name=".activity.MealSearchActivity" android:exported="false"/>
+        <activity android:name=".activity.MealSwapActivity" android:exported="false" />
         <receiver android:name=".receiver.WaterReminderReceiver" android:exported="false" />
-
         <activity android:name="com.hcmute.edu.vn.activity.ChatbotActivity" android:windowSoftInputMode="adjustResize" android:exported="false" />
-
         <receiver android:name="com.hcmute.edu.vn.receiver.WorkoutReminderReceiver" android:exported="false" />
+        <receiver android:name=".receiver.WeightReminderReceiver" android:exported="false" />
+
 
     </application>
 
