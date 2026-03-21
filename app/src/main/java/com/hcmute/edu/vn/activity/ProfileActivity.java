@@ -64,7 +64,7 @@ public class ProfileActivity extends AppCompatActivity {
         controller.setAppearanceLightStatusBars(true);
 
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        pref.edit().putBoolean("TARGET_CHANGED", true).apply(); // Cắm cờ báo hiệu
+
         username = pref.getString("KEY_USER", null);
 
         // Ánh xạ
@@ -294,6 +294,7 @@ public class ProfileActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
+                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("TARGET_CHANGED", true).apply();
                         Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
                         loadUserProfile();
                         dialog.dismiss();

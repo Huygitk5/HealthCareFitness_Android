@@ -89,10 +89,11 @@ public class NutritionActivity extends AppCompatActivity {
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
-        userId = pref.getString("KEY_USER_ID", ""); 
+        userId = pref.getString("KEY_USER_ID", "");
 
-        selectedDate = new Date(); 
+        selectedDate = new Date();
         currentWeekBase = Calendar.getInstance();
+        currentWeekBase.setFirstDayOfWeek(Calendar.MONDAY);
         currentWeekBase.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 
         initViews();
@@ -101,7 +102,7 @@ public class NutritionActivity extends AppCompatActivity {
         setupClickListeners();
 
         loadUserAllergies();
-        loadMealsForSelectedDate(); 
+        loadMealsForSelectedDate();
 
         setupBottomNavigation();
 
@@ -147,12 +148,15 @@ public class NutritionActivity extends AppCompatActivity {
                         public void onResponse(Call<Void> call, Response<Void> response) {
                             // SAU KHI XÓA: Reset cờ hiệu và tải lại Macro để kích hoạt AI tạo mới
                             isGeneratingMeals = false;
-                            loadUserAllergies(); 
+                            breakfastList.clear();
+                            lunchList.clear();
+                            dinnerList.clear();
+                            loadUserAllergies();
                         }
                         @Override
                         public void onFailure(Call<Void> call, Throwable t) {
                             isGeneratingMeals = false;
-                            loadUserAllergies(); 
+                            loadUserAllergies();
                         }
                     });
                 })
@@ -204,9 +208,9 @@ public class NutritionActivity extends AppCompatActivity {
             tvWeekLabel.setText("Tháng " + monthFormat.format(cal.getTime()));
         }
 
-        int selectedIndex = 0; 
+        int selectedIndex = 0;
         SimpleDateFormat matchFormat = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
-        String targetDateStr = matchFormat.format(selectedDate); 
+        String targetDateStr = matchFormat.format(selectedDate);
 
         for (int i = 0; i < 7; i++) {
             dates.add(cal.getTime());
@@ -256,7 +260,7 @@ public class NutritionActivity extends AppCompatActivity {
         btnAddBreakfast.setOnClickListener(v -> openMealSearch("BREAKFAST"));
         btnAddLunch.setOnClickListener(v -> openMealSearch("LUNCH"));
         btnAddDinner.setOnClickListener(v -> openMealSearch("DINNER"));
-        
+
         if (btnPrevWeek != null) {
             btnPrevWeek.setOnClickListener(v -> {
                 currentWeekBase.add(Calendar.WEEK_OF_YEAR, -1);
@@ -312,13 +316,15 @@ public class NutritionActivity extends AppCompatActivity {
                     calculateAndDisplayTotals(response.body());
                 } else {
                     updateMealUI();
-                    calculateAndDisplayTotals(new ArrayList<>()); 
+                    calculateAndDisplayTotals(new ArrayList<>());
 
                     Calendar todayMon = Calendar.getInstance();
+                    todayMon.setFirstDayOfWeek(Calendar.MONDAY);
                     todayMon.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-                    todayMon.set(Calendar.HOUR_OF_DAY, 0); 
+                    todayMon.set(Calendar.HOUR_OF_DAY, 0);
 
                     Calendar selectedMon = Calendar.getInstance();
+                    selectedMon.setFirstDayOfWeek(Calendar.MONDAY);
                     selectedMon.setTime(selectedDate);
                     selectedMon.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
                     selectedMon.set(Calendar.HOUR_OF_DAY, 0);
@@ -375,7 +381,7 @@ public class NutritionActivity extends AppCompatActivity {
             public void onResponse(Call<Void> call, Response<Void> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(NutritionActivity.this, "Đã xóa món ăn!", Toast.LENGTH_SHORT).show();
-                    loadMealsForSelectedDate(); 
+                    loadMealsForSelectedDate();
                 }
             }
             @Override
@@ -484,7 +490,7 @@ public class NutritionActivity extends AppCompatActivity {
     private void setupWarningDisplay(List<String> dataList) {
         if (dataList.isEmpty()) {
             tvAllergiesWarning.setText("⚠️ Cần tránh: Không có");
-            cardAllergiesWarning.setOnClickListener(null); 
+            cardAllergiesWarning.setOnClickListener(null);
             return;
         }
 
@@ -520,14 +526,14 @@ public class NutritionActivity extends AppCompatActivity {
             TextView chip = new TextView(this);
             chip.setText(itemName);
             chip.setTextSize(14f);
-            chip.setTypeface(null, android.graphics.Typeface.BOLD); 
+            chip.setTypeface(null, android.graphics.Typeface.BOLD);
             int padX = (int) (16 * getResources().getDisplayMetrics().density);
             int padY = (int) (8 * getResources().getDisplayMetrics().density);
             chip.setPadding(padX, padY, padX, padY);
 
             android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
             chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
-            chipGradient.setCornerRadius(100f); 
+            chipGradient.setCornerRadius(100f);
 
             if (isAllergy) {
                 chipGradient.setColors(new int[]{android.graphics.Color.parseColor("#FFE0B2"), android.graphics.Color.parseColor("#FFCCBC")});
@@ -543,7 +549,7 @@ public class NutritionActivity extends AppCompatActivity {
         btnDialogClose.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
     }
-    
+
     private void setupBottomNavigation() {
         LinearLayout navHome = findViewById(R.id.nav_home);
         LinearLayout navWorkout = findViewById(R.id.nav_workout);
@@ -589,8 +595,18 @@ public class NutritionActivity extends AppCompatActivity {
         }
 
         Calendar cal = Calendar.getInstance();
-        cal.setTime(selectedDate); 
-        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        cal.setTime(selectedDate);
+
+        // 1. CHỐNG LỖI MẤT NGÀY: Khóa giờ về 12h trưa để vòng lặp cộng ngày không bao giờ bị lệch múi giờ (23:59 - 00:00)
+        cal.set(Calendar.HOUR_OF_DAY, 12);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        // Lùi về đúng Thứ 2
+        int day = cal.get(Calendar.DAY_OF_WEEK);
+        int diff = (day == Calendar.SUNDAY) ? 6 : (day - Calendar.MONDAY);
+        cal.add(Calendar.DAY_OF_MONTH, -diff);
 
         List<UserDailyMeal> generatedMeals = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -599,32 +615,49 @@ public class NutritionActivity extends AppCompatActivity {
         double lunchTarget = targetCalories * 0.40;
         double dinnerTarget = targetCalories * 0.35;
 
+        // ... (phần khởi tạo breakfastTarget, lunchTarget... giữ nguyên)
+
         for (int i = 0; i < 7; i++) {
             String dateStr = sdf.format(cal.getTime());
-            Food breakfastFood = safeFoods.get((int) (Math.random() * safeFoods.size()));
-            Food lunchFood = safeFoods.get((int) (Math.random() * safeFoods.size()));
-            Food dinnerFood = safeFoods.get((int) (Math.random() * safeFoods.size()));
 
-            double bCal = breakfastFood.getCalories() > 0 ? breakfastFood.getCalories() : 1;
-            double lCal = lunchFood.getCalories() > 0 ? lunchFood.getCalories() : 1;
-            double dCal = dinnerFood.getCalories() > 0 ? dinnerFood.getCalories() : 1;
+            // Tạo mảng để lặp qua 3 bữa Sáng, Trưa, Tối
+            String[] mealTypes = {"BREAKFAST", "LUNCH", "DINNER"};
+            double[] mealTargets = {breakfastTarget, lunchTarget, dinnerTarget};
 
-            double bMultiplier = 1.0, lMultiplier = 1.0, dMultiplier = 1.0;
+            // Lặp qua từng bữa ăn trong ngày
+            for (int m = 0; m < 3; m++) {
+                String currentMealType = mealTypes[m];
+                double currentTarget = mealTargets[m];
+                double accumulatedCal = 0;
+                int maxItemsPerMeal = 0;
 
-            while ((bMultiplier * bCal) + (lMultiplier * lCal) + (dMultiplier * dCal) < targetCalories - 50) {
-                if ((bMultiplier * bCal) < breakfastTarget) bMultiplier += 0.5;
-                else if ((lMultiplier * lCal) < lunchTarget) lMultiplier += 0.5;
-                else if ((dMultiplier * dCal) < dinnerTarget) dMultiplier += 0.5;
-                else lMultiplier += 0.5;
-                if (bMultiplier > 8 || lMultiplier > 8 || dMultiplier > 8) break;
+                // Bốc món ăn liên tục cho đến khi đủ Calo của bữa đó (sai số 50 Kcal), tối đa bốc 4 món khác nhau/bữa
+                while (accumulatedCal < currentTarget - 50 && maxItemsPerMeal < 4) {
+                    Food randomFood = safeFoods.get((int) (Math.random() * safeFoods.size()));
+                    double fCal = randomFood.getCalories() > 0 ? randomFood.getCalories() : 1;
+
+                    // Tính lượng Calo còn thiếu cho bữa này
+                    double neededCal = currentTarget - accumulatedCal;
+
+                    // Tính số phần ăn cần thiết cho món vừa bốc (làm tròn 0.1)
+                    double multiplier = Math.round((neededCal / fCal) * 10.0) / 10.0;
+
+                    // Giới hạn phần ăn: Tối thiểu 0.3 phần, Tối đa 3.0 phần cho 1 món
+                    // (VD: Tránh việc AI bắt bạn ăn tới 10 phần Salad để đủ Calo)
+                    multiplier = Math.max(0.3, Math.min(multiplier, 3.0));
+
+                    // Thêm món ăn vào bữa
+                    generatedMeals.add(new UserDailyMeal(userId, dateStr, currentMealType, randomFood.getId(), multiplier));
+
+                    // Cộng dồn lượng Calo đã nạp
+                    accumulatedCal += (fCal * multiplier);
+                    maxItemsPerMeal++;
+                }
             }
 
-            generatedMeals.add(new UserDailyMeal(userId, dateStr, "BREAKFAST", breakfastFood.getId(), bMultiplier));
-            generatedMeals.add(new UserDailyMeal(userId, dateStr, "LUNCH", lunchFood.getId(), lMultiplier));
-            generatedMeals.add(new UserDailyMeal(userId, dateStr, "DINNER", dinnerFood.getId(), dMultiplier));
+            // Sang ngày tiếp theo
             cal.add(Calendar.DAY_OF_MONTH, 1);
         }
-
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
         apiService.addMultipleDailyMeals(generatedMeals).enqueue(new Callback<Void>() {
             @Override
@@ -632,7 +665,7 @@ public class NutritionActivity extends AppCompatActivity {
                 isGeneratingMeals = false;
                 if (response.isSuccessful()) {
                     Toast.makeText(NutritionActivity.this, "Đã tạo thực đơn tuần mới!", Toast.LENGTH_SHORT).show();
-                    loadMealsForSelectedDate(); 
+                    loadMealsForSelectedDate();
                 } else {
                     Toast.makeText(NutritionActivity.this, "Lỗi Server: Không thể lưu thực đơn!", Toast.LENGTH_LONG).show();
                 }
@@ -656,5 +689,45 @@ public class NutritionActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_MEAL_TYPE", oldMeal.getMealType());
         intent.putExtra("EXTRA_TARGET_KCAL", targetKcalToSwap);
         addMealLauncher.launch(intent);
+    }
+
+    private void showSwapOptionsDialog(UserDailyMeal oldMeal, List<Food> options, List<Double> quantities, List<String> displayStrings) {
+        String[] items = displayStrings.toArray(new String[0]);
+
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Đổi món tương đương (" + Math.round(oldMeal.getFood().getCalories() * oldMeal.getQuantityMultiplier()) + " Kcal)")
+                .setItems(items, (dialog, which) -> {
+                    Food selectedFood = options.get(which);
+                    Double selectedQuantity = quantities.get(which);
+
+                    String dateStr = apiDateFormat.format(selectedDate);
+
+                    // 1. Gắn dữ liệu mới vào Object
+                    UserDailyMeal newMeal = new UserDailyMeal(
+                            userId, dateStr, oldMeal.getMealType(), selectedFood.getId(), selectedQuantity
+                    );
+
+                    SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+                    // 2. Xóa món cũ đi
+                    apiService.deleteDailyMeal("eq." + oldMeal.getId()).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call, Response<Void> response) {
+                            // 3. Lưu món mới vào
+                            apiService.addDailyMeal(newMeal).enqueue(new Callback<Void>() {
+                                @Override
+                                public void onResponse(Call<Void> call, Response<Void> response) {
+                                    Toast.makeText(NutritionActivity.this, "Đã đổi món thành công!", Toast.LENGTH_SHORT).show();
+                                    loadMealsForSelectedDate(); // Tải lại giao diện
+                                }
+                                @Override public void onFailure(Call<Void> call, Throwable t) {}
+                            });
+                        }
+                        @Override public void onFailure(Call<Void> call, Throwable t) {}
+                    });
+
+                })
+                .setNegativeButton("Hủy", null)
+                .show();
     }
 }
