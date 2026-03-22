@@ -277,7 +277,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-                    android:text="Tạo lịch tập của riêng bạn"
+                    android:text="Tạo bài tập riêng của bạn"
                     android:textColor="#212121"
                     android:textSize="17sp"
                     android:textStyle="bold"
