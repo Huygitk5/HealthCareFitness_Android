@@ -101,8 +101,8 @@ public class NutritionActivity extends AppCompatActivity {
         setupMealAdapters();
         setupClickListeners();
 
-        // CHỈ gọi loadUserAllergies - nó sẽ tự điều phối việc load meal và trigger AI
         loadUserAllergies();
+        loadMealsForSelectedDate();
 
         setupBottomNavigation();
 
@@ -203,11 +203,6 @@ public class NutritionActivity extends AppCompatActivity {
         List<Date> dates = new ArrayList<>();
         Calendar cal = (Calendar) currentWeekBase.clone();
 
-        SimpleDateFormat monthFormat = new SimpleDateFormat("MM/yyyy", Locale.getDefault());
-        if (tvWeekLabel != null) {
-            tvWeekLabel.setText("Tháng " + monthFormat.format(cal.getTime()));
-        }
-
         int selectedIndex = 0;
         SimpleDateFormat matchFormat = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
         String targetDateStr = matchFormat.format(selectedDate);
@@ -220,14 +215,26 @@ public class NutritionActivity extends AppCompatActivity {
             cal.add(Calendar.DAY_OF_MONTH, 1);
         }
 
+        // Hiển thị tháng/năm theo đúng ngày đang được chọn
+        updateWeekLabel(selectedDate);
+
         CalendarAdapter calendarAdapter = new CalendarAdapter(this, dates, selectedIndex, date -> {
             selectedDate = date;
+            // Cập nhật label ngay khi user bấm sang ngày khác (kể cả khác tháng)
+            updateWeekLabel(selectedDate);
             loadMealsForSelectedDate();
         });
 
         rvCalendar.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         rvCalendar.setAdapter(calendarAdapter);
         rvCalendar.scrollToPosition(selectedIndex);
+    }
+
+    /** Hiển thị tháng/năm của ngày đang được chọn */
+    private void updateWeekLabel(Date date) {
+        if (tvWeekLabel == null) return;
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MM/yyyy", Locale.getDefault());
+        tvWeekLabel.setText("Tháng " + monthFormat.format(date));
     }
 
     private void setupMealAdapters() {
@@ -457,12 +464,16 @@ public class NutritionActivity extends AppCompatActivity {
                     if (currentUser.getCurrentDailyCalories() != null) {
                         int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
                         calculateTargetMacros(currentUser.getCurrentDailyCalories(), goalId);
-                    }
 
-                    // LUÔN gọi loadMealsForSelectedDate sau khi có target.
-                    // loadMealsForSelectedDate sẽ tự kiểm tra DB có data chưa rồi mới quyết định trigger AI.
-                    // Không bao giờ trigger AI trực tiếp từ đây để tránh double-insert.
-                    loadMealsForSelectedDate();
+                        // ĐÃ SỬA: Sau khi tính xong Macro mới, nếu đang trống danh sách, kích hoạt AI ngay
+                        if (breakfastList.isEmpty() && lunchList.isEmpty() && dinnerList.isEmpty()) {
+                            if (!isGeneratingMeals) triggerAIGeneration();
+                        } else {
+                            // Nếu đã có danh sách, chỉ cần cập nhật lại dashboard
+                            calculateAndDisplayTotals(new ArrayList<>());
+                            loadMealsForSelectedDate();
+                        }
+                    }
 
                     List<String> allergyList = new ArrayList<>();
                     if (currentUser.getUserMedicalConditions() != null) {
@@ -666,16 +677,11 @@ public class NutritionActivity extends AppCompatActivity {
         apiService.addMultipleDailyMeals(generatedMeals).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
+                isGeneratingMeals = false;
                 if (response.isSuccessful()) {
                     Toast.makeText(NutritionActivity.this, "Đã tạo thực đơn tuần mới!", Toast.LENGTH_SHORT).show();
-                    // Delay nhỏ để Supabase có thời gian index data trước khi query lại.
-                    // isGeneratingMeals vẫn = true trong thời gian này để chặn trigger lần 2.
-                    new android.os.Handler().postDelayed(() -> {
-                        isGeneratingMeals = false;
-                        loadMealsForSelectedDate();
-                    }, 1500);
+                    loadMealsForSelectedDate();
                 } else {
-                    isGeneratingMeals = false;
                     Toast.makeText(NutritionActivity.this, "Lỗi Server: Không thể lưu thực đơn!", Toast.LENGTH_LONG).show();
                 }
             }
