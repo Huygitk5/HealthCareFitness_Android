@@ -101,8 +101,8 @@ public class NutritionActivity extends AppCompatActivity {
         setupMealAdapters();
         setupClickListeners();
 
+        // CHỈ gọi loadUserAllergies - nó sẽ tự điều phối việc load meal và trigger AI
         loadUserAllergies();
-        loadMealsForSelectedDate();
 
         setupBottomNavigation();
 
@@ -457,16 +457,12 @@ public class NutritionActivity extends AppCompatActivity {
                     if (currentUser.getCurrentDailyCalories() != null) {
                         int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
                         calculateTargetMacros(currentUser.getCurrentDailyCalories(), goalId);
-
-                        // ĐÃ SỬA: Sau khi tính xong Macro mới, nếu đang trống danh sách, kích hoạt AI ngay
-                        if (breakfastList.isEmpty() && lunchList.isEmpty() && dinnerList.isEmpty()) {
-                            if (!isGeneratingMeals) triggerAIGeneration();
-                        } else {
-                            // Nếu đã có danh sách, chỉ cần cập nhật lại dashboard
-                            calculateAndDisplayTotals(new ArrayList<>());
-                            loadMealsForSelectedDate();
-                        }
                     }
+
+                    // LUÔN gọi loadMealsForSelectedDate sau khi có target.
+                    // loadMealsForSelectedDate sẽ tự kiểm tra DB có data chưa rồi mới quyết định trigger AI.
+                    // Không bao giờ trigger AI trực tiếp từ đây để tránh double-insert.
+                    loadMealsForSelectedDate();
 
                     List<String> allergyList = new ArrayList<>();
                     if (currentUser.getUserMedicalConditions() != null) {
@@ -634,23 +630,31 @@ public class NutritionActivity extends AppCompatActivity {
                 // Bốc món ăn liên tục cho đến khi đủ Calo của bữa đó (sai số 50 Kcal), tối đa bốc 4 món khác nhau/bữa
                 while (accumulatedCal < currentTarget - 50 && maxItemsPerMeal < 4) {
                     Food randomFood = safeFoods.get((int) (Math.random() * safeFoods.size()));
-                    double fCal = randomFood.getCalories() > 0 ? randomFood.getCalories() : 1;
+                    double fCal = randomFood.getCalories() != null && randomFood.getCalories() > 0
+                            ? randomFood.getCalories() : 1;
 
-                    // Tính lượng Calo còn thiếu cho bữa này
+                    // Tính lượng Calo còn thiếu tại thời điểm này
                     double neededCal = currentTarget - accumulatedCal;
 
-                    // Tính số phần ăn cần thiết cho món vừa bốc (làm tròn 0.1)
+                    // Tính số phần ăn vừa đủ để bù lượng còn thiếu (làm tròn 0.1)
                     double multiplier = Math.round((neededCal / fCal) * 10.0) / 10.0;
 
-                    // Giới hạn phần ăn: Tối thiểu 0.3 phần, Tối đa 3.0 phần cho 1 món
-                    // (VD: Tránh việc AI bắt bạn ăn tới 10 phần Salad để đủ Calo)
-                    multiplier = Math.max(0.3, Math.min(multiplier, 3.0));
+                    // Giới hạn phần ăn: Tối thiểu 0.1 phần (tránh overshoot khi bữa gần đủ),
+                    // Tối đa 3.0 phần cho 1 món (tránh ăn quá nhiều 1 loại)
+                    multiplier = Math.max(0.1, Math.min(multiplier, 3.0));
+
+                    // Nếu thêm món này sẽ vượt quá target + 50 Kcal thì dừng luôn,
+                    // tránh bữa bị overshoot do clamp min
+                    double willAdd = fCal * multiplier;
+                    if (accumulatedCal + willAdd > currentTarget + 50 && maxItemsPerMeal > 0) {
+                        break;
+                    }
 
                     // Thêm món ăn vào bữa
                     generatedMeals.add(new UserDailyMeal(userId, dateStr, currentMealType, randomFood.getId(), multiplier));
 
                     // Cộng dồn lượng Calo đã nạp
-                    accumulatedCal += (fCal * multiplier);
+                    accumulatedCal += willAdd;
                     maxItemsPerMeal++;
                 }
             }
@@ -662,11 +666,16 @@ public class NutritionActivity extends AppCompatActivity {
         apiService.addMultipleDailyMeals(generatedMeals).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-                isGeneratingMeals = false;
                 if (response.isSuccessful()) {
                     Toast.makeText(NutritionActivity.this, "Đã tạo thực đơn tuần mới!", Toast.LENGTH_SHORT).show();
-                    loadMealsForSelectedDate();
+                    // Delay nhỏ để Supabase có thời gian index data trước khi query lại.
+                    // isGeneratingMeals vẫn = true trong thời gian này để chặn trigger lần 2.
+                    new android.os.Handler().postDelayed(() -> {
+                        isGeneratingMeals = false;
+                        loadMealsForSelectedDate();
+                    }, 1500);
                 } else {
+                    isGeneratingMeals = false;
                     Toast.makeText(NutritionActivity.this, "Lỗi Server: Không thể lưu thực đơn!", Toast.LENGTH_LONG).show();
                 }
             }
