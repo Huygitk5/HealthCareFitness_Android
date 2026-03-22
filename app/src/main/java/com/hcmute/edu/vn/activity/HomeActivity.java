@@ -36,7 +36,7 @@ import com.hcmute.edu.vn.adapter.NewsAdapter;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.activity.NutritionActivity;
 import com.hcmute.edu.vn.activity.ProfileActivity;
-import com.hcmute.edu.vn.activity.WorkoutActivity;
+import com.hcmute.edu.vn.activity.WorkoutJourneyActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -169,7 +169,7 @@ public class HomeActivity extends AppCompatActivity {
         navWorkout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(HomeActivity.this, WorkoutActivity.class);
+                Intent intent = new Intent(HomeActivity.this, WorkoutJourneyActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);

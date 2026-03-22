@@ -332,4 +332,5 @@ public interface SupabaseApiService {
     // API Xóa sạch thực đơn của một User (dùng khi Reset mục tiêu)
     @DELETE("user_daily_meals")
     Call<Void> deleteMealsByUserId(@Query("user_id") String userId);
+
 }
