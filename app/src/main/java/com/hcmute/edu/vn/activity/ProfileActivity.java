@@ -715,7 +715,7 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(i); overridePendingTransition(0, 0);
         });
         navWorkout.setOnClickListener(v -> {
-            Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
+            Intent i = new Intent(ProfileActivity.this, WorkoutJourneyActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i); overridePendingTransition(0, 0);
         });
