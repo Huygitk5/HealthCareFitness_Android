@@ -357,7 +357,7 @@ public class ChatbotActivity extends AppCompatActivity {
     }
 
     private int calculateAge(String dobString) {
-        if (dobString == null || dobString.isEmpty()) return 0;
+
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             Date birthDate = sdf.parse(dobString);
