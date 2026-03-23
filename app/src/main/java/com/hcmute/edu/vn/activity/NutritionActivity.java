@@ -75,6 +75,8 @@ public class NutritionActivity extends AppCompatActivity {
 
     private ActivityResultLauncher<Intent> addMealLauncher;
 
+    private List<String> restrictedIngredientIds = new ArrayList<>();
+
     List<String> userAllergies = new ArrayList<>();
 
     @Override
@@ -298,13 +300,22 @@ public class NutritionActivity extends AppCompatActivity {
     private void triggerAIGeneration() {
         isGeneratingMeals = true;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.searchFoods(new java.util.HashMap<>()).enqueue(new Callback<List<Food>>() {
+
+        java.util.Map<String, String> queryMap = new java.util.HashMap<>();
+        queryMap.put("select", "*, food_ingredients(*, ingredients(*))");
+
+        apiService.searchFoods(queryMap).enqueue(new Callback<List<Food>>() {
             @Override
             public void onResponse(Call<List<Food>> call, Response<List<Food>> res) {
-                if (res.isSuccessful() && res.body() != null) autoGenerateWeeklyMeals(res.body());
-                else isGeneratingMeals = false;
+                if (res.isSuccessful() && res.body() != null) {
+                    autoGenerateWeeklyMeals(res.body());
+                } else {
+                    isGeneratingMeals = false;
+                }
             }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) { isGeneratingMeals = false; }
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {
+                isGeneratingMeals = false;
+            }
         });
     }
 
@@ -314,30 +325,54 @@ public class NutritionActivity extends AppCompatActivity {
             return;
         }
 
-        // --- BƯỚC LỌC THỰC PHẨM DỊ ỨNG CHO AI ---
+        // --- BƯỚC LỌC THỰC PHẨM DỊ ỨNG CHO AI---
         List<Food> safeFoods = new ArrayList<>();
         for (Food food : allFoods) {
-            boolean isAllergic = false;
-            // Kiểm tra xem tên thực phẩm có chứa từ khóa dị ứng nào không
+            boolean isSafe = true;
+
+            // LỚP 1: TÊN MÓN ĂN
             if (food.getName() != null) {
                 String foodName = food.getName().toLowerCase();
                 for (String allergy : currentAllergies) {
                     if (allergy != null && !allergy.isEmpty()) {
                         String keyword = allergy.toLowerCase().replace("dị ứng", "").replace("allergy", "").trim();
                         if (!keyword.isEmpty() && foodName.contains(keyword)) {
-                            isAllergic = true;
-                            break; // Lập tức loại món này
+                            isSafe = false;
+                            break;
                         }
                     }
                 }
             }
-            // Món nào qua ải thì mới được đưa vào danh sách an toàn
-            if (!isAllergic) {
+
+            // LỚP 2: THÀNH PHẦN NGUYÊN LIỆU BÊN TRONG MÓN ĂN
+            if (isSafe && food.getFoodIngredients() != null) {
+                for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                    // Quét bằng ID (Chuẩn xác 100%)
+                    if (fi.getIngredientId() != null && restrictedIngredientIds.contains(fi.getIngredientId())) {
+                        isSafe = false;
+                        break;
+                    }
+                    // Quét dự phòng bằng tên nguyên liệu
+                    if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
+                        String ingName = fi.getIngredient().getName().toLowerCase();
+                        for (String allergy : currentAllergies) {
+                            if (allergy != null && !allergy.isEmpty()) {
+                                String keyword = allergy.toLowerCase().replace("dị ứng", "").replace("allergy", "").trim();
+                                if (!keyword.isEmpty() && ingName.contains(keyword)) {
+                                    isSafe = false;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!isSafe) break;
+                }
+            }
+            if (isSafe) {
                 safeFoods.add(food);
             }
         }
 
-        // Fallback: Tránh crash nếu danh sách an toàn bị rỗng
         if (safeFoods.isEmpty()) {
             safeFoods = allFoods;
         }
@@ -360,8 +395,7 @@ public class NutritionActivity extends AppCompatActivity {
                 double currentTarget = targets[m], accumulatedCal = 0;
                 int count = 0;
                 while (accumulatedCal < currentTarget - 15 && count < 6) {
-                    // AI sẽ bốc random từ safeFoods
-                    Food f = safeFoods.get((int) (Math.random() * safeFoods.size()));
+                    Food f = safeFoods.get((int) (Math.random() * safeFoods.size())); // Lấy ngẫu nhiên từ đồ an toàn
                     double fCal = (f.getCalories() != null && f.getCalories() > 0) ? f.getCalories() : 100;
                     double multiplier = Math.max(0.3, Math.min(Math.round(((currentTarget - accumulatedCal) / fCal) * 10.0) / 10.0, 3.0));
                     if (count > 0 && (accumulatedCal + fCal * multiplier) > currentTarget + 50) {
@@ -433,39 +467,48 @@ public class NutritionActivity extends AppCompatActivity {
         if (username == null || username.isEmpty()) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        apiService.getUserByUsername("eq." + username, "*, user_medical_conditions(*, medical_conditions(*))").enqueue(new Callback<List<User>>() {
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*, condition_restricted_ingredients(*)))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> res) {
                 if (res.isSuccessful() && res.body() != null && !res.body().isEmpty()) {
                     User u = res.body().get(0);
-                    // 1. Lưu ID
                     if (userId == null || userId.isEmpty()) {
                         userId = u.getId();
                         getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putString("KEY_USER_ID", userId).apply();
                     }
 
-                    // 2. Tính toán Calories
                     if (u.getCurrentDailyCalories() != null) {
                         calculateTargetMacros(u.getCurrentDailyCalories(), u.getFitnessGoalId() != null ? u.getFitnessGoalId() : 3);
                     }
 
-                    // 3. KHÔI PHỤC LOGIC LẤY DỊ ỨNG
                     currentAllergies.clear();
+                    restrictedIngredientIds.clear();
+
                     if (u.getUserMedicalConditions() != null) {
                         for (UserMedicalCondition umc : u.getUserMedicalConditions()) {
                             MedicalCondition mc = umc.getMedicalCondition();
-                            if (mc != null && mc.getType() != null) {
-                                String type = mc.getType().toLowerCase();
-                                if (type.contains("allergy") || type.contains("dị ứng")) {
-                                    currentAllergies.add(mc.getName());
+                            if (mc != null) {
+                                // 1. Lấy tên dị ứng để hiển thị UI
+                                if (mc.getType() != null) {
+                                    String type = mc.getType().toLowerCase();
+                                    if (type.contains("allergy") || type.contains("dị ứng")) {
+                                        currentAllergies.add(mc.getName());
+                                    }
+                                }
+                                // 2. Lấy ID nguyên liệu cấm để AI né ra
+                                if (mc.getRestrictedIngredients() != null) {
+                                    for (com.hcmute.edu.vn.model.ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
+                                        if (cri.getIngredientId() != null) {
+                                            restrictedIngredientIds.add(cri.getIngredientId());
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    // 4. Hiển thị lên UI
                     setupWarningDisplay(currentAllergies);
-
-                    // 5. Load meal
                     loadMealsForSelectedDate();
                 }
             }
