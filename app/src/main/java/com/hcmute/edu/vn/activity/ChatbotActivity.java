@@ -124,7 +124,13 @@ public class ChatbotActivity extends AppCompatActivity {
         rvMessages.setAdapter(messageAdapter);
     }
 
-
+    private void setupRetrofit() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://generativelanguage.googleapis.com/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        geminiService = retrofit.create(GeminiService.class);
+    }
 
     private void setupClickListeners() {
         ivBack.setOnClickListener(v -> finish());
