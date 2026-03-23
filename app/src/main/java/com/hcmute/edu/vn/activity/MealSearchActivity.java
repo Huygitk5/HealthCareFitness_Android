@@ -71,9 +71,17 @@ public class MealSearchActivity extends AppCompatActivity {
         targetDate = getIntent().getStringExtra("EXTRA_DATE");
         targetMealType = getIntent().getStringExtra("EXTRA_MEAL_TYPE");
 
+        if (getIntent().hasExtra("EXTRA_ALLERGIES")) {
+            userAllergiesList = getIntent().getStringArrayListExtra("EXTRA_ALLERGIES");
+        }
+        if (userAllergiesList == null) {
+            userAllergiesList = new ArrayList<>();
+        }
+
         initViews();
         setupUI();
-        loadRestrictedIngredientsThenFoods();
+
+        loadAllFoods();
     }
 
     private void initViews() {
@@ -174,7 +182,7 @@ public class MealSearchActivity extends AppCompatActivity {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
         java.util.Map<String, String> queryMap = new java.util.HashMap<>();
-        queryMap.put("select", "*, food_ingredients(*, ingredients(*))"); // Kéo theo cả tên nguyên liệu để dự phòng
+        queryMap.put("select", "*, food_ingredients(*, ingredients(*))");
 
         apiService.searchFoods(queryMap).enqueue(new Callback<List<Food>>() {
             @Override
@@ -188,44 +196,41 @@ public class MealSearchActivity extends AppCompatActivity {
                     for (Food food : allFoodsFetched) {
                         boolean isSafe = true;
 
-                        // LỌC 1: KIỂM TRA TÊN MÓN ĂN (Dự phòng)
+                        // LỌC 1: KIỂM TRA TÊN MÓN ĂN
                         if (food.getName() != null) {
                             String foodName = food.getName().toLowerCase();
                             for (String allergyName : userAllergiesList) {
-                                if (foodName.contains(allergyName) || allergyName.contains(foodName)) {
-                                    isSafe = false;
-                                    android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì tên trùng dị ứng: " + allergyName);
-                                    break;
+                                if (allergyName != null && !allergyName.isEmpty()) {
+                                    String keyword = allergyName.toLowerCase().replace("dị ứng", "").replace("allergy", "").trim();
+
+                                    if (!keyword.isEmpty() && foodName.contains(keyword)) {
+                                        isSafe = false;
+                                        android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì tên chứa: " + keyword);
+                                        break;
+                                    }
                                 }
                             }
                         }
 
-                        // LỌC 2: KIỂM TRA BẰNG BẢNG ID VÀ CÔNG THỨC MÓN
+                        // LỌC 2: KIỂM TRA THÀNH PHẦN NGUYÊN LIỆU (Nếu API có trả về)
                         if (isSafe && food.getFoodIngredients() != null) {
                             for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
-
-                                // Quét bằng ID nguyên liệu (Chính xác tuyệt đối)
-                                if (fi.getIngredientId() != null && restrictedIngredientIds.contains(fi.getIngredientId())) {
-                                    isSafe = false;
-                                    android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì chứa ID nguyên liệu cấm: " + fi.getIngredientId());
-                                    break;
-                                }
-
-                                // Quét dự phòng bằng TÊN nguyên liệu (Phòng khi Database ID chưa nối)
                                 if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
                                     String ingName = fi.getIngredient().getName().toLowerCase();
                                     for (String allergyName : userAllergiesList) {
-                                        if (ingName.contains(allergyName) || allergyName.contains(ingName)) {
-                                            isSafe = false;
-                                            android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì tên nguyên liệu '" + ingName + "' trùng dị ứng: " + allergyName);
-                                            break;
+                                        if (allergyName != null && !allergyName.isEmpty()) {
+                                            String keyword = allergyName.toLowerCase().replace("dị ứng", "").replace("allergy", "").trim();
+
+                                            if (!keyword.isEmpty() && ingName.contains(keyword)) {
+                                                isSafe = false;
+                                                android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì có nguyên liệu: " + keyword);
+                                                break;
+                                            }
                                         }
                                     }
                                 }
                                 if (!isSafe) break;
                             }
-                        } else if (food.getFoodIngredients() == null) {
-                            android.util.Log.e("LOC_MON_AN", "CẢNH BÁO: Món [" + food.getName() + "] trả về foodIngredients = NULL (Xem lại Model Food)");
                         }
 
                         // Nếu an toàn -> Thêm vào danh sách hiển thị
@@ -236,11 +241,13 @@ public class MealSearchActivity extends AppCompatActivity {
                         }
                     }
 
-                    android.util.Log.d("LOC_MON_AN", "ĐÃ LỌC XONG! Tổng số món hiển thị: " + foodList.size() + " | Số món bị giấu đi: " + soMonBiLoai);
+                    android.util.Log.d("LOC_MON_AN", "✅ ĐÃ LỌC XONG! Tổng số món an toàn: " + foodList.size() + " | Bị giấu đi: " + soMonBiLoai);
                     setupAdapter(foodList);
                 }
             }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) {}
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {
+                Toast.makeText(MealSearchActivity.this, "Lỗi tải món ăn!", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 

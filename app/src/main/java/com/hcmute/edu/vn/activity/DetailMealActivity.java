@@ -56,7 +56,7 @@ public class DetailMealActivity extends AppCompatActivity {
         });
 
         navWorkout.setOnClickListener(v -> {
-            Intent intent = new Intent(DetailMealActivity.this, WorkoutActivity.class);
+            Intent intent = new Intent(DetailMealActivity.this, WorkoutJourneyActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);

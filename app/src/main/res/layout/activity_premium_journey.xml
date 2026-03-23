@@ -1,293 +1,431 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/journeyRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F4F7F6"
-    android:fillViewport="true">
+    android:background="#F4F7F6">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- SCROLL CONTENT -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="40dp">
+        android:layout_height="match_parent"
+        android:layout_above="@+id/bottomNav"
+        android:clipToPadding="false"
+        android:scrollbars="none">
 
-        <View
-            android:id="@+id/heroBackground"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:layout_margin="16dp"
-            android:background="@drawable/bg_premium_hero"
-            android:elevation="8dp"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <TextView
-            android:id="@+id/tvStreak"
-            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="24dp"
-            android:background="@drawable/bg_badge_white"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp"
-            android:text="🔥 12 Day Streak"
-            android:textColor="#2F7F73"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:elevation="10dp"
-            app:layout_constraintStart_toStartOf="@id/heroBackground"
-            app:layout_constraintTop_toTopOf="@id/heroBackground" />
+            android:orientation="vertical"
+            android:paddingBottom="32dp">
 
-        <TextView
-            android:id="@+id/tvHeroTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
-            android:layout_marginTop="16dp"
-            android:text="Your Journey:\nBuild Muscle"
-            android:textColor="#FFFFFF"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:elevation="10dp"
-            app:layout_constraintStart_toStartOf="@id/heroBackground"
-            app:layout_constraintTop_toBottomOf="@id/tvStreak" />
-
-        <ProgressBar
-            android:id="@+id/pbOverallProgress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="0dp"
-            android:layout_height="10dp"
-            android:layout_marginHorizontal="24dp"
-            android:layout_marginTop="20dp"
-            android:max="100"
-            android:progress="45"
-            android:progressDrawable="@drawable/bg_white_pill"
-            android:progressTint="#FFFFFF"
-            android:elevation="10dp"
-            app:layout_constraintEnd_toEndOf="@id/heroBackground"
-            app:layout_constraintStart_toStartOf="@id/heroBackground"
-            app:layout_constraintTop_toBottomOf="@id/tvHeroTitle" />
-
-        <TextView
-            android:id="@+id/tvProgressFraction"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="14 / 30 days completed"
-            android:textColor="#E0F2F1"
-            android:textSize="13sp"
-            android:elevation="10dp"
-            app:layout_constraintStart_toStartOf="@id/pbOverallProgress"
-            app:layout_constraintTop_toBottomOf="@id/pbOverallProgress" />
-
-        <TextView
-            android:id="@+id/tvTodayHeader"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="32dp"
-            android:text="Today's Mission"
-            android:textColor="#1A1A1A"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/heroBackground" />
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cvTodayWorkout"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="6dp"
-            app:layout_constraintTop_toBottomOf="@id/tvTodayHeader">
-
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <!-- ===== HERO CARD: YOUR JOURNEY ===== -->
+            <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="220dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="8dp">
 
-                <ImageView
-                    android:id="@+id/ivTodayBg"
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/gym_tmp" />
+                    android:layout_height="match_parent">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="#80000000" /> <TextView
-                android:id="@+id/tvTodaySub"
+                    <View
+                        android:id="@+id/heroBackground"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="@drawable/bg_premium_hero" />
+
+                    <!-- Streak badge -->
+                    <TextView
+                        android:id="@+id/tvStreak"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|start"
+                        android:layout_margin="16dp"
+                        android:background="@drawable/bg_badge_white"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="6dp"
+                        android:text="🔥 0 Day Streak"
+                        android:textColor="#2F7F73"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="20dp"
+                        android:paddingBottom="20dp">
+
+                        <!-- Title: Your Journey -->
+                        <TextView
+                            android:id="@+id/tvHeroTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Your Journey:\nĐang tải..."
+                            android:textColor="#FFFFFF"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <!-- Progress bar tổng -->
+                        <ProgressBar
+                            android:id="@+id/pbOverallProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="8dp"
+                            android:layout_marginTop="12dp"
+                            android:max="100"
+                            android:progress="0"
+                            android:progressDrawable="@drawable/bg_white_pill"
+                            android:progressTint="#FFFFFF" />
+
+                        <!-- Fraction text -->
+                        <TextView
+                            android:id="@+id/tvProgressFraction"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="0 / -- ngày hoàn thành"
+                            android:textColor="#E0F2F1"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ===== TODAY'S MISSION ===== -->
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="20dp"
-                android:text="DAY 15"
-                android:textColor="#4DAA9A"
-                android:textSize="14sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="28dp"
+                android:text="Today's Mission"
+                android:textColor="#1A1A1A"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cvTodayWorkout"
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="12dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="6dp">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <ImageView
+                        android:id="@+id/ivTodayBg"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/gym_tmp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <!-- Overlay tối -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#80000000"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <!-- "DAY X" label -->
+                    <TextView
+                        android:id="@+id/tvTodaySub"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="20dp"
+                        android:text="NGÀY --"
+                        android:textColor="#4DAA9A"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <!-- Tên buổi tập -->
+                    <TextView
+                        android:id="@+id/tvTodayName"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="90dp"
+                        android:text="Đang tải..."
+                        android:textColor="#FFFFFF"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="@id/tvTodaySub"
+                        app:layout_constraintTop_toBottomOf="@id/tvTodaySub" />
+
+                    <!-- Circular progress + % -->
+                    <ProgressBar
+                        android:id="@+id/pbTodayCircular"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="70dp"
+                        android:layout_height="70dp"
+                        android:layout_marginEnd="20dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressDrawable="@drawable/bg_circular_progress"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <TextView
+                        android:id="@+id/tvTodayPercent"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0%"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:layout_constraintBottom_toBottomOf="@id/pbTodayCircular"
+                        app:layout_constraintEnd_toEndOf="@id/pbTodayCircular"
+                        app:layout_constraintStart_toStartOf="@id/pbTodayCircular"
+                        app:layout_constraintTop_toTopOf="@id/pbTodayCircular" />
+
+                    <!-- Nút START/CONTINUE/DONE -->
+                    <Button
+                        android:id="@+id/btnTodayAction"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginBottom="16dp"
+                        android:backgroundTint="#4DAA9A"
+                        android:text="BẮT ĐẦU"
+                        android:textColor="#FFFFFF"
+                        app:cornerRadius="20dp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="@id/tvTodaySub" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ===== YOUR TIMELINE ===== -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="28dp">
 
                 <TextView
-                    android:id="@+id/tvTodayName"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="100dp"
-                    android:text="Upper Body Power &amp; Core"
-                    android:textColor="#FFFFFF"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    app:layout_constraintStart_toStartOf="@id/tvTodaySub"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tvTodaySub" />
-
-                <TextView
-                    android:id="@+id/tvTodayStats"
+                    android:id="@+id/tvTimelineHeader"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="⏱ 45 min  |  🔥 320 kcal"
-                    android:textColor="#E0E0E0"
-                    android:textSize="13sp"
-                    app:layout_constraintStart_toStartOf="@id/tvTodaySub"
-                    app:layout_constraintTop_toBottomOf="@id/tvTodayName" />
+                    android:layout_centerVertical="true"
+                    android:text="Your Timeline"
+                    android:textColor="#1A1A1A"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
-                <ProgressBar
-                    android:id="@+id/pbTodayCircular"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
+                <!-- Nút Xem tất cả -->
+                <TextView
+                    android:id="@+id/tvSeeAllDays"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:text="Xem tất cả"
+                    android:textColor="#4DAA9A"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
+
+            <!-- RecyclerView hiển thị các ngày (ngang, preview 3-4 ngày) -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvWorkoutDays"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <!-- ===== CREATE CUSTOM ROUTINE ===== -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layoutCustomWorkout"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="28dp"
+                android:background="@drawable/bg_dashed_card"
+                android:foreground="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/ivCustomIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="24dp"
+                    android:src="@drawable/ic_workout_setting"
+                    app:tint="#4DAA9A"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvCustomTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Tạo bài tập riêng của bạn"
+                    android:textColor="#212121"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toTopOf="@id/tvCustomSub"
+                    app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintVertical_chainStyle="packed" />
+
+                <TextView
+                    android:id="@+id/tvCustomSub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:text="Chọn dụng cụ, nhóm cơ và bài tập"
+                    android:textColor="#757575"
+                    android:textSize="13sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
+                    app:layout_constraintTop_toBottomOf="@id/tvCustomTitle" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="20dp"
-                    android:max="100"
-                    android:progress="0"
-                    android:progressDrawable="@drawable/bg_circular_progress"
+                    android:src="@drawable/ic_workout_setting"
+                    app:tint="#BDBDBD"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <TextView
-                    android:id="@+id/tvTodayPercent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="0%"
-                    android:textColor="#FFFFFF"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    app:layout_constraintBottom_toBottomOf="@id/pbTodayCircular"
-                    app:layout_constraintEnd_toEndOf="@id/pbTodayCircular"
-                    app:layout_constraintStart_toStartOf="@id/pbTodayCircular"
-                    app:layout_constraintTop_toTopOf="@id/pbTodayCircular" />
-
-                <Button
-                    android:id="@+id/btnTodayAction"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_marginBottom="16dp"
-                    android:backgroundTint="#4DAA9A"
-                    android:text="START"
-                    android:textColor="#FFFFFF"
-                    app:cornerRadius="20dp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintStart_toStartOf="@id/tvTodaySub" />
-
             </androidx.constraintlayout.widget.ConstraintLayout>
-        </androidx.cardview.widget.CardView>
 
-        <androidx.cardview.widget.CardView
-            android:id="@+id/cvInsights"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="24dp"
-            app:cardBackgroundColor="#E8F5F3"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/cvTodayWorkout">
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:text="💡 Insight: You're in the top 10% of users this week. Keep this pace to reach your goal by next month!"
-                android:textColor="#00695C"
-                android:textSize="14sp"
-                app:drawableStartCompat="@drawable/ic_nutriton"
-                android:drawablePadding="12dp"/>
-        </androidx.cardview.widget.CardView>
+    <!-- ===== BOTTOM NAVIGATION (giống các trang chính khác) ===== -->
+    <LinearLayout
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="85dp"
+        android:layout_alignParentBottom="true"
+        android:background="#FFFFFF"
+        android:elevation="12dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="20dp"
+        android:weightSum="4">
 
-        <TextView
-            android:id="@+id/tvTimelineHeader"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="32dp"
-            android:text="Your Timeline"
-            android:textColor="#1A1A1A"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/cvInsights" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvWorkoutDays"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintTop_toBottomOf="@id/tvTimelineHeader" />
-
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/layoutCustomWorkout"
-            android:layout_width="match_parent"
-            android:layout_height="100dp"
-            android:layout_marginHorizontal="16dp"
-            android:layout_marginTop="32dp"
-            android:background="@drawable/bg_dashed_card"
-            app:layout_constraintTop_toBottomOf="@id/rvWorkoutDays">
-
+        <LinearLayout
+            android:id="@+id/nav_home"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
             <ImageView
-                android:id="@+id/ivCustomIcon"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="24dp"
-                android:src="@drawable/ic_workout_setting"
-                app:tint="#4DAA9A"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_home"
+                app:tint="#9E9E9E" />
             <TextView
-                android:id="@+id/tvCustomTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Create Custom Routine"
-                android:textColor="#212121"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toTopOf="@id/tvCustomSub"
-                app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_chainStyle="packed" />
+                android:layout_marginTop="4dp"
+                android:text="Home"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/nav_nutrition"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_nutriton"
+                app:tint="#9E9E9E" />
             <TextView
-                android:id="@+id/tvCustomSub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:text="Build your own set of exercises"
-                android:textColor="#757575"
-                android:textSize="13sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/ivCustomIcon"
-                app:layout_constraintTop_toBottomOf="@id/tvCustomTitle" />
+                android:layout_marginTop="4dp"
+                android:text="Nutrition"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        <LinearLayout
+            android:id="@+id/nav_workout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_workout"
+                app:tint="#4DAA9A" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Workout"
+                android:textColor="#4DAA9A"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.core.widget.NestedScrollView>
+        <LinearLayout
+            android:id="@+id/nav_profile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical">
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_profile"
+                app:tint="#9E9E9E" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Profile"
+                android:textColor="#9E9E9E"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>
