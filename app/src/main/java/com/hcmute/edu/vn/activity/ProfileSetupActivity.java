@@ -22,6 +22,7 @@ import com.hcmute.edu.vn.model.User;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -116,27 +117,60 @@ public class ProfileSetupActivity extends AppCompatActivity {
         // Gọi hàm tải Fitness Goals từ Supabase
         loadFitnessGoals();
 
-        // Lắng nghe sự kiện chọn Goal
+        // Lắng nghe sự kiện chọn Goal (CÓ HEALTH GUARD)
         spinnerFitnessGoal.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 if (!fitnessGoalList.isEmpty()) {
-                    // Lấy tên của mục tiêu được chọn
                     String selectedName = fitnessGoalList.get(position).getName().toLowerCase();
+                    boolean isLose = selectedName.contains("giảm");
+                    boolean isGain = selectedName.contains("tăng");
+                    boolean isMaintain = selectedName.contains("giữ");
 
-                    // Nếu mục tiêu là "Duy trì" thì ẩn ô nhập cân nặng mục tiêu
-                    if (selectedName.contains("duy trì") || selectedName.contains("maintain")) {
+                    // Đọc chiều cao, cân nặng hiện tại
+                    String hStr = edtHeight.getText().toString().trim();
+                    String wStr = edtWeight.getText().toString().trim();
+
+                    if (!hStr.isEmpty() && !wStr.isEmpty()) {
+                        try {
+                            double heightCm = Double.parseDouble(hStr);
+                            double weightKg = Double.parseDouble(wStr);
+                            double currentBmi = calculateBMI(weightKg, heightCm);
+
+                            // LUẬT 1: BÉO PHÌ (BMI > 24.9) -> CHỈ ĐƯỢC GIẢM MỠ
+                            if (currentBmi > 24.9 && (isMaintain || isGain)) {
+                                Toast.makeText(ProfileSetupActivity.this, "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                                // Tìm và ép nhảy về mục tiêu Giảm mỡ
+                                for (int i = 0; i < fitnessGoalList.size(); i++) {
+                                    if (fitnessGoalList.get(i).getName().toLowerCase().contains("giảm")) {
+                                        spinnerFitnessGoal.setSelection(i); return;
+                                    }
+                                }
+                            }
+
+                            // LUẬT 2: THIẾU CÂN (BMI < 18.5) -> CHỈ ĐƯỢC TĂNG CƠ
+                            if (currentBmi < 18.5 && (isMaintain || isLose)) {
+                                Toast.makeText(ProfileSetupActivity.this, "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                                // Tìm và ép nhảy về mục tiêu Tăng cơ
+                                for (int i = 0; i < fitnessGoalList.size(); i++) {
+                                    if (fitnessGoalList.get(i).getName().toLowerCase().contains("tăng")) {
+                                        spinnerFitnessGoal.setSelection(i); return;
+                                    }
+                                }
+                            }
+                        } catch (NumberFormatException e) { e.printStackTrace(); }
+                    }
+
+                    // LUẬT 3: ẨN/HIỆN Ô NHẬP CÂN NẶNG
+                    if (isMaintain) {
                         layoutTargetWeight.setVisibility(View.GONE);
-                        edtTargetWeight.setText(""); // Xóa dữ liệu cũ nếu có
+                        edtTargetWeight.setText("");
                     } else {
-                        // Nếu là Giảm cân hoặc Tăng cân -> Hiện ô nhập cân nặng
                         layoutTargetWeight.setVisibility(View.VISIBLE);
                     }
                 }
             }
-
-            @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
 
         btnComplete.setOnClickListener(new View.OnClickListener() {
@@ -237,65 +271,81 @@ public class ProfileSetupActivity extends AppCompatActivity {
         try {
             double height = Double.parseDouble(heightStr);
             double weight = Double.parseDouble(weightStr);
+
+            // 1. CHUẨN BỊ TRƯỚC BIẾN TUỔI VÀ TÊN MỤC TIÊU ĐỂ TRÁNH LỖI SCOPE
+            int age = 20; // Khởi tạo mặc định
+            String selectedGoalName = "";
+
             if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
-                String selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
+                selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
 
                 double heightM = height / 100.0;
                 double currentBmi = weight / (heightM * heightM);
 
+                // ===============================================================
+                // BỘ LỌC TỪ KHÓA MỚI (Bắt chuẩn 100% các loại tên mục tiêu)
+                // ===============================================================
+                boolean isLose = selectedGoalName.contains("giảm");
+                boolean isGain = selectedGoalName.contains("tăng");
+                boolean isMaintain = selectedGoalName.contains("giữ");
+
                 // --- RÀO CHẮN 1: KIỂM TRA TÍNH HỢP LÝ CỦA MỤC TIÊU DỰA TRÊN THỂ TRẠNG HIỆN TẠI ---
-                if ((selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) && currentBmi < 18.5) {
-                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
+                if (isLose && currentBmi < 18.5) {
+                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn mục tiêu Giảm cân/Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
                     spinnerFitnessGoal.requestFocus();
                     return;
                 }
 
-                if ((selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) && currentBmi > 23.0) {
-                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
+                if (isGain && currentBmi > 23.0) {
+                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm cân/Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
                     spinnerFitnessGoal.requestFocus();
                     return;
                 }
 
-                if ((selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain")) && (currentBmi < 18.5 || currentBmi > 23.0)) {
-                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
+                if (isMaintain && (currentBmi < 18.5 || currentBmi > 23.0)) {
+                    Toast.makeText(this, "BMI hiện tại của bạn (" + String.format(Locale.US, "%.1f", currentBmi) + ") không nằm trong mức chuẩn (18.5 - 23.0). Không thể chọn Giảm mỡ vóc dáng!", Toast.LENGTH_LONG).show();
                     spinnerFitnessGoal.requestFocus();
                     return;
                 }
 
-                // --- RÀO CHẮN 2 & 3: KIỂM TRA CÂN NẶNG ĐÍCH (Chỉ áp dụng khi không phải là Giữ dáng) ---
-                if (targetWeightValue != null && (!selectedGoalName.contains("duy trì") && !selectedGoalName.contains("maintain"))) {
-                    double targetBmi = targetWeightValue / (heightM * heightM);
+                // --- RÀO CHẮN 2 & 3: KIỂM TRA CÂN NẶNG ĐÍCH (Chỉ áp dụng khi không phải là Giảm mỡ) ---
+                if (targetWeightValue != null && !isMaintain) {
+                    double targetWeight = targetWeightValue.doubleValue();
+                    double minNormal = getMinNormalWeight(height);
+                    double maxNormal = getMaxNormalWeight(height);
 
-                    // Nếu chọn Giảm mỡ
-                    if (selectedGoalName.contains("giảm mỡ") || selectedGoalName.contains("lose fat")) {
-                        if (targetWeightValue >= weight) {
-                            edtTargetWeight.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
-                            edtTargetWeight.requestFocus();
-                            return;
+                    if (isLose) { // ĐANG GIẢM MỠ
+                        if (targetWeight >= weight) {
+                            edtTargetWeight.setError("Để giảm mỡ, cân nặng mục tiêu phải nhỏ hơn cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus(); return;
                         }
-                        if (targetBmi < 18.5) {
-                            edtTargetWeight.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
-                            edtTargetWeight.requestFocus();
-                            return;
+                        if (targetWeight < minNormal) {
+                            edtTargetWeight.setError("Giảm quá mức! Cân nặng tối thiểu để không bị suy dinh dưỡng là: " + Math.round(minNormal) + "kg");
+                            edtTargetWeight.requestFocus(); return;
                         }
                     }
-                    // Nếu chọn Tăng cơ
-                    else if (selectedGoalName.contains("tăng cơ") || selectedGoalName.contains("build muscle")) {
-                        if (targetWeightValue <= weight) {
-                            edtTargetWeight.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
-                            edtTargetWeight.requestFocus();
-                            return;
+                    else if (isGain) { // ĐANG TĂNG CƠ
+                        if (targetWeight <= weight) {
+                            edtTargetWeight.setError("Để tăng cơ, cân nặng mục tiêu phải lớn hơn cân nặng hiện tại!");
+                            edtTargetWeight.requestFocus(); return;
                         }
-                        if (targetBmi > 23.0) {
-                            edtTargetWeight.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
-                            edtTargetWeight.requestFocus();
-                            return;
+                        if (targetWeight > maxNormal) {
+                            edtTargetWeight.setError("Tăng quá mức! Cân nặng tối đa để không bị béo phì là: " + Math.round(maxNormal) + "kg");
+                            edtTargetWeight.requestFocus(); return;
                         }
                     }
+                }
+
+                // Ép kiểm tra rỗng đối với các mục tiêu không phải giảm mỡ
+                if (!isMaintain && targetWeightValue == null) {
+                    edtTargetWeight.setError("Vui lòng nhập cân nặng mục tiêu!");
+                    edtTargetWeight.requestFocus();
+                    return;
                 }
             }
             // ===============================================================
 
+            // 2. CHUẨN BỊ OBJECT ĐỂ LƯU
             User updateData = new User();
             updateData.setName(fullName);
             updateData.setDateOfBirth(dobFormatted);
@@ -304,6 +354,26 @@ public class ProfileSetupActivity extends AppCompatActivity {
             updateData.setWeight(weight);
             updateData.setFitnessGoalId(selectedGoalId);
             updateData.setTarget(targetWeightValue);
+
+            // 3. TÍNH TOÁN TUỔI NGAY TRƯỚC KHI GỌI HÀM
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                Date dob = sdf.parse(dobFormatted);
+                Calendar calDOB = Calendar.getInstance();
+                calDOB.setTime(dob);
+                age = Calendar.getInstance().get(Calendar.YEAR) - calDOB.get(Calendar.YEAR);
+            } catch (Exception e) {}
+
+            // 4. GỌI HÀM TÍNH TOÁN CALO & TARGET DATE
+            calculateFitnessMetrics(
+                    updateData,
+                    weight,
+                    height,
+                    age,
+                    gender,
+                    selectedGoalName,
+                    targetWeightValue != null ? targetWeightValue.doubleValue() : weight
+            );
 
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
@@ -397,5 +467,92 @@ public class ProfileSetupActivity extends AppCompatActivity {
         Intent i = new Intent(ProfileSetupActivity.this, HomeActivity.class);
         startActivity(i);
         finish();
+    }
+
+    // ===============================================================
+    // THUẬT TOÁN TÍNH TOÁN CALO, THỜI GIAN VÀ GÁN GÓI TẬP
+    // ===============================================================
+    private void calculateFitnessMetrics(User updateData, double weight, double height, int age, String gender, String goalName, Double targetWeight) {
+        // 1. Tính BMR (Mifflin-St Jeor Equation)
+        double bmr;
+        if ("Male".equalsIgnoreCase(gender)) {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+        } else {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+        }
+
+        // 2. Tính TDEE (Giả sử mức độ vận động trung bình - Moderately Active x 1.55)
+        double tdee = bmr * 1.55;
+
+        double dailyCalories = tdee;
+        int weeksToTarget = 0;
+        String assignedPlanId = "";
+
+        // 3. Xử lý theo từng Mục tiêu
+        if (goalName.contains("giảm") || goalName.contains("lose")) {
+            // Tốc độ an toàn: 0.75% trọng lượng cơ thể / tuần
+            double safeLoseRatePerWeek = weight * 0.0075;
+            double weightDiff = weight - targetWeight;
+
+            if (weightDiff > 0) {
+                weeksToTarget = (int) Math.ceil(weightDiff / safeLoseRatePerWeek);
+            }
+            // Thâm hụt calo an toàn để giảm mỡ (~500 kcal/ngày)
+            dailyCalories = tdee - 500;
+            // Gán gói tập: Đốt mỡ cường độ cao (Advanced)
+            assignedPlanId = "05fea3e9-377e-4108-bee3-15a78150dc43";
+
+        } else if (goalName.contains("tăng") || goalName.contains("gain") || goalName.contains("build")) {
+            // Tốc độ an toàn: 0.5% trọng lượng cơ thể / tuần
+            double safeGainRatePerWeek = weight * 0.005;
+            double weightDiff = targetWeight - weight;
+
+            if (weightDiff > 0) {
+                weeksToTarget = (int) Math.ceil(weightDiff / safeGainRatePerWeek);
+            }
+            // Thặng dư calo để tăng cơ (~300 kcal/ngày, tránh tăng mỡ)
+            dailyCalories = tdee + 300;
+            // Gán gói tập: Tăng cơ & Giảm mỡ (Intermediate)
+            assignedPlanId = "a2222222-2222-2222-2222-222222222222";
+
+        } else {
+            // giảm mỡ
+            weeksToTarget = 0; // Không cần thời gian
+            dailyCalories = tdee; // Ăn đúng mức TDEE
+            // Gán gói tập: Khởi động & Làm quen (Beginner)
+            assignedPlanId = "a1111111-1111-1111-1111-111111111111";
+        }
+
+        // 4. Tính toán Ngày đạt mục tiêu (Target Date)
+        if (weeksToTarget > 0) {
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.WEEK_OF_YEAR, weeksToTarget);
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            updateData.setTargetDate(sdf.format(calendar.getTime()));
+        } else {
+            updateData.setTargetDate(null); // giảm mỡ thì không có target date
+        }
+
+        // 5. Gắn kết quả vào object User để chuẩn bị đẩy lên Supabase
+        updateData.setCurrentDailyCalories(dailyCalories);
+        updateData.setCurrentWorkoutPlanId(assignedPlanId);
+    }
+    // =======================================================
+    // BỘ BẢO VỆ SỨC KHỎE (HEALTH GUARD) DỰA TRÊN BMI
+    // =======================================================
+    private double calculateBMI(double weightKg, double heightCm) {
+        if (heightCm <= 0) return 0;
+        double heightM = heightCm / 100.0;
+        return weightKg / (heightM * heightM);
+    }
+
+    private double getMinNormalWeight(double heightCm) {
+        double heightM = heightCm / 100.0;
+        return 18.5 * (heightM * heightM); // Cân nặng tối thiểu để BMI = 18.5
+    }
+
+    private double getMaxNormalWeight(double heightCm) {
+        double heightM = heightCm / 100.0;
+        return 24.9 * (heightM * heightM); // Cân nặng tối đa để BMI = 24.9
     }
 }

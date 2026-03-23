@@ -52,6 +52,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     Double currentHeight = 0.0;
     Double currentWeight = 0.0;
+    String currentGender = "Male";
+    int currentAge = 20;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +64,7 @@ public class ProfileActivity extends AppCompatActivity {
         controller.setAppearanceLightStatusBars(true);
 
         android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+
         username = pref.getString("KEY_USER", null);
 
         // Ánh xạ
@@ -153,6 +156,8 @@ public class ProfileActivity extends AppCompatActivity {
         dialogSpinnerGoal.setAdapter(adapter);
         dialogSpinnerGoal.setSelection(selectedIndex);
 
+        final int finalSelectedIndex = selectedIndex;
+
         if (currentTargetWeight != null && currentTargetWeight > 0) {
             dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
         }
@@ -161,7 +166,32 @@ public class ProfileActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 String selectedName = goalNames.get(position).toLowerCase();
-                if (selectedName.contains("duy trì") || selectedName.contains("maintain")) {
+
+                // ===============================================================
+                // KIỂM TRA BMI NGAY LẬP TỨC KHI NGƯỜI DÙNG VỪA CHỌN SPINNER
+                // (Chỉ kiểm tra nếu họ chọn một mục tiêu MỚI khác với cái ban đầu)
+                // ===============================================================
+                if (position != finalSelectedIndex && currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
+                    double currentBmi = calculateBMI(currentWeight, currentHeight);
+
+                    boolean isLose = selectedName.contains("giảm");
+                    boolean isGain = selectedName.contains("tăng");
+                    boolean isMaintain = selectedName.contains("giữ");
+
+                    if (currentBmi > 24.9 && (isGain || isMaintain)) {
+                        Toast.makeText(ProfileActivity.this, "Bạn đang thừa cân (BMI > 24.9), chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                        dialogSpinnerGoal.setSelection(finalSelectedIndex); return;
+                    }
+                    if (currentBmi < 18.5 && (isLose || isMaintain)) {
+                        Toast.makeText(ProfileActivity.this, "Bạn đang thiếu cân (BMI < 18.5), chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                        dialogSpinnerGoal.setSelection(finalSelectedIndex); return;
+                    }
+                }
+
+                // ===============================================================
+                // NẾU VƯỢT QUA BÀI KIỂM TRA -> CẬP NHẬT GIAO DIỆN ẨN/HIỆN Ô CÂN NẶNG
+                // ===============================================================
+                if (selectedName.contains("giữ")) {
                     dialogLayoutTarget.setVisibility(View.GONE);
                     dialogEdtTarget.setText("");
                 } else {
@@ -198,53 +228,32 @@ public class ProfileActivity extends AppCompatActivity {
             // LOGIC 3 RÀO CHẮN BMI (Sử dụng từ khóa an toàn: giảm, tăng, duy trì)
             // ===============================================================
             if (currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
-                double heightM = currentHeight / 100.0;
-                double currentBmi = currentWeight / (heightM * heightM);
+                boolean isLose = selectedGoalName.contains("giảm");
+                boolean isGain = selectedGoalName.contains("tăng");
+                boolean isMaintain = selectedGoalName.contains("giữ");
 
-                boolean isLose = selectedGoalName.contains("giảm") || selectedGoalName.contains("lose");
-                boolean isGain = selectedGoalName.contains("tăng") || selectedGoalName.contains("gain") || selectedGoalName.contains("build");
-                boolean isMaintain = selectedGoalName.contains("duy trì") || selectedGoalName.contains("maintain");
-
-                // --- RÀO CHẮN 1: TÍNH HỢP LÝ CỦA MỤC TIÊU VỚI THỂ TRẠNG HIỆN TẠI ---
-                if (isLose && currentBmi < 18.5) {
-                    Toast.makeText(this, "Bạn đang thiếu cân (BMI < 18.5), không thể chọn Giảm mỡ. Hãy chọn Tăng cơ nhé!", Toast.LENGTH_LONG).show();
-                    return;
-                }
-                if (isGain && currentBmi > 23.0) {
-                    Toast.makeText(this, "Bạn đang thừa cân (BMI > 23.0), không nên Tăng cơ lúc này. Hãy chọn Giảm mỡ nhé!", Toast.LENGTH_LONG).show();
-                    return;
-                }
-                if (isMaintain && (currentBmi < 18.5 || currentBmi > 23.0)) {
-                    Toast.makeText(this, "BMI hiện tại không nằm trong mức chuẩn (18.5 - 23.0). Không nên chọn Duy trì vóc dáng lúc này!", Toast.LENGTH_LONG).show();
-                    return;
-                }
-
-                // --- RÀO CHẮN 2 & 3: KIỂM TRA MỨC CÂN NẶNG ĐÍCH HỢP LÝ ---
                 if (newTarget != null && !isMaintain) {
-                    double targetBmi = newTarget / (heightM * heightM);
+                    double targetW = newTarget;
+                    double minNormal = getMinNormalWeight(currentHeight);
+                    double maxNormal = getMaxNormalWeight(currentHeight);
 
                     if (isLose) {
-                        if (newTarget >= currentWeight) {
-                            dialogEdtTarget.setError("Để giảm mỡ, cân nặng mục tiêu phải < cân nặng hiện tại!");
-                            dialogEdtTarget.requestFocus();
-                            return;
+                        if (targetW >= currentWeight) {
+                            dialogEdtTarget.setError("Mục tiêu phải nhỏ hơn cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus(); return;
                         }
-                        if (targetBmi < 18.5) {
-                            dialogEdtTarget.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
-                            dialogEdtTarget.requestFocus();
-                            return;
+                        if (targetW < minNormal) {
+                            dialogEdtTarget.setError("Tối thiểu để không bị suy dinh dưỡng: " + Math.round(minNormal) + "kg");
+                            dialogEdtTarget.requestFocus(); return;
                         }
-                    }
-                    else if (isGain) {
-                        if (newTarget <= currentWeight) {
-                            dialogEdtTarget.setError("Để tăng cơ, cân nặng mục tiêu phải > cân nặng hiện tại!");
-                            dialogEdtTarget.requestFocus();
-                            return;
+                    } else if (isGain) {
+                        if (targetW <= currentWeight) {
+                            dialogEdtTarget.setError("Mục tiêu phải lớn hơn cân nặng hiện tại!");
+                            dialogEdtTarget.requestFocus(); return;
                         }
-                        if (targetBmi > 23.0) {
-                            dialogEdtTarget.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy điều chỉnh lại mục tiêu an toàn hơn (Target BMI: 18.5 - 23.0).");
-                            dialogEdtTarget.requestFocus();
-                            return;
+                        if (targetW > maxNormal) {
+                            dialogEdtTarget.setError("Tối đa để không bị béo phì: " + Math.round(maxNormal) + "kg");
+                            dialogEdtTarget.requestFocus(); return;
                         }
                     }
                 }
@@ -252,9 +261,30 @@ public class ProfileActivity extends AppCompatActivity {
             // ===============================================================
 
             // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
+            // ===============================================================
+            // BỔ SUNG: TÍNH TOÁN LẠI CALO (TDEE) KHI ĐỔI MỤC TIÊU
+            // ===============================================================
+            // Khai báo lại logic xác định mục tiêu ở đây để không bị lỗi Scope
+            boolean isLoseGoal = selectedGoalName.contains("giảm");
+            boolean isGainGoal = selectedGoalName.contains("tăng");
+
+            double bmr = ("Male".equalsIgnoreCase(currentGender)) ?
+                    (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) + 5 :
+                    (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) - 161;
+
+            double tdee = bmr * 1.55; // Mức vận động trung bình
+            double newDailyCalories = tdee;
+
+            if (isLoseGoal) newDailyCalories = tdee - 500; // Giảm mỡ -> Thâm hụt 500 kcal
+            else if (isGainGoal) newDailyCalories = tdee + 300; // Tăng cơ -> Thặng dư 300 kcal
+
+            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
             User updateData = new User();
             updateData.setFitnessGoalId(newGoalId);
             updateData.setTarget(newTarget);
+
+            // LƯU Ý QUAN TRỌNG NHẤT: Bắt buộc phải lưu Kcal mới xuống DB!
+            updateData.setCurrentDailyCalories(newDailyCalories);
 
             btnSave.setText("Đang lưu...");
             btnSave.setEnabled(false);
@@ -264,6 +294,7 @@ public class ProfileActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
+                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("TARGET_CHANGED", true).apply();
                         Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
                         loadUserProfile();
                         dialog.dismiss();
@@ -367,6 +398,9 @@ public class ProfileActivity extends AppCompatActivity {
 
                     currentHeight = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
                     currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+                    currentGender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
+                    currentAge = calculateAge(currentUser.getDateOfBirth());
+                    if (currentAge <= 0) currentAge = 20;
 
                     txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName() : username);
                     txtEmail.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
@@ -690,5 +724,23 @@ public class ProfileActivity extends AppCompatActivity {
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i); overridePendingTransition(0, 0);
         });
+    }
+    // =======================================================
+    // BỘ BẢO VỆ SỨC KHỎE (HEALTH GUARD) DỰA TRÊN BMI
+    // =======================================================
+    private double calculateBMI(double weightKg, double heightCm) {
+        if (heightCm <= 0) return 0;
+        double heightM = heightCm / 100.0;
+        return weightKg / (heightM * heightM);
+    }
+
+    private double getMinNormalWeight(double heightCm) {
+        double heightM = heightCm / 100.0;
+        return 18.5 * (heightM * heightM); // Cân nặng tối thiểu để BMI = 18.5
+    }
+
+    private double getMaxNormalWeight(double heightCm) {
+        double heightM = heightCm / 100.0;
+        return 24.9 * (heightM * heightM); // Cân nặng tối đa để BMI = 24.9
     }
 }

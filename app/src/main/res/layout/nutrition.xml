@@ -46,7 +46,48 @@
                         android:textSize="20sp"
                         android:textStyle="bold" />
                 </RelativeLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="20dp"
+                    android:paddingTop="10dp"
+                    android:layout_marginBottom="8dp">
 
+                    <TextView
+                        android:id="@+id/btnPrevWeek"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:text="❮"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#757575"
+                        android:gravity="center"
+                        android:background="?attr/selectableItemBackgroundBorderless"/>
+
+                    <TextView
+                        android:id="@+id/tvWeekLabel"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:text="Tuần này"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#333333"
+                        android:gravity="center"/>
+
+                    <TextView
+                        android:id="@+id/btnNextWeek"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:text="❯"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:textColor="#757575"
+                        android:gravity="center"
+                        android:background="?attr/selectableItemBackgroundBorderless"/>
+                </LinearLayout>
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvCalendar"
                     android:layout_width="match_parent"
@@ -99,11 +140,12 @@
                                 android:textStyle="bold" />
 
                             <TextView
+                                android:id="@+id/tvTargetCalories"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="/ 2000 Kcal"
                                 android:textColor="#757575"
-                                android:textSize="10sp" />
+                                android:textSize="12sp" />
                         </LinearLayout>
                     </RelativeLayout>
 

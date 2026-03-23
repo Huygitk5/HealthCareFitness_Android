@@ -1,5 +1,6 @@
 package com.hcmute.edu.vn.database;
 
+import com.hcmute.edu.vn.model.FitnessGoal;
 import com.hcmute.edu.vn.model.SignInRequest;
 import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
@@ -12,6 +13,7 @@ import com.hcmute.edu.vn.model.MuscleGroup;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.SignUpRequest;
 import com.hcmute.edu.vn.model.SignUpResponse;
+import com.hcmute.edu.vn.model.UserDailyMeal;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
 import com.hcmute.edu.vn.model.UserWorkoutExerciseLog;
@@ -285,7 +287,7 @@ public interface SupabaseApiService {
 
     // Lưu bệnh mới
     @POST("user_medical_conditions")
-    Call<Void> saveUserMedicalConditions(@Body java.util.List<UserMedicalConditionInsert> conditions);
+    Call<Void> saveUserMedicalConditions(@Body List<UserMedicalConditionInsert> conditions);
 
     // =================================================================================
     // KẾ HOẠCH DINH DƯỠNG HÀNG NGÀY (DAILY MEAL PLANNER)
@@ -295,7 +297,7 @@ public interface SupabaseApiService {
     // Trả về tất cả các món ăn user đã chọn trong 1 ngày cụ thể (Bao gồm Sáng, Trưa, Tối).
     // Có join với bảng foods để lấy luôn tên, calo, hình ảnh của món ăn.
     @GET("user_daily_meals")
-    Call<List<com.hcmute.edu.vn.model.UserDailyMeal>> getDailyMeals(
+    Call<List<UserDailyMeal>> getDailyMeals(
             @Query("user_id") String eqUserId, // Cú pháp: "eq.ID_CUA_USER"
             @Query("date") String eqDate,      // Cú pháp: "eq.2026-03-16"
             @Query("select") String select     // Bắt buộc truyền: "*, foods(*)"
@@ -305,7 +307,7 @@ public interface SupabaseApiService {
     // Thêm 1 món mới vào bữa Sáng/Trưa/Tối của 1 ngày cụ thể.
     @POST("user_daily_meals")
     Call<Void> addDailyMeal(
-            @Body com.hcmute.edu.vn.model.UserDailyMeal meal
+            @Body UserDailyMeal meal
     );
 
     // 3. XÓA MÓN ĂN KHỎI BỮA:
@@ -317,7 +319,17 @@ public interface SupabaseApiService {
 
     // Lấy fitness goal
     @GET("fitness_goals")
-    Call<List<com.hcmute.edu.vn.model.FitnessGoal>> getAllFitnessGoals(
+    Call<List<FitnessGoal>> getAllFitnessGoals(
             @Query("select") String select
     );
+
+    // Thêm nhiều món ăn cùng lúc (Batch Insert) cho tính năng Auto-Generate
+    @POST("user_daily_meals")
+    Call<Void> addMultipleDailyMeals(
+            @Body List<UserDailyMeal> meals
+    );
+
+    // API Xóa sạch thực đơn của một User (dùng khi Reset mục tiêu)
+    @DELETE("user_daily_meals")
+    Call<Void> deleteMealsByUserId(@Query("user_id") String userId);
 }
