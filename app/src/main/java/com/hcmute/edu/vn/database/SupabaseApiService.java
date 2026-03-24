@@ -88,10 +88,17 @@ public interface SupabaseApiService {
             @Query("workout_days.order") String orderDays
     );
 
-    // Lọc Gói tập (Workout Plan) theo Độ khó (Difficulty Level)
+    // Lấy Gói tập dựa trên Khóa ngoại Mục tiêu (Fitness Goals)
     @GET("workout_plans")
-    Call<List<WorkoutPlan>> getWorkoutPlansByDifficulty(
-            @Query("difficulty_level_id") String eqDifficultyId,
+    Call<List<WorkoutPlan>> getWorkoutPlanByGoalId(
+            @Query("fitness_goal_id") String eqGoalId,
+            @Query("select") String select
+    );
+
+    @GET("user_workout_sessions")
+    Call<List<UserWorkoutSession>> getUserWorkoutHistoryByPlan(
+            @Query("user_id") String eqUserId,
+            @Query("plan_id") String eqPlanId, // Lọc theo đúng Plan đang chọn
             @Query("select") String select
     );
 
