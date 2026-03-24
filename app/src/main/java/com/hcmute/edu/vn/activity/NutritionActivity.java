@@ -633,6 +633,23 @@ public class NutritionActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Tính macro targets từ dailyCalories + goalId.
+     * Đồng thời lưu currentGoalName để dùng trong generate meal.
+     */
+    private void calculateTargetMacros(double dailyCalories, int goalId) {
+        // Tỷ lệ macro theo mục tiêu
+        double pRatio, cRatio, fRatio;
+        if (goalId == 1) {          // Giảm mỡ: protein cao hơn, carb thấp hơn
+            pRatio = 0.35; cRatio = 0.35; fRatio = 0.30;
+            currentGoalName = "giảm";
+        } else if (goalId == 2) {   // Tăng cơ: carb cao hơn để có năng lượng tập
+            pRatio = 0.30; cRatio = 0.50; fRatio = 0.20;
+            currentGoalName = "tăng";
+        } else {                    // Giữ dáng
+            pRatio = 0.30; cRatio = 0.40; fRatio = 0.30;
+            currentGoalName = "giữ";
+        }
 
     private void calculateTargetMacros(double tdee, int goalId) {
         double pR = 0.3, cR = 0.4, fR = 0.3;
