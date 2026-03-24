@@ -55,7 +55,7 @@ public interface SupabaseApiService {
     // USER PROFILE
     // =================================================================================
 
-    // Tìm user dựa theo username (Lấy thông tin hiển thị, lấy email đăng nhập, check trùng)
+    // Tìm user dựa theo username
     @GET("users")
     Call<List<User>> getUserByUsername(
             @Query("username") String eqUsername,
@@ -98,7 +98,7 @@ public interface SupabaseApiService {
     @GET("user_workout_sessions")
     Call<List<UserWorkoutSession>> getUserWorkoutHistoryByPlan(
             @Query("user_id") String eqUserId,
-            @Query("plan_id") String eqPlanId, // Lọc theo đúng Plan đang chọn
+            @Query("plan_id") String eqPlanId,
             @Query("select") String select
     );
 

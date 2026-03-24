@@ -57,7 +57,6 @@ public class WorkoutActivity extends AppCompatActivity {
 
         setupWindowInsets();
 
-        // Chỉ lấy User ID và Username 1 lần ở onCreate
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
         userId = pref.getString("KEY_USER_ID", "");
@@ -83,7 +82,6 @@ public class WorkoutActivity extends AppCompatActivity {
         // Nếu ID mục tiêu khác HOẶC có cờ báo đã thay đổi
         if (newGoalId != userGoalId || hasChanged || currentPlanId.isEmpty()) {
             userGoalId = newGoalId;
-            // Sau khi đọc xong thì tắt cờ báo hiệu đi
             pref.edit().putBoolean("TARGET_CHANGED", false).apply();
             fetchWorkoutPlanByGoalId();
         } else {
@@ -132,7 +130,6 @@ public class WorkoutActivity extends AppCompatActivity {
                 Toast.makeText(WorkoutActivity.this, "Đang tải lộ trình, vui lòng đợi...", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Truyền ĐÚNG ID gói tập sang màn hình Detail
             Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
             intent.putExtra("PLAN_ID", currentPlanId);
             startActivity(intent);
