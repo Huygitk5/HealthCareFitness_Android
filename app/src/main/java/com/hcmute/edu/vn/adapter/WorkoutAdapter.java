@@ -79,7 +79,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
                     }
                 }
 
-                intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
+                intent.putExtra("EXTRA_DAY_ID", item.getId());
                 intent.putExtra("EXTRA_DAY_TITLE", displayTitle);
                 v.getContext().startActivity(intent);
             };
