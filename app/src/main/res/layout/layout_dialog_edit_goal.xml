@@ -23,6 +23,7 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
+        <!-- MỤC TIÊU -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,7 +36,7 @@
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:background="@drawable/bg_input_rounded"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="20dp">
             <Spinner
                 android:id="@+id/dialogSpinnerGoal"
                 android:layout_width="match_parent"
@@ -43,11 +44,48 @@
                 android:paddingStart="10dp" />
         </LinearLayout>
 
+        <!-- DIVIDER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- MỨC ĐỘ VẬN ĐỘNG -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mức độ vận động hàng ngày"
+            android:textStyle="bold"
+            android:textColor="#757575"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_rounded"
+            android:layout_marginBottom="20dp">
+            <Spinner
+                android:id="@+id/dialogSpinnerActivity"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="10dp" />
+        </LinearLayout>
+
+        <!-- DIVIDER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- CÂN NẶNG MỤC TIÊU -->
         <LinearLayout
             android:id="@+id/dialogLayoutTarget"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -64,9 +102,10 @@
                 android:hint="VD: 60.5"
                 android:inputType="numberDecimal"
                 android:paddingHorizontal="16dp"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="16dp" />
         </LinearLayout>
 
+        <!-- NÚT HỦY / LƯU -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -89,5 +128,6 @@
                 android:text="LƯU"
                 android:textColor="#009688" />
         </LinearLayout>
+
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
