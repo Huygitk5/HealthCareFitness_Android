@@ -24,11 +24,14 @@ import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
+import com.hcmute.edu.vn.model.WorkoutPlan;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -50,6 +53,8 @@ public class WorkoutActivity extends AppCompatActivity {
     private CardView cardTodayWorkout;
 
     private CardView cardFreeWorkout;
+
+    private Map<String, String> planMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,9 +89,12 @@ public class WorkoutActivity extends AppCompatActivity {
         initViews();
         setupLevelListeners();
         selectLevel("BEGINNER");
-        setupTodayWorkout();
         setupClickListeners();
         setupBottomNavigation();
+
+        fetchAllWorkoutPlansAndSelectTarget();
+        setupTodayWorkout();
+
 //
 //        com.google.android.material.floatingactionbutton.FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
 //        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
@@ -234,24 +242,18 @@ public class WorkoutActivity extends AppCompatActivity {
         resetLevelButtons();
         switch (level) {
             case "BEGINNER":
-                currentPlanId = "a1111111-1111-1111-1111-111111111111";
-
                 tvBeginner.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvBeginner.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Khởi động & Làm quen");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv1);
                 break;
             case "INTERMEDIATE":
-                currentPlanId = "a2222222-2222-2222-2222-222222222222";
-
                 tvIntermediate.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvIntermediate.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Tăng cơ & Giảm mỡ");
                 ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv2);
                 break;
             case "ADVANCED":
-                currentPlanId = "05fea3e9-377e-4108-bee3-15a78150dc43";
-
                 tvAdvanced.setBackgroundResource(R.drawable.bg_workout_chip_active);
                 tvAdvanced.setTextColor(Color.WHITE);
                 tvWorkoutPlanTitle.setText("Đốt mỡ cường độ cao");
@@ -294,6 +296,33 @@ public class WorkoutActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
             overridePendingTransition(0, 0);
+        });
+    }
+
+    // Lấy danh sách Gói tập và tự động chọn theo mục tiêu User
+    private void fetchAllWorkoutPlansAndSelectTarget() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        // Gọi API lấy toàn bộ plans
+        apiService.getAllWorkoutPlans("*").enqueue(new Callback<List<WorkoutPlan>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    for (WorkoutPlan plan : response.body()) {
+                        // Ánh xạ Tên (hoặc Difficulty/Goal ID) với Plan ID thực tế trên Supabase
+                        planMap.put(plan.getName().toUpperCase(), plan.getId());
+                    }
+
+                    // Mặc định chọn Beginner, nhưng nếu user có mục tiêu "Tăng cơ" (Intermediate), ta sẽ tự động gán.
+                    // Ở đây em có thể lấy target của user từ SharedPreferences (VD: userTarget)
+                    String userTarget = "BEGINNER"; // Tạm thời hardcode biến này, em hãy thay bằng target thật lấy từ DB/Prefs
+                    selectLevel(userTarget);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
+                Toast.makeText(WorkoutActivity.this, "Lỗi tải danh sách gói tập", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }
