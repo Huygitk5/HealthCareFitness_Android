@@ -1,9 +1,18 @@
 package com.hcmute.edu.vn.activity;
 
+import android.Manifest;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -11,17 +20,20 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.model.FitnessGoal;
 import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
+import com.hcmute.edu.vn.util.FitnessCalculator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -29,6 +41,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -46,7 +59,7 @@ public class ProfileActivity extends AppCompatActivity {
     List<Integer> currentConditionIds = new ArrayList<>();
 
     TextView tvProfileGoal, tvProfileTargetWeight, btnEditGoal;
-    List<com.hcmute.edu.vn.model.FitnessGoal> fitnessGoalList = new ArrayList<>();
+    List<FitnessGoal> fitnessGoalList = new ArrayList<>();
     Integer currentGoalId = 1;
     Float currentTargetWeight = null;
 
@@ -55,15 +68,17 @@ public class ProfileActivity extends AppCompatActivity {
     String currentGender = "Male";
     int currentAge = 20;
 
+    private int currentActivityIndex = 2; // mặc định "Vận động vừa"
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         username = pref.getString("KEY_USER", null);
 
@@ -86,7 +101,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnEditGoal = findViewById(R.id.btnEditGoal);
 
         // Xử lý nút Switch Nhắc nhở uống nước
-        androidx.appcompat.widget.SwitchCompat switchWater = findViewById(R.id.switchWaterReminder);
+        SwitchCompat switchWater = findViewById(R.id.switchWaterReminder);
         boolean isWaterReminderOn = pref.getBoolean("WATER_REMINDER", false);
         switchWater.setChecked(isWaterReminderOn);
 
@@ -94,9 +109,9 @@ public class ProfileActivity extends AppCompatActivity {
             pref.edit().putBoolean("WATER_REMINDER", isChecked).apply();
 
             if (isChecked) {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
                     }
                 }
                 setupWaterReminder(true);
@@ -108,7 +123,7 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
         btnLogout.setOnClickListener(v -> {
-            Intent loginIntent = new Intent(ProfileActivity.this, com.hcmute.edu.vn.activity.LoginActivity.class);
+            Intent loginIntent = new Intent(ProfileActivity.this, LoginActivity.class);
             loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(loginIntent);
             Toast.makeText(ProfileActivity.this, "Đã đăng xuất thành công!", Toast.LENGTH_SHORT).show();
@@ -130,161 +145,153 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_edit_goal, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_edit_goal, null);
         Spinner dialogSpinnerGoal = dialogView.findViewById(R.id.dialogSpinnerGoal);
+        Spinner dialogSpinnerActivity = dialogView.findViewById(R.id.dialogSpinnerActivity);
         LinearLayout dialogLayoutTarget = dialogView.findViewById(R.id.dialogLayoutTarget);
         EditText dialogEdtTarget = dialogView.findViewById(R.id.dialogEdtTarget);
-        com.google.android.material.button.MaterialButton btnCancel = dialogView.findViewById(R.id.btnDialogCancelGoal);
-        com.google.android.material.button.MaterialButton btnSave = dialogView.findViewById(R.id.btnDialogSaveGoal);
+        MaterialButton btnCancel = dialogView.findViewById(R.id.btnDialogCancelGoal);
+        MaterialButton btnSave = dialogView.findViewById(R.id.btnDialogSaveGoal);
 
-        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this).setView(dialogView).create();
+        AlertDialog dialog = new AlertDialog.Builder(this).setView(dialogView).create();
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
+        // --- Setup Goal Spinner ---
         List<String> goalNames = new ArrayList<>();
         int selectedIndex = 0;
         for (int i = 0; i < fitnessGoalList.size(); i++) {
             goalNames.add(fitnessGoalList.get(i).getName());
-            if (fitnessGoalList.get(i).getId() == currentGoalId) {
-                selectedIndex = i;
-            }
+            if (fitnessGoalList.get(i).getId() == currentGoalId) selectedIndex = i;
         }
-
-        android.widget.ArrayAdapter<String> adapter = new android.widget.ArrayAdapter<>(this, android.R.layout.simple_spinner_item, goalNames);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        dialogSpinnerGoal.setAdapter(adapter);
+        ArrayAdapter<String> goalAdapter  = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, goalNames);
+        goalAdapter .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogSpinnerGoal.setAdapter(goalAdapter );
         dialogSpinnerGoal.setSelection(selectedIndex);
 
-        final int finalSelectedIndex = selectedIndex;
+        // --- Setup Activity Level Spinner ---
+        ArrayAdapter<String> actAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+                Arrays.asList(FitnessCalculator.ACTIVITY_LEVEL_LABELS));
+        actAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogSpinnerActivity.setAdapter(actAdapter);
+        dialogSpinnerActivity.setSelection(currentActivityIndex);
 
-        if (currentTargetWeight != null && currentTargetWeight > 0) {
+        // --- Pre-fill target weight ---
+        if (currentTargetWeight != null && currentTargetWeight > 0)
             dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
-        }
 
-        dialogSpinnerGoal.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+        // --- Goal spinner listener (ẩn/hiện ô cân nặng mục tiêu + validate BMI) ---
+        final int finalSelectedIndex = selectedIndex;
+        dialogSpinnerGoal.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String selectedName = goalNames.get(position).toLowerCase();
+                boolean isMaintain = selectedName.contains("giữ");
 
-                // ===============================================================
-                // KIỂM TRA BMI NGAY LẬP TỨC KHI NGƯỜI DÙNG VỪA CHỌN SPINNER
-                // (Chỉ kiểm tra nếu họ chọn một mục tiêu MỚI khác với cái ban đầu)
-                // ===============================================================
-                if (position != finalSelectedIndex && currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
-                    double currentBmi = calculateBMI(currentWeight, currentHeight);
-
-                    boolean isLose = selectedName.contains("giảm");
-                    boolean isGain = selectedName.contains("tăng");
-                    boolean isMaintain = selectedName.contains("giữ");
-
-                    if (currentBmi > 24.9 && (isGain || isMaintain)) {
-                        Toast.makeText(ProfileActivity.this, "Bạn đang thừa cân (BMI > 24.9), chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
-                        dialogSpinnerGoal.setSelection(finalSelectedIndex); return;
+                // BMI guard (chỉ check khi đổi sang goal khác)
+                if (position != finalSelectedIndex && currentHeight != null && currentHeight > 0
+                        && currentWeight != null && currentWeight > 0) {
+                    double currentBmi = currentWeight / Math.pow(currentHeight / 100.0, 2);
+                    if (currentBmi > 24.9 && (goalNames.contains("tăng") || isMaintain)) {
+                        Toast.makeText(ProfileActivity.this,
+                                "Bạn đang thừa cân (BMI > 24.9), chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                        dialogSpinnerGoal.setSelection(finalSelectedIndex);
+                        return;
                     }
-                    if (currentBmi < 18.5 && (isLose || isMaintain)) {
-                        Toast.makeText(ProfileActivity.this, "Bạn đang thiếu cân (BMI < 18.5), chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
-                        dialogSpinnerGoal.setSelection(finalSelectedIndex); return;
+                    if (currentBmi < 18.5 && (goalNames.contains("giảm") || isMaintain)) {
+                        Toast.makeText(ProfileActivity.this,
+                                "Bạn đang thiếu cân (BMI < 18.5), chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                        dialogSpinnerGoal.setSelection(finalSelectedIndex);
+                        return;
                     }
                 }
 
-                // ===============================================================
-                // NẾU VƯỢT QUA BÀI KIỂM TRA -> CẬP NHẬT GIAO DIỆN ẨN/HIỆN Ô CÂN NẶNG
-                // ===============================================================
-                if (selectedName.contains("giữ")) {
-                    dialogLayoutTarget.setVisibility(View.GONE);
-                    dialogEdtTarget.setText("");
-                } else {
-                    dialogLayoutTarget.setVisibility(View.VISIBLE);
-                }
+                dialogLayoutTarget.setVisibility(isMaintain ? View.GONE : View.VISIBLE);
+                if (isMaintain) dialogEdtTarget.setText("");
             }
-            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
         btnSave.setOnClickListener(v -> {
-            int newGoalId = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getId();
-            Float newTarget = null;
-            String selectedGoalName = fitnessGoalList.get(dialogSpinnerGoal.getSelectedItemPosition()).getName().toLowerCase();
+            int newGoalPosition  = dialogSpinnerGoal.getSelectedItemPosition();
+            int newActivityIndex = dialogSpinnerActivity.getSelectedItemPosition();
+            int newGoalId = fitnessGoalList.get(newGoalPosition).getId();
+            String selectedGoalName = fitnessGoalList.get(newGoalPosition).getName();
 
+            Float newTarget = null;
             if (dialogLayoutTarget.getVisibility() == View.VISIBLE) {
                 String targetStr = dialogEdtTarget.getText().toString().trim();
-                if (!targetStr.isEmpty()) {
-                    try {
-                        newTarget = Float.parseFloat(targetStr);
-                    } catch (NumberFormatException e) {
-                        Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                } else {
+                if (targetStr.isEmpty()) {
                     dialogEdtTarget.setError("Vui lòng nhập cân nặng mục tiêu!");
                     dialogEdtTarget.requestFocus();
                     return;
                 }
+                try { newTarget = Float.parseFloat(targetStr); }
+                catch (NumberFormatException e) {
+                    Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
 
-            // ===============================================================
-            // LOGIC 3 RÀO CHẮN BMI (Sử dụng từ khóa an toàn: giảm, tăng, duy trì)
-            // ===============================================================
-            if (currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
-                boolean isLose = selectedGoalName.contains("giảm");
-                boolean isGain = selectedGoalName.contains("tăng");
-                boolean isMaintain = selectedGoalName.contains("giữ");
+            // --- Validate target vs current weight ---
+            boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
+            boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
+            if (newTarget != null && currentHeight != null && currentHeight > 0) {
+                double targetBmi = newTarget / Math.pow(currentHeight / 100.0, 2);
 
-                if (newTarget != null && !isMaintain) {
-                    double targetW = newTarget;
-                    double minNormal = getMinNormalWeight(currentHeight);
-                    double maxNormal = getMaxNormalWeight(currentHeight);
-
-                    if (isLose) {
-                        if (targetW >= currentWeight) {
-                            dialogEdtTarget.setError("Mục tiêu phải nhỏ hơn cân nặng hiện tại!");
-                            dialogEdtTarget.requestFocus(); return;
-                        }
-                        if (targetW < minNormal) {
-                            dialogEdtTarget.setError("Tối thiểu để không bị suy dinh dưỡng: " + Math.round(minNormal) + "kg");
-                            dialogEdtTarget.requestFocus(); return;
-                        }
-                    } else if (isGain) {
-                        if (targetW <= currentWeight) {
-                            dialogEdtTarget.setError("Mục tiêu phải lớn hơn cân nặng hiện tại!");
-                            dialogEdtTarget.requestFocus(); return;
-                        }
-                        if (targetW > maxNormal) {
-                            dialogEdtTarget.setError("Tối đa để không bị béo phì: " + Math.round(maxNormal) + "kg");
-                            dialogEdtTarget.requestFocus(); return;
-                        }
+                if (isLose) {
+                    if (newTarget >= currentWeight) {
+                        dialogEdtTarget.setError("Phải nhỏ hơn cân nặng hiện tại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
+                    if (targetBmi < 18.5) {
+                        dialogEdtTarget.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy chỉnh lại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
+                }
+                if (isGain) {
+                    if (newTarget <= currentWeight) {
+                        dialogEdtTarget.setError("Phải lớn hơn cân nặng hiện tại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
+                    if (targetBmi > 23.0) {
+                        dialogEdtTarget.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy chỉnh lại!");
+                        dialogEdtTarget.requestFocus(); return;
                     }
                 }
             }
-            // ===============================================================
 
-            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
-            // ===============================================================
-            // BỔ SUNG: TÍNH TOÁN LẠI CALO (TDEE) KHI ĐỔI MỤC TIÊU
-            // ===============================================================
-            // Khai báo lại logic xác định mục tiêu ở đây để không bị lỗi Scope
-            boolean isLoseGoal = selectedGoalName.contains("giảm");
-            boolean isGainGoal = selectedGoalName.contains("tăng");
+            // === TÍNH TOÁN VỚI FitnessCalculator ===
+            double bmr = FitnessCalculator.calcBMR(
+                    currentWeight != null ? currentWeight : 60,
+                    currentHeight != null ? currentHeight : 165,
+                    currentAge, currentGender);
 
-            double bmr = ("Male".equalsIgnoreCase(currentGender)) ?
-                    (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) + 5 :
-                    (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) - 161;
+            double tdee = FitnessCalculator.calcTDEE(bmr, newActivityIndex);
+            double targetW = (newTarget != null) ? newTarget : (currentWeight != null ? currentWeight : 60);
+            boolean isUserBeginner = getSharedPreferences("UserPrefs", MODE_PRIVATE).getBoolean("IS_BEGINNER", true);
+            FitnessCalculator.FitnessResult result =
+                    FitnessCalculator.calculate(selectedGoalName, currentWeight != null ? currentWeight : 60,
+                            targetW, tdee, currentGender, isUserBeginner);
 
-            double tdee = bmr * 1.55; // Mức vận động trung bình
-            double newDailyCalories = tdee;
-
-            if (isLoseGoal) newDailyCalories = tdee - 500; // Giảm mỡ -> Thâm hụt 500 kcal
-            else if (isGainGoal) newDailyCalories = tdee + 300; // Tăng cơ -> Thặng dư 300 kcal
-
-            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
+            // Build update payload
             User updateData = new User();
             updateData.setFitnessGoalId(newGoalId);
             updateData.setTarget(newTarget);
+            updateData.setCurrentDailyCalories(result.dailyCalories);
+            updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
+            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
 
-            // LƯU Ý QUAN TRỌNG NHẤT: Bắt buộc phải lưu Kcal mới xuống DB!
-            updateData.setCurrentDailyCalories(newDailyCalories);
+            // Lưu activity index vào SharedPrefs
+            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                    .putInt("ACTIVITY_INDEX", newActivityIndex)
+                    .putBoolean("TARGET_CHANGED", true)
+                    .apply();
+            currentActivityIndex = newActivityIndex;
 
             btnSave.setText("Đang lưu...");
             btnSave.setEnabled(false);
@@ -294,7 +301,6 @@ public class ProfileActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
                     if (response.isSuccessful()) {
-                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("TARGET_CHANGED", true).apply();
                         Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
                         loadUserProfile();
                         dialog.dismiss();
@@ -412,6 +418,9 @@ public class ProfileActivity extends AppCompatActivity {
 
                     int age = calculateAge(currentUser.getDateOfBirth());
                     tvProfileAge.setText(age > 0 ? String.valueOf(age) : "--");
+
+                    currentActivityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+                            .getInt("ACTIVITY_INDEX", 2);
 
                     String goalName = "Chưa thiết lập";
                     for (com.hcmute.edu.vn.model.FitnessGoal g : fitnessGoalList) {
@@ -600,7 +609,7 @@ public class ProfileActivity extends AppCompatActivity {
                             boolean isChecked = !checkBox.isChecked();
                             checkBox.setChecked(isChecked);
 
-                            if(isChecked) {
+                            if (isChecked) {
                                 cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
                                 cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
                             } else {
@@ -712,35 +721,20 @@ public class ProfileActivity extends AppCompatActivity {
         navHome.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, HomeActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            startActivity(i); overridePendingTransition(0, 0);
+            startActivity(i);
+            overridePendingTransition(0, 0);
         });
         navWorkout.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, WorkoutJourneyActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            startActivity(i); overridePendingTransition(0, 0);
+            startActivity(i);
+            overridePendingTransition(0, 0);
         });
         navNutrition.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, NutritionActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            startActivity(i); overridePendingTransition(0, 0);
+            startActivity(i);
+            overridePendingTransition(0, 0);
         });
-    }
-    // =======================================================
-    // BỘ BẢO VỆ SỨC KHỎE (HEALTH GUARD) DỰA TRÊN BMI
-    // =======================================================
-    private double calculateBMI(double weightKg, double heightCm) {
-        if (heightCm <= 0) return 0;
-        double heightM = heightCm / 100.0;
-        return weightKg / (heightM * heightM);
-    }
-
-    private double getMinNormalWeight(double heightCm) {
-        double heightM = heightCm / 100.0;
-        return 18.5 * (heightM * heightM); // Cân nặng tối thiểu để BMI = 18.5
-    }
-
-    private double getMaxNormalWeight(double heightCm) {
-        double heightM = heightCm / 100.0;
-        return 24.9 * (heightM * heightM); // Cân nặng tối đa để BMI = 24.9
     }
 }
