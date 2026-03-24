@@ -518,6 +518,58 @@ public class NutritionActivity extends AppCompatActivity {
         });
     }
 
+
+    // -----------------------------------------------------------------------
+    // FILTER SAFE FOODS
+    // -----------------------------------------------------------------------
+
+    private List<Food> filterSafeFoods(List<Food> allFoods) {
+        List<Food> safeFoods = new ArrayList<>();
+        for (Food food : allFoods) {
+            boolean isSafe = true;
+
+            // Lọc theo tên món
+            if (food.getName() != null) {
+                String foodName = food.getName().toLowerCase();
+                for (String allergy : currentAllergies) {
+                    if (allergy != null && !allergy.isEmpty()) {
+                        String keyword = allergy.toLowerCase()
+                                .replace("dị ứng", "").replace("allergy", "").trim();
+                        if (!keyword.isEmpty() && foodName.contains(keyword)) {
+                            isSafe = false; break;
+                        }
+                    }
+                }
+            }
+
+            // Lọc theo nguyên liệu
+            if (isSafe && food.getFoodIngredients() != null) {
+                for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                    if (fi.getIngredientId() != null
+                            && restrictedIngredientIds.contains(fi.getIngredientId())) {
+                        isSafe = false; break;
+                    }
+                    if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
+                        String ingName = fi.getIngredient().getName().toLowerCase();
+                        for (String allergy : currentAllergies) {
+                            if (allergy != null && !allergy.isEmpty()) {
+                                String keyword = allergy.toLowerCase()
+                                        .replace("dị ứng", "").replace("allergy", "").trim();
+                                if (!keyword.isEmpty() && ingName.contains(keyword)) {
+                                    isSafe = false; break;
+                                }
+                            }
+                        }
+                    }
+                    if (!isSafe) break;
+                }
+            }
+
+            if (isSafe) safeFoods.add(food);
+        }
+        return safeFoods;
+    }
+
     private void setupWarningDisplay(List<String> dataList) {
         if (dataList.isEmpty()) {
             tvAllergiesWarning.setText("⚠️ Cần tránh: Không có");
