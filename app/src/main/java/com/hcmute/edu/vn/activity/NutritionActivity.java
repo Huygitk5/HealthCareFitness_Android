@@ -337,19 +337,20 @@ public class NutritionActivity extends AppCompatActivity {
         List<Food> lunchPool = new ArrayList<>();
         List<Food> dinnerPool = new ArrayList<>();
 
-            // LỚP 1: TÊN MÓN ĂN
-            if (food.getName() != null) {
-                String foodName = food.getName().toLowerCase();
-                for (String allergy : currentAllergies) {
-                    if (allergy != null && !allergy.isEmpty()) {
-                        String keyword = allergy.toLowerCase().replace("dị ứng", "").replace("allergy", "").trim();
-                        if (!keyword.isEmpty() && foodName.contains(keyword)) {
-                            isSafe = false;
-                            break;
-                        }
-                    }
-                }
-            }
+        for (Food food : safeFoods) {
+            double cal = food.getCalories() != null ? food.getCalories() : 0;
+            if (cal <= 0) continue;
+
+            double protein = food.getProteinG() != null ? food.getProteinG() : 0;
+            double carb    = food.getCarbG()    != null ? food.getCarbG()    : 0;
+            double fat     = food.getFatG()     != null ? food.getFatG()     : 0;
+
+            // Tính "protein density" = protein% trong tổng macro
+            double totalMacro = protein + carb + fat;
+            double proteinPct = totalMacro > 0 ? protein / totalMacro : 0;
+
+            boolean isHighProtein = proteinPct >= 0.3;   // ≥30% protein
+            boolean isLowCalDense = cal < 350;            // Nhẹ — phù hợp bữa sáng
 
             // LỚP 2: THÀNH PHẦN NGUYÊN LIỆU BÊN TRONG MÓN ĂN
             if (isSafe && food.getFoodIngredients() != null) {
