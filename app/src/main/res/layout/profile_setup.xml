@@ -218,6 +218,42 @@
             android:textSize="12sp"
             android:textColor="#9E9E9E"
             android:layout_marginBottom="8dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kinh nghiệm tập luyện"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rgExperience"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbBeginner"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Người mới"
+                android:textSize="15sp"
+                android:checked="true"
+                android:buttonTint="#2196F3"/>
+
+            <RadioButton
+                android:id="@+id/rbIntermediate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Đã có kinh nghiệm"
+                android:textSize="15sp"
+                android:buttonTint="#2196F3"/>
+        </RadioGroup>
 
         <LinearLayout
             android:id="@+id/layoutTargetWeight"

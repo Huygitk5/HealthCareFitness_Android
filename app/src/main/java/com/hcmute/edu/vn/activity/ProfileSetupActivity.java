@@ -49,6 +49,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
     Spinner spinnerActivityLevel;
     LinearLayout layoutTargetWeight;
     EditText edtTargetWeight;
+    RadioGroup rgExperience;
 
     private List<FitnessGoal> fitnessGoalList = new ArrayList<>();
 
@@ -70,6 +71,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         spinnerActivityLevel = findViewById(R.id.spinnerActivityLevel);
         layoutTargetWeight = findViewById(R.id.layoutTargetWeight);
         edtTargetWeight = findViewById(R.id.edtTargetWeight);
+        rgExperience = findViewById(R.id.rgExperience);
 
         // --- Setup Activity Level Spinner ---
         ArrayAdapter<String> actAdapter = new ArrayAdapter<>(
@@ -197,6 +199,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         String dobInput = edtDOB.getText().toString().trim();
         String heightStr = edtHeight.getText().toString().trim();
         String weightStr = edtWeight.getText().toString().trim();
+        boolean isUserBeginner = (rgExperience.getCheckedRadioButtonId() == R.id.rbBeginner);
 
         if (fullName.isEmpty() || dobInput.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
             Toast.makeText(ProfileSetupActivity.this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
@@ -257,6 +260,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             // Activity level
             int activityIndex = spinnerActivityLevel.getSelectedItemPosition();
 
+            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                    .putBoolean("IS_BEGINNER", isUserBeginner)
+                    .putInt("ACTIVITY_INDEX", activityIndex)
+                    .apply();
             // BMI
             double bmi = calculateBMI(weight, height);
 
@@ -271,16 +278,49 @@ public class ProfileSetupActivity extends AppCompatActivity {
             // Validation
             boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
             boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
-            if (isLose && targetWeightValue != null && targetWeightValue >= weight) {
-                showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
+            boolean isMaintain = selectedGoalName.toLowerCase().contains("giữ");
+//            if (isLose && targetWeightValue != null && targetWeightValue >= weight) {
+//                showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
+//            }
+//            if (isGain && targetWeightValue != null && targetWeightValue <= weight) {
+//                showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
+//            }
+            if (targetWeightValue != null && !isMaintain) {
+                double heightM = height / 100.0;
+                double targetBmi = targetWeightValue / (heightM * heightM);
+
+                if (isLose) { // ĐANG GIẢM MỠ
+                    if (targetWeightValue >= weight) {
+                        showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
+                    }
+                    if (targetBmi < 18.5) {
+                        showError("Cấm! Mức này quá thấp để giảm (BMI < 18.5). Hãy điều chỉnh lại!"); return;
+                    }
+                }
+                else if (isGain) { // ĐANG TĂNG CƠ
+                    if (targetWeightValue <= weight) {
+                        showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
+                    }
+                    if (targetBmi > 23.0) {
+                        showError("Cấm! Mức này quá cao để tăng (BMI > 23.0). Hãy điều chỉnh lại!"); return;
+                    }
+                }
             }
-            if (isGain && targetWeightValue != null && targetWeightValue <= weight) {
-                showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
+
+            if (!isMaintain && targetWeightValue == null) {
+                showError("Vui lòng nhập cân nặng mục tiêu!");
+                return;
             }
 
             // === CALCULATE ===
-            FitnessCalculator.FitnessResult result =
-                    FitnessCalculator.calculate(selectedGoalName, weight, targetW, tdee, bmi);
+            FitnessCalculator.FitnessResult result = FitnessCalculator.calculate(
+                    selectedGoalName,
+                    weight,
+                    targetWeightValue != null ? targetWeightValue : weight,
+                    tdee,
+                    gender,
+                    isUserBeginner
+            );
 
             // Build User object
             User updateData = new User();

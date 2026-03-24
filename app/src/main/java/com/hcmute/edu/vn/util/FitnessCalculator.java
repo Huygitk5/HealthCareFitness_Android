@@ -53,18 +53,15 @@ public class FitnessCalculator {
      * @param goalName       tên goal (chứa "giảm" / "tăng" / "giữ")
      * @param currentWeight  kg
      * @param targetWeight   kg  (truyền currentWeight nếu giữ dáng)
-     * @param tdee           kcal/ngày
-     * @param bmi            chỉ số BMI để phân loại beginner/intermediate
+     * @param gender         giới tính lấy từ đối tượng User ("Male" / "Female")
+     * @param isBeginner     trình độ tập luyện lấy từ đối tượng User (true = Người mới)
      */
     public static FitnessResult calculate(String goalName, double currentWeight,
-                                          double targetWeight, double tdee, double bmi) {
+                                          double targetWeight, double tdee, String gender, boolean isBeginner) {
         FitnessResult r = new FitnessResult();
         boolean isLose     = goalName.toLowerCase().contains("giảm");
         boolean isGain     = goalName.toLowerCase().contains("tăng");
         boolean isMaintain = !isLose && !isGain;
-
-        // Phân loại beginner / intermediate dựa trên BMI
-        boolean isBeginner = (bmi < 25);   // Đơn giản hoá: BMI bình thường = beginner
 
         if (isMaintain) {
             // ---- GIỮ DÁNG ----
@@ -87,7 +84,8 @@ public class FitnessCalculator {
             r.dailyCaloriesToBurn = 0.3 * dailyDeficit;                // 30% deficit từ tập
 
             // Không ăn dưới 1200 kcal (nữ) / 1500 kcal (nam)
-            double minCalories = 1300; // double minCalories = isMale ? 1500 : 1200;
+            boolean isMale = "Male".equalsIgnoreCase(gender);
+            double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
 
             r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
