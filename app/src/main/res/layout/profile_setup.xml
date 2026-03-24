@@ -214,7 +214,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="! Mức vận động ảnh hưởng đến lượng calo cần nạp mỗi ngày"
+            android:text="⚠️ Mức vận động ảnh hưởng đến lượng calo cần nạp mỗi ngày"
             android:textSize="12sp"
             android:textColor="#9E9E9E"
             android:layout_marginBottom="8dp"/>
