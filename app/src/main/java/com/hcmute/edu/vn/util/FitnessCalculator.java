@@ -87,7 +87,8 @@ public class FitnessCalculator {
             r.dailyCaloriesToBurn = 0.3 * dailyDeficit;                // 30% deficit từ tập
 
             // Không ăn dưới 1200 kcal (nữ) / 1500 kcal (nam)
-            r.dailyCalories      = Math.max(r.dailyCalories, 1300);
+            double minCalories = isMale ? 1500 : 1200;
+            r.dailyCalories = Math.max(r.dailyCalories, minCalories);
 
             r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
 
