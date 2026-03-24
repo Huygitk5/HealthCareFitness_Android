@@ -62,22 +62,6 @@ public class ExerciseListActivity extends AppCompatActivity {
             fetchExercisesForDay(dayId);
 
             // Sửa lại nhánh này trong onCreate()
-        } else if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
-            exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
-
-            // Nhận thêm Title để hiển thị cho đẹp
-            String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
-            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-            if(tvDayTitle != null) {
-                tvDayTitle.setText(dayTitle != null ? dayTitle : "Danh sách bài tập");
-            }
-
-            adapter = new ExerciseAdapter(exercises);
-            rvExercises.setAdapter(adapter);
-
-            if (exercises == null || exercises.isEmpty()) {
-                Toast.makeText(this, "Ngày này chưa được gán bài tập nào!", Toast.LENGTH_SHORT).show();
-            }
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
