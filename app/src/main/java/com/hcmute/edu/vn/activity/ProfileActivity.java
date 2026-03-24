@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
@@ -22,6 +21,7 @@ import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
+import com.hcmute.edu.vn.model.WorkoutPlan;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -121,9 +121,6 @@ public class ProfileActivity extends AppCompatActivity {
         setupBottomNavigation();
     }
 
-    // ==============================================================
-    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU (ĐÃ TÍCH HỢP 3 RÀO CHẮN BẢO VỆ)
-    // ==============================================================
     private void showEditGoalDialog() {
         if (fitnessGoalList.isEmpty()) {
             Toast.makeText(this, "Đang tải dữ liệu, vui lòng thử lại sau!", Toast.LENGTH_SHORT).show();
@@ -167,10 +164,6 @@ public class ProfileActivity extends AppCompatActivity {
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 String selectedName = goalNames.get(position).toLowerCase();
 
-                // ===============================================================
-                // KIỂM TRA BMI NGAY LẬP TỨC KHI NGƯỜI DÙNG VỪA CHỌN SPINNER
-                // (Chỉ kiểm tra nếu họ chọn một mục tiêu MỚI khác với cái ban đầu)
-                // ===============================================================
                 if (position != finalSelectedIndex && currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
                     double currentBmi = calculateBMI(currentWeight, currentHeight);
 
@@ -188,9 +181,6 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 }
 
-                // ===============================================================
-                // NẾU VƯỢT QUA BÀI KIỂM TRA -> CẬP NHẬT GIAO DIỆN ẨN/HIỆN Ô CÂN NẶNG
-                // ===============================================================
                 if (selectedName.contains("giữ")) {
                     dialogLayoutTarget.setVisibility(View.GONE);
                     dialogEdtTarget.setText("");
@@ -224,9 +214,6 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
 
-            // ===============================================================
-            // LOGIC 3 RÀO CHẮN BMI (Sử dụng từ khóa an toàn: giảm, tăng, duy trì)
-            // ===============================================================
             if (currentHeight != null && currentHeight > 0 && currentWeight != null && currentWeight > 0) {
                 boolean isLose = selectedGoalName.contains("giảm");
                 boolean isGain = selectedGoalName.contains("tăng");
@@ -258,13 +245,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 }
             }
-            // ===============================================================
 
-            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
-            // ===============================================================
-            // BỔ SUNG: TÍNH TOÁN LẠI CALO (TDEE) KHI ĐỔI MỤC TIÊU
-            // ===============================================================
-            // Khai báo lại logic xác định mục tiêu ở đây để không bị lỗi Scope
             boolean isLoseGoal = selectedGoalName.contains("giảm");
             boolean isGainGoal = selectedGoalName.contains("tăng");
 
@@ -272,41 +253,71 @@ public class ProfileActivity extends AppCompatActivity {
                     (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) + 5 :
                     (10 * currentWeight) + (6.25 * currentHeight) - (5 * currentAge) - 161;
 
-            double tdee = bmr * 1.55; // Mức vận động trung bình
+            double tdee = bmr * 1.55;
             double newDailyCalories = tdee;
 
-            if (isLoseGoal) newDailyCalories = tdee - 500; // Giảm mỡ -> Thâm hụt 500 kcal
-            else if (isGainGoal) newDailyCalories = tdee + 300; // Tăng cơ -> Thặng dư 300 kcal
-
-            // Vượt qua hết các rào chắn thì gọi API Lưu dữ liệu
-            User updateData = new User();
-            updateData.setFitnessGoalId(newGoalId);
-            updateData.setTarget(newTarget);
-
-            // LƯU Ý QUAN TRỌNG NHẤT: Bắt buộc phải lưu Kcal mới xuống DB!
-            updateData.setCurrentDailyCalories(newDailyCalories);
+            if (isLoseGoal) newDailyCalories = tdee - 500;
+            else if (isGainGoal) newDailyCalories = tdee + 300;
 
             btnSave.setText("Đang lưu...");
             btnSave.setEnabled(false);
 
+            final int finalNewGoalId = newGoalId;
+            final Float finalNewTarget = newTarget;
+            final double finalNewDailyCalories = newDailyCalories;
+
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+            
+            apiService.getWorkoutPlanByGoalId("eq." + finalNewGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
                 @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    if (response.isSuccessful()) {
-                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("TARGET_CHANGED", true).apply();
-                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
-                        loadUserProfile();
-                        dialog.dismiss();
-                    } else {
-                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
-                        btnSave.setText("LƯU");
-                        btnSave.setEnabled(true);
+                public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                    String newPlanId = null;
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        newPlanId = response.body().get(0).getId();
                     }
+
+                    User updateData = new User();
+                    updateData.setFitnessGoalId(finalNewGoalId);
+                    updateData.setTarget(finalNewTarget);
+                    updateData.setCurrentDailyCalories(finalNewDailyCalories);
+                    if (newPlanId != null) {
+                        updateData.setCurrentWorkoutPlanId(newPlanId);
+                    }
+
+                    apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call2, Response<Void> response2) {
+                            if (response2.isSuccessful()) {
+                                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                        .putInt("USER_FITNESS_GOAL_ID", finalNewGoalId)
+                                        .putBoolean("TARGET_CHANGED", true)
+                                        .apply();
+
+                                Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
+
+                                currentGoalId = finalNewGoalId;
+                                currentTargetWeight = finalNewTarget;
+                                loadUserProfile();
+                                dialog.dismiss();
+                            } else {
+                                Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                                btnSave.setText("LƯU");
+                                btnSave.setEnabled(true);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call2, Throwable t) {
+                            Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                            btnSave.setText("LƯU");
+                            btnSave.setEnabled(true);
+                        }
+                    });
                 }
+
                 @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT).show();
                     btnSave.setText("LƯU");
                     btnSave.setEnabled(true);
                 }
@@ -395,6 +406,13 @@ public class ProfileActivity extends AppCompatActivity {
                     currentUserId = currentUser.getId();
                     currentGoalId = currentUser.getFitnessGoalId();
                     currentTargetWeight = currentUser.getTarget();
+
+                    // Luôn cập nhật Goal ID vào máy mỗi khi load profile
+                    if (currentGoalId != null) {
+                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                .putInt("USER_FITNESS_GOAL_ID", currentGoalId)
+                                .apply();
+                    }
 
                     currentHeight = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
                     currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
@@ -715,9 +733,11 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(i); overridePendingTransition(0, 0);
         });
         navWorkout.setOnClickListener(v -> {
-            Intent i = new Intent(ProfileActivity.this, WorkoutJourneyActivity.class);
+            // 🔥 ĐÃ SỬA: Chuyển sang WorkoutActivity thay vì WorkoutJourneyActivity
+            Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-            startActivity(i); overridePendingTransition(0, 0);
+            startActivity(i);
+            overridePendingTransition(0, 0);
         });
         navNutrition.setOnClickListener(v -> {
             Intent i = new Intent(ProfileActivity.this, NutritionActivity.class);
@@ -725,9 +745,7 @@ public class ProfileActivity extends AppCompatActivity {
             startActivity(i); overridePendingTransition(0, 0);
         });
     }
-    // =======================================================
-    // BỘ BẢO VỆ SỨC KHỎE (HEALTH GUARD) DỰA TRÊN BMI
-    // =======================================================
+
     private double calculateBMI(double weightKg, double heightCm) {
         if (heightCm <= 0) return 0;
         double heightM = heightCm / 100.0;
@@ -736,11 +754,11 @@ public class ProfileActivity extends AppCompatActivity {
 
     private double getMinNormalWeight(double heightCm) {
         double heightM = heightCm / 100.0;
-        return 18.5 * (heightM * heightM); // Cân nặng tối thiểu để BMI = 18.5
+        return 18.5 * (heightM * heightM);
     }
 
     private double getMaxNormalWeight(double heightCm) {
         double heightM = heightCm / 100.0;
-        return 24.9 * (heightM * heightM); // Cân nặng tối đa để BMI = 24.9
+        return 24.9 * (heightM * heightM);
     }
 }
