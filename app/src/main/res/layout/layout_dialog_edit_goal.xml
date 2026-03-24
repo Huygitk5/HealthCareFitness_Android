@@ -43,6 +43,24 @@
                 android:paddingStart="10dp" />
         </LinearLayout>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mức độ vận động"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"/>
+
+        <Spinner
+            android:id="@+id/dialogSpinnerActivity"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input_rounded"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"/>
+
         <LinearLayout
             android:id="@+id/dialogLayoutTarget"
             android:layout_width="match_parent"
