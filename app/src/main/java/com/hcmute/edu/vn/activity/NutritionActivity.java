@@ -376,10 +376,10 @@ public class NutritionActivity extends AppCompatActivity {
         double bfRatio, lunchRatio, dinnerRatio;
         if (currentGoalName.contains("giảm")) {
             // Giảm mỡ: bữa tối nhẹ hơn (không muốn carb ban đêm)
-            bfRatio = 0.25; lunchRatio = 0.45; dinnerRatio = 0.30;
+            bfRatio = 0.35; lunchRatio = 0.40; dinnerRatio = 0.25;
         } else if (currentGoalName.contains("tăng")) {
             // Tăng cơ: bữa trưa nhiều nhất (carb cho tập luyện)
-            bfRatio = 0.25; lunchRatio = 0.40; dinnerRatio = 0.35;
+            bfRatio = 0.30; lunchRatio = 0.40; dinnerRatio = 0.30;
         } else {
             // Giữ dáng: đều nhau
             bfRatio = 0.25; lunchRatio = 0.40; dinnerRatio = 0.35;
@@ -408,9 +408,11 @@ public class NutritionActivity extends AppCompatActivity {
                 List<Food> pool        = pools[mealIdx];
                 double accumulatedCal  = 0;
                 int attempts           = 0;
+                int addedFoods         = 0;
                 int maxFoodsPerMeal    = 4;
 
-                while (accumulatedCal < mealTarget - 20 && attempts < maxFoodsPerMeal) {
+                while (accumulatedCal < mealTarget - 20 && addedFoods < maxFoodsPerMeal && attempts < 15) {
+                    attempts++;
                     Food f      = pool.get((int)(Math.random() * pool.size()));
                     double fCal = (f.getCalories() != null && f.getCalories() > 0) ? f.getCalories() : 100;
 
@@ -420,18 +422,14 @@ public class NutritionActivity extends AppCompatActivity {
                     double multiplier = Math.round(rawMult * 2.0) / 2.0;  // làm tròn đến 0.5
                     multiplier        = Math.max(0.5, Math.min(multiplier, 3.0));
 
-                    // Tránh vượt quá target quá nhiều
-                    if (accumulatedCal + fCal * multiplier > mealTarget + 80 && attempts > 0) {
+                    if (accumulatedCal + fCal * multiplier > mealTarget + 50) {
                         multiplier = 0.5;
-                        if (accumulatedCal + fCal * multiplier > mealTarget + 80) {
-                            attempts++;
-                            continue;
-                        }
                     }
+
                     generatedMeals.add(new UserDailyMeal(
                             userId, dateStr, types[mealIdx], f.getId(), multiplier));
                     accumulatedCal += fCal * multiplier;
-                    attempts++;
+                    addedFoods++;
                 }
             }
             cal.add(Calendar.DAY_OF_MONTH, 1);

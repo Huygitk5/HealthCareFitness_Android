@@ -240,18 +240,32 @@ public class ProfileActivity extends AppCompatActivity {
             // --- Validate target vs current weight ---
             boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
             boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
-            if (newTarget != null) {
-                if (isLose && newTarget >= currentWeight) {
-                    dialogEdtTarget.setError("Phải nhỏ hơn cân nặng hiện tại!"); return;
+            if (newTarget != null && currentHeight != null && currentHeight > 0) {
+                double targetBmi = newTarget / Math.pow(currentHeight / 100.0, 2);
+
+                if (isLose) {
+                    if (newTarget >= currentWeight) {
+                        dialogEdtTarget.setError("Phải nhỏ hơn cân nặng hiện tại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
+                    if (targetBmi < 18.5) {
+                        dialogEdtTarget.setError("Cấm! Mức này quá thấp (BMI < 18.5). Hãy chỉnh lại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
                 }
-                if (isGain && newTarget <= currentWeight) {
-                    dialogEdtTarget.setError("Phải lớn hơn cân nặng hiện tại!"); return;
+                if (isGain) {
+                    if (newTarget <= currentWeight) {
+                        dialogEdtTarget.setError("Phải lớn hơn cân nặng hiện tại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
+                    if (targetBmi > 23.0) {
+                        dialogEdtTarget.setError("Cấm! Mức này quá cao (BMI > 23.0). Hãy chỉnh lại!");
+                        dialogEdtTarget.requestFocus(); return;
+                    }
                 }
             }
 
             // === TÍNH TOÁN VỚI FitnessCalculator ===
-            double bmi = (currentHeight != null && currentHeight > 0 && currentWeight != null)
-                    ? currentWeight / Math.pow(currentHeight / 100.0, 2) : 22;
             double bmr = FitnessCalculator.calcBMR(
                     currentWeight != null ? currentWeight : 60,
                     currentHeight != null ? currentHeight : 165,
@@ -259,9 +273,10 @@ public class ProfileActivity extends AppCompatActivity {
 
             double tdee = FitnessCalculator.calcTDEE(bmr, newActivityIndex);
             double targetW = (newTarget != null) ? newTarget : (currentWeight != null ? currentWeight : 60);
+            boolean isUserBeginner = getSharedPreferences("UserPrefs", MODE_PRIVATE).getBoolean("IS_BEGINNER", true);
             FitnessCalculator.FitnessResult result =
                     FitnessCalculator.calculate(selectedGoalName, currentWeight != null ? currentWeight : 60,
-                            targetW, tdee, bmi);
+                            targetW, tdee, currentGender, isUserBeginner);
 
             // Build update payload
             User updateData = new User();
