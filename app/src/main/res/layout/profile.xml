@@ -6,14 +6,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8FAFB">
-    
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/bottomNav"
         android:clipToPadding="false"
         android:scrollbars="none">
-        
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -459,6 +459,7 @@
                             android:textSize="16sp"
                             android:textStyle="bold"/>
                         <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchWorkoutReminder"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
