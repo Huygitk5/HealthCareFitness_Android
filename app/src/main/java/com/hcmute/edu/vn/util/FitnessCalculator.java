@@ -81,6 +81,7 @@ public class FitnessCalculator {
             r.weeksToTarget      = (int) Math.ceil(weightDiff / weeklyLoseKg);
 
             double dailyDeficit  = (weeklyLoseKg * 7700.0) / 7.0;      // kcal/ngày cần thiếu hụt
+            // heuristic split: 70% diet, 30% exercise (common fitness practice)
             r.dailyCalories      = tdee - (0.7 * dailyDeficit);        // 70% deficit từ ăn ít
             r.dailyCaloriesToBurn = 0.3 * dailyDeficit;                // 30% deficit từ tập
 
