@@ -100,6 +100,7 @@ public class FitnessCalculator {
 
             double weeklySurplus = weeklyGainKg * 7700.0;               // kcal thặng dư cần/tuần
             double dailySurplus  = weeklySurplus / 7.0;
+            dailySurplus = Math.min(dailySurplus, 500);                 // tránh tăng mỡ
             r.dailyCalories      = tdee + dailySurplus;
             r.dailyCaloriesToBurn = 0;
 
