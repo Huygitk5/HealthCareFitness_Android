@@ -325,10 +325,17 @@ public class NutritionActivity extends AppCompatActivity {
             return;
         }
 
-        // --- BƯỚC LỌC THỰC PHẨM DỊ ỨNG CHO AI---
-        List<Food> safeFoods = new ArrayList<>();
-        for (Food food : allFoods) {
-            boolean isSafe = true;
+        // --- LỌC THỰC PHẨM DỊ ỨNG ---
+        List<Food> safeFoods = filterSafeFoods(allFoods);
+        if (safeFoods.isEmpty()) safeFoods = allFoods;
+
+        // --- PHÂN LOẠI MÓN ĂN THEO GOAL ---
+        // Giảm mỡ  : ưu tiên protein cao, carb thấp
+        // Tăng cơ  : ưu tiên carb & protein cao
+        // Giữ dáng : cân bằng
+        List<Food> breakfastPool = new ArrayList<>();
+        List<Food> lunchPool = new ArrayList<>();
+        List<Food> dinnerPool = new ArrayList<>();
 
             // LỚP 1: TÊN MÓN ĂN
             if (food.getName() != null) {
