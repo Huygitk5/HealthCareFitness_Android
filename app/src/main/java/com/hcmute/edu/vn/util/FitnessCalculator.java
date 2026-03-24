@@ -77,8 +77,7 @@ public class FitnessCalculator {
             // ---- GIẢM MỠ ----
             double weightDiff    = currentWeight - targetWeight;        // kg cần giảm
             double weeklyLoseKg  = currentWeight * 0.0075;              // 0.75% cân nặng/tuần (an toàn)
-            weeklyLoseKg         = Math.max(weeklyLoseKg, 0.3);        // tối thiểu 0.3 kg/tuần
-            weeklyLoseKg         = Math.min(weeklyLoseKg, 1.0);        // tối đa 1 kg/tuần
+            weeklyLoseKg = Math.min(currentWeight * 0.01, weeklyLoseKg);
             r.weeksToTarget      = (int) Math.ceil(weightDiff / weeklyLoseKg);
 
             double dailyDeficit  = (weeklyLoseKg * 7700.0) / 7.0;      // kcal/ngày cần thiếu hụt
