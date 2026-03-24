@@ -1,8 +1,10 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,7 +13,9 @@ import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
@@ -19,9 +23,11 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.FitnessGoal;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.util.FitnessCalculator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -40,6 +46,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
     String receivedUsername;
 
     Spinner spinnerFitnessGoal;
+    Spinner spinnerActivityLevel;
     LinearLayout layoutTargetWeight;
     EditText edtTargetWeight;
 
@@ -49,18 +56,46 @@ public class ProfileSetupActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile_setup);
-        androidx.activity.EdgeToEdge.enable(this);
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        EdgeToEdge.enable(this);
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         edtFullName = findViewById(R.id.edtFullName);
         edtDOB = findViewById(R.id.edtDOB);
+        edtHeight = findViewById(R.id.edtHeight);
+        edtWeight = findViewById(R.id.edtWeight);
+        rgGender = findViewById(R.id.rgGender);
+        btnComplete = findViewById(R.id.btnComplete);
+        spinnerFitnessGoal = findViewById(R.id.spinnerFitnessGoal);
+        spinnerActivityLevel = findViewById(R.id.spinnerActivityLevel);
+        layoutTargetWeight = findViewById(R.id.layoutTargetWeight);
+        edtTargetWeight = findViewById(R.id.edtTargetWeight);
+
+        // --- Setup Activity Level Spinner ---
+        ArrayAdapter<String> actAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                Arrays.asList(FitnessCalculator.ACTIVITY_LEVEL_LABELS));
+        actAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerActivityLevel.setAdapter(actAdapter);
+        spinnerActivityLevel.setSelection(2); // mặc định "Vận động vừa"
+
+        // --- Auto-format ngày sinh ---
         edtDOB.addTextChangedListener(new android.text.TextWatcher() {
             private boolean isFormatting = false;
             private boolean isDeleting = false;
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) { isDeleting = after == 0; }
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override public void afterTextChanged(android.text.Editable s) {
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                isDeleting = after == 0;
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {
                 if (isFormatting) return;
                 isFormatting = true;
                 String digits = s.toString().replaceAll("[^\\d]", "");
@@ -69,75 +104,66 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     formatted.append(digits.charAt(i));
                     if ((i == 1 || i == 3) && i < digits.length() - 1) formatted.append("/");
                 }
-                if (!isDeleting && (digits.length() == 2 || digits.length() == 4)) formatted.append("/");
+                if (!isDeleting && (digits.length() == 2 || digits.length() == 4))
+                    formatted.append("/");
                 if (formatted.length() > 10) formatted.delete(10, formatted.length());
                 edtDOB.setText(formatted.toString());
                 edtDOB.setSelection(formatted.length());
                 isFormatting = false;
             }
         });
-        edtHeight = findViewById(R.id.edtHeight);
-        edtWeight = findViewById(R.id.edtWeight);
-        rgGender = findViewById(R.id.rgGender);
-        btnComplete = findViewById(R.id.btnComplete);
-        spinnerFitnessGoal = findViewById(R.id.spinnerFitnessGoal);
-        layoutTargetWeight = findViewById(R.id.layoutTargetWeight);
-        edtTargetWeight = findViewById(R.id.edtTargetWeight);
 
-        Intent intent = getIntent();
-        receivedUsername = intent.getStringExtra("KEY_REGISTER_USER");
+        receivedUsername = getIntent().getStringExtra("KEY_REGISTER_USER");
 
-        loadFitnessGoals();
+//        loadFitnessGoals();
 
-        spinnerFitnessGoal.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+        // --- Spinner Fitness Goal ---
+        spinnerFitnessGoal.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (!fitnessGoalList.isEmpty()) {
                     String selectedName = fitnessGoalList.get(position).getName().toLowerCase();
-                    boolean isLose = selectedName.contains("giảm");
-                    boolean isGain = selectedName.contains("tăng");
                     boolean isMaintain = selectedName.contains("giữ");
 
+                    // Validation BMI vs goal
                     String hStr = edtHeight.getText().toString().trim();
                     String wStr = edtWeight.getText().toString().trim();
-
                     if (!hStr.isEmpty() && !wStr.isEmpty()) {
                         try {
-                            double heightCm = Double.parseDouble(hStr);
-                            double weightKg = Double.parseDouble(wStr);
-                            double currentBmi = calculateBMI(weightKg, heightCm);
+                            double currentBmi = calculateBMI(Double.parseDouble(wStr), Double.parseDouble(hStr));
+                            if (currentBmi > 24.9 && (isMaintain || selectedName.contains("tăng"))) {
+                                Toast.makeText(ProfileSetupActivity.this,
+                                        "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                                selectFirstGoalContaining("giảm");
+                                return;
+                            }
+                            if (currentBmi < 18.5 && (isMaintain || selectedName.contains("giảm"))) {
+                                Toast.makeText(ProfileSetupActivity.this,
+                                        "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                                selectFirstGoalContaining("tăng");
+                                return;
+                            }
+                        } catch (NumberFormatException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-                            if (currentBmi > 24.9 && (isMaintain || isGain)) {
-                                Toast.makeText(ProfileSetupActivity.this, "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
-                                for (int i = 0; i < fitnessGoalList.size(); i++) {
-                                    if (fitnessGoalList.get(i).getName().toLowerCase().contains("giảm")) {
-                                        spinnerFitnessGoal.setSelection(i); return;
-                                    }
-                                }
-                            }
-                            if (currentBmi < 18.5 && (isMaintain || isLose)) {
-                                Toast.makeText(ProfileSetupActivity.this, "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
-                                for (int i = 0; i < fitnessGoalList.size(); i++) {
-                                    if (fitnessGoalList.get(i).getName().toLowerCase().contains("tăng")) {
-                                        spinnerFitnessGoal.setSelection(i); return;
-                                    }
-                                }
-                            }
-                        } catch (NumberFormatException e) { e.printStackTrace(); }
-                    }
-                    if (isMaintain) {
-                        layoutTargetWeight.setVisibility(View.GONE);
-                        edtTargetWeight.setText("");
-                    } else {
-                        layoutTargetWeight.setVisibility(View.VISIBLE);
-                    }
+                    layoutTargetWeight.setVisibility(isMaintain ? View.GONE : View.VISIBLE);
+                    if (isMaintain) edtTargetWeight.setText("");
                 }
             }
-            @Override public void onNothingSelected(android.widget.AdapterView<?> parent) {}
-        });
 
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+            }
+        });
         btnComplete.setOnClickListener(v -> saveProfileData());
+        loadFitnessGoals(); // thắc mắc sao gọi ngay đây
     }
+
+    // =========================================================
+    // LOAD FITNESS GOALS
+    // =========================================================
 
     private void loadFitnessGoals() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
@@ -148,77 +174,115 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     fitnessGoalList = response.body();
                     List<String> goalNames = new ArrayList<>();
                     for (FitnessGoal goal : fitnessGoalList) goalNames.add(goal.getName());
-                    ArrayAdapter<String> adapter = new ArrayAdapter<>(ProfileSetupActivity.this, android.R.layout.simple_spinner_item, goalNames);
+
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                            ProfileSetupActivity.this, android.R.layout.simple_spinner_item, goalNames);
                     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spinnerFitnessGoal.setAdapter(adapter);
                 }
             }
-            @Override public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {}
+
+            @Override
+            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {
+            }
         });
     }
+
+    // =========================================================
+    // SAVE DATA
+    // =========================================================
 
     private void saveProfileData() {
         String fullName = edtFullName.getText().toString().trim();
         String dobInput = edtDOB.getText().toString().trim();
         String heightStr = edtHeight.getText().toString().trim();
         String weightStr = edtWeight.getText().toString().trim();
-        String dobFormatted = dobInput;
 
-        if (!dobInput.isEmpty()) {
-            try {
-                if ((dobInput.contains("/") || dobInput.contains("-")) && !dobInput.matches("\\d{4}-\\d{2}-\\d{2}")) {
-                    String formatPattern = dobInput.contains("/") ? "dd/MM/yyyy" : "dd-MM-yyyy";
-                    SimpleDateFormat inputFormat = new SimpleDateFormat(formatPattern, Locale.getDefault());
-                    SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                    Date date = inputFormat.parse(dobInput);
-                    if (date != null) dobFormatted = outputFormat.format(date);
-                }
-            } catch (Exception e) {
-                Toast.makeText(this, "Ngày sinh không hợp lệ!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-        }
-
-        int selectedGoalId = 1;
-        if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
-            selectedGoalId = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getId();
-        }
-
-        Float targetWeightValue = null;
-        if (layoutTargetWeight.getVisibility() == View.VISIBLE) {
-            String targetWeightStr = edtTargetWeight.getText().toString().trim();
-            if (!targetWeightStr.isEmpty()) {
-                try { targetWeightValue = Float.parseFloat(targetWeightStr); } catch (NumberFormatException e) {}
-            }
-        }
-
-        String gender = rgGender.getCheckedRadioButtonId() == R.id.rbMale ? "Male" : "Female";
-
-        if (fullName.isEmpty() || dobFormatted.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
+        if (fullName.isEmpty() || dobInput.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
             Toast.makeText(ProfileSetupActivity.this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Convert DOB
+        String dobFormatted = dobInput;
+        try {
+            if ((dobInput.contains("/") || dobInput.contains("-"))
+                    && !dobInput.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                String formatPattern = dobInput.contains("/") ? "dd/MM/yyyy" : "dd-MM-yyyy";
+                Date date = new SimpleDateFormat(formatPattern, Locale.getDefault()).parse(dobInput);
+                if (date != null)
+                    dobFormatted = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date);
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Ngày sinh không hợp lệ!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
             double height = Double.parseDouble(heightStr);
             double weight = Double.parseDouble(weightStr);
+
+            // Goal
+            int selectedGoalId = 1;
             String selectedGoalName = "";
-            int age = 20;
-
             if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
-                selectedGoalName = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition()).getName().toLowerCase();
-                double currentBmi = weight / ((height / 100.0) * (height / 100.0));
-                boolean isLose = selectedGoalName.contains("giảm"), isGain = selectedGoalName.contains("tăng"), isMaintain = selectedGoalName.contains("giữ");
+                FitnessGoal g = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition());
+                selectedGoalId = g.getId();
+                selectedGoalName = g.getName();
+            }
 
-                if (isLose && currentBmi < 18.5) { showError("BMI quá thấp, không thể giảm cân!"); return; }
-                if (isGain && currentBmi > 23.0) { showError("BMI cao, không nên tăng cân!"); return; }
-                if (targetWeightValue != null && !isMaintain) {
-                    double targetWeight = targetWeightValue;
-                    if (isLose && targetWeight >= weight) { showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return; }
-                    if (isGain && targetWeight <= weight) { showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return; }
+            // Target weight
+            Float targetWeightValue = null;
+            if (layoutTargetWeight.getVisibility() == View.VISIBLE) {
+                String tw = edtTargetWeight.getText().toString().trim();
+                if (!tw.isEmpty()) {
+                    try {
+                        targetWeightValue = Float.parseFloat(tw);
+                    } catch (NumberFormatException e) {
+                    }
                 }
             }
 
+            String gender = (rgGender.getCheckedRadioButtonId() == R.id.rbMale) ? "Male" : "Female";
+
+            // Age
+            int age = 20;
+            try {
+                Calendar dobCal = Calendar.getInstance();
+                dobCal.setTime(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dobFormatted));
+                age = Calendar.getInstance().get(Calendar.YEAR) - dobCal.get(Calendar.YEAR);
+            } catch (Exception e) {
+            }
+
+            // Activity level
+            int activityIndex = spinnerActivityLevel.getSelectedItemPosition();
+
+            // BMI
+            double bmi = calculateBMI(weight, height);
+
+            // BMR & TDEE
+            double bmr  = FitnessCalculator.calcBMR(weight, height, age, gender);
+            double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
+
+            // Target weight fallback
+            double targetW = (targetWeightValue != null && targetWeightValue > 0)
+                    ? targetWeightValue : weight;
+
+            // Validation
+            boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
+            boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
+            if (isLose && targetWeightValue != null && targetWeightValue >= weight) {
+                showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
+            }
+            if (isGain && targetWeightValue != null && targetWeightValue <= weight) {
+                showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
+            }
+
+            // === CALCULATE ===
+            FitnessCalculator.FitnessResult result =
+                    FitnessCalculator.calculate(selectedGoalName, weight, targetW, tdee, bmi);
+
+            // Build User object
             User updateData = new User();
             updateData.setName(fullName);
             updateData.setDateOfBirth(dobFormatted);
@@ -227,81 +291,86 @@ public class ProfileSetupActivity extends AppCompatActivity {
             updateData.setWeight(weight);
             updateData.setFitnessGoalId(selectedGoalId);
             updateData.setTarget(targetWeightValue);
+            updateData.setCurrentDailyCalories(result.dailyCalories);
+            updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
+            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
 
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                Calendar calDOB = Calendar.getInstance(); calDOB.setTime(sdf.parse(dobFormatted));
-                age = Calendar.getInstance().get(Calendar.YEAR) - calDOB.get(Calendar.YEAR);
-            } catch (Exception e) {}
+//            calculateFitnessMetrics(updateData, weight, height, age, gender, selectedGoalName, targetWeightValue != null ? targetWeightValue.doubleValue() : weight);
 
-            calculateFitnessMetrics(updateData, weight, height, age, gender, selectedGoalName, targetWeightValue != null ? targetWeightValue.doubleValue() : weight);
+            btnComplete.setEnabled(false);
+            btnComplete.setText("Đang lưu...");
 
-            btnComplete.setEnabled(false); btnComplete.setText("Đang lưu...");
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+            final String finalDobFormatted = dobFormatted;
+            final double finalWeight = weight;
+            final double finalHeight = height;
 
-            apiService.getUserByUsername("eq." + receivedUsername, "*").enqueue(new Callback<List<User>>() {
+            apiService.getUserByUsername("eq." + receivedUsername, "*")
+                    .enqueue(new Callback<List<User>>() {
                 @Override
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
-                        apiService.updateUserProfile("eq." + receivedUsername, updateData).enqueue(new Callback<Void>() {
+
+                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                .enqueue(new Callback<Void>() {
                             @Override
                             public void onResponse(Call<Void> call, Response<Void> profileResponse) {
                                 if (profileResponse.isSuccessful()) {
-                                    String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
-                                    double currentBmi = weight / ((height / 100.0) * (height / 100.0));
-                                    BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), userId, weight, height, currentBmi, currentDateFull);
-                                    apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
-                                        @Override public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
-                                        @Override public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
+                                    // Lưu BMI log
+                                    double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
+                                    String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+                                            Locale.getDefault()).format(new Date());
+                                    BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                            userId, finalWeight, finalHeight, bmiVal, now);
+                                    apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                        @Override
+                                        public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
+
+                                        @Override
+                                        public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
                                     });
                                 } else { showError("Lỗi cập nhật!"); }
                             }
-                            @Override public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
+                            @Override
+                            public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
                         });
                     }
                 }
-                @Override public void onFailure(Call<List<User>> call, Throwable t) { showError("Lỗi mạng!"); }
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) { showError("Lỗi mạng!"); }
             });
         } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
     }
 
+    // =========================================================
+    // HELPERS
+    // =========================================================
+
+    private void selectFirstGoalContaining(String keyword) {
+        for (int i = 0; i < fitnessGoalList.size(); i++) {
+            if (fitnessGoalList.get(i).getName().toLowerCase().contains(keyword)) {
+                spinnerFitnessGoal.setSelection(i);
+                return;
+            }
+        }
+    }
+
+    private double calculateBMI(double weightKg, double heightCm) {
+        if (heightCm <= 0) return 0;
+        return weightKg / Math.pow(heightCm / 100.0, 2);
+    }
+
     private void showError(String message) {
-        btnComplete.setEnabled(true); btnComplete.setText("Hoàn Tất");
-        Toast.makeText(ProfileSetupActivity.this, message, Toast.LENGTH_LONG).show();
+        btnComplete.setEnabled(true);
+        btnComplete.setText("Hoàn Tất");
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
     }
 
     private void goToHome(String userId) {
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         pref.edit().putString("KEY_USER", receivedUsername).putString("KEY_USER_ID", userId).commit();
-        startActivity(new Intent(ProfileSetupActivity.this, HomeActivity.class));
+        startActivity(new Intent(this, HomeActivity.class));
         finish();
     }
-
-    private void calculateFitnessMetrics(User updateData, double weight, double height, int age, String gender, String goalName, Double targetWeight) {
-        double bmr = ("Male".equalsIgnoreCase(gender)) ? (10 * weight) + (6.25 * height) - (5 * age) + 5 : (10 * weight) + (6.25 * height) - (5 * age) - 161;
-        double tdee = bmr * 1.55;
-        double dailyCalories = tdee;
-        int weeksToTarget = 0;
-        String assignedPlanId = "a1111111-1111-1111-1111-111111111111";
-
-        if (goalName.contains("giảm")) {
-            weeksToTarget = (int) Math.ceil((weight - targetWeight) / (weight * 0.0075));
-            dailyCalories = tdee - 500;
-            assignedPlanId = "05fea3e9-377e-4108-bee3-15a78150dc43";
-        } else if (goalName.contains("tăng")) {
-            weeksToTarget = (int) Math.ceil((targetWeight - weight) / (weight * 0.005));
-            dailyCalories = tdee + 300;
-            assignedPlanId = "a2222222-2222-2222-2222-222222222222";
-        }
-
-        if (weeksToTarget > 0) {
-            Calendar c = Calendar.getInstance(); c.add(Calendar.WEEK_OF_YEAR, weeksToTarget);
-            updateData.setTargetDate(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(c.getTime()));
-        }
-        updateData.setCurrentDailyCalories(dailyCalories);
-        updateData.setCurrentWorkoutPlanId(assignedPlanId);
-    }
-
-    private double calculateBMI(double weightKg, double heightCm) { return (heightCm <= 0) ? 0 : weightKg / ((heightCm / 100.0) * (heightCm / 100.0)); }
 }
