@@ -68,7 +68,7 @@ public class FitnessCalculator {
             // ---- GIỮ DÁNG ----
             r.dailyCalories      = tdee;
             r.dailyCaloriesToBurn = 0;
-            r.workoutPlanId      = PLAN_MAINTAIN;
+            r.workoutPlanId      = isBeginner ? PLAN_MAINTAIN_BEGINNER : PLAN_MAINTAIN_INTERMEDIATE;
             r.weeksToTarget      = 0;
 
         } else if (isLose) {
@@ -89,7 +89,7 @@ public class FitnessCalculator {
             double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
 
-            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
+//            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
 
         } else {
             // ---- TĂNG CƠ ----
