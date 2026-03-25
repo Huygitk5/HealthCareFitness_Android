@@ -42,16 +42,8 @@ public class MusicService extends Service {
     private static final int NOTIF_ID = 101;
 
     // ======================= Mock Data =======================
-    /**
-     * Tạo danh sách nhạc mẫu.
-     * Thay rawResId bằng R.raw.ten_file khi bạn thêm file mp3 vào res/raw/.
-     * Hiện tại dùng 0 → Service sẽ bỏ qua và không crash.
-     */
     public static List<Song> getMockSongs() {
         List<Song> list = new ArrayList<>();
-        // TODO: Thay R.raw.xxx bằng tên file mp3 thực tế bạn đặt trong res/raw/
-        // Ví dụ: nếu file là res/raw/fresh_day.mp3  → R.raw.fresh_day
-        //        nếu file là res/raw/energy_boost.mp3 → R.raw.energy_boost
         list.add(new Song(1, "Fresh Day",       "Workout Beats",  R.raw.fresh_day,      0));
         list.add(new Song(2, "Energy Boost",    "Gym Vibes",      R.raw.energy_boost,   0));
         list.add(new Song(3, "Push The Limit",  "FitRhythm",      R.raw.push_the_limit, 0));
@@ -69,10 +61,6 @@ public class MusicService extends Service {
 
     // ======================= Binder =======================
 
-    /**
-     * Inner Binder class — Activity lấy đối tượng này qua ServiceConnection
-     * để gọi trực tiếp các phương thức điều khiển nhạc.
-     */
     public class MusicBinder extends Binder {
         /** Trả về instance của Service để Activity gọi các phương thức public. */
         public MusicService getService() {
