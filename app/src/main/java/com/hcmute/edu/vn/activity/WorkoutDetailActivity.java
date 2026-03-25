@@ -62,47 +62,31 @@ public class WorkoutDetailActivity extends AppCompatActivity {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
         String selectQuery = "*,workout_days(*, workout_day_exercises(*, exercise:exercises(*)))";
 
-        apiService.getWorkoutPlanById("eq." + planId, selectQuery).enqueue(new Callback<List<WorkoutPlan>>() {
-            @Override
-            public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
-                if (response.isSuccessful()) {
-                    if (response.body() != null && !response.body().isEmpty()) {
-                        WorkoutPlan plan = response.body().get(0);
+        apiService.getWorkoutPlanByIdAndSort("eq." + planId, selectQuery, "day_order.asc")
+                .enqueue(new Callback<List<WorkoutPlan>>() {
+                    @Override
+                    public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                            WorkoutPlan plan = response.body().get(0);
 
-                        if (plan.getDays() != null) {
-                            data.clear();
+                            if (plan.getDays() != null) {
+                                data.clear();
+                                data.addAll(plan.getDays());
 
-                            List<WorkoutDay> sortedDays = plan.getDays();
-                            java.util.Collections.sort(sortedDays, (d1, d2) -> {
-                                if (d1.getDayOrder() == null) return 1;
-                                if (d2.getDayOrder() == null) return -1;
-                                return Integer.compare(d1.getDayOrder(), d2.getDayOrder());
-                            });
-
-                            data.addAll(sortedDays);
-
-                            adapter = new WorkoutAdapter(data);
-                            rvWorkoutDays.setAdapter(adapter);
+                                adapter = new WorkoutAdapter(data);
+                                rvWorkoutDays.setAdapter(adapter);
+                            } else {
+                                Toast.makeText(WorkoutDetailActivity.this, "Gói tập chưa có ngày nào!", Toast.LENGTH_SHORT).show();
+                            }
                         } else {
-                            Toast.makeText(WorkoutDetailActivity.this, "Gói tập chưa có ngày nào!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(WorkoutDetailActivity.this, "Dữ liệu rỗng hoặc lỗi API", Toast.LENGTH_LONG).show();
                         }
-                    } else {
-                        Toast.makeText(WorkoutDetailActivity.this, "Dữ liệu rỗng! Hãy kiểm tra lại ID hoặc tắt RLS trên Supabase", Toast.LENGTH_LONG).show();
                     }
-                } else {
-                    try {
-                        String errorMsg = response.errorBody().string();
-                        Toast.makeText(WorkoutDetailActivity.this, "Lỗi API: " + errorMsg, Toast.LENGTH_LONG).show();
-                    } catch (Exception e) {
-                        Toast.makeText(WorkoutDetailActivity.this, "Lỗi truy vấn API!", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
 
-            @Override
-            public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
-                Toast.makeText(WorkoutDetailActivity.this, "Lỗi kết nối mạng: " + t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+                    @Override
+                    public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
+                        Toast.makeText(WorkoutDetailActivity.this, "Lỗi kết nối mạng: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 }
