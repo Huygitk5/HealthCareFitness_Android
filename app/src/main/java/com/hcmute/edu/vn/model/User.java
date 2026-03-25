@@ -49,6 +49,9 @@ public class User {
     @SerializedName("target_date")
     private String targetDate; // Ngày dự kiến đạt được mục tiêu (YYYY-MM-DD)
 
+    @SerializedName("user_experience_id")
+    private Integer userExperienceId;
+
     // --- CONSTRUCTOR ---
     public User() {}
 
@@ -157,5 +160,13 @@ public class User {
 
     public void setTargetDate(String targetDate) {
         this.targetDate = targetDate;
+    }
+
+    public Integer getUserExperienceId() {
+        return userExperienceId;
+    }
+
+    public void setUserExperienceId(Integer userExperienceId) {
+        this.userExperienceId = userExperienceId;
     }
 }

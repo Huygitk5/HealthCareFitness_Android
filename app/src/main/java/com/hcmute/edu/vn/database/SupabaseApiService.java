@@ -14,6 +14,7 @@ import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.SignUpRequest;
 import com.hcmute.edu.vn.model.SignUpResponse;
 import com.hcmute.edu.vn.model.UserDailyMeal;
+import com.hcmute.edu.vn.model.UserExperience;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
 import com.hcmute.edu.vn.model.UserWorkoutExerciseLog;
@@ -31,7 +32,7 @@ import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
-import retrofit2.http.DELETE; // Nhớ import thư viện này ở trên cùng nhé
+import retrofit2.http.DELETE;
 public interface SupabaseApiService {
 
     // =================================================================================
@@ -55,7 +56,7 @@ public interface SupabaseApiService {
     // USER PROFILE
     // =================================================================================
 
-    // Tìm user dựa theo username (Lấy thông tin hiển thị, lấy email đăng nhập, check trùng)
+    // Tìm user dựa theo username
     @GET("users")
     Call<List<User>> getUserByUsername(
             @Query("username") String eqUsername,
@@ -88,17 +89,18 @@ public interface SupabaseApiService {
             @Query("workout_days.order") String orderDays
     );
 
-    // Lấy Gói tập dựa trên Khóa ngoại Mục tiêu (Fitness Goals)
+    //  API lấy Gói tập (Bắt buộc khớp cả Target và Experience)
     @GET("workout_plans")
-    Call<List<WorkoutPlan>> getWorkoutPlanByGoalId(
+    Call<List<WorkoutPlan>> getWorkoutPlanByGoalAndExperience(
             @Query("fitness_goal_id") String eqGoalId,
+            @Query("user_experience_id") String eqExpId,
             @Query("select") String select
     );
 
     @GET("user_workout_sessions")
     Call<List<UserWorkoutSession>> getUserWorkoutHistoryByPlan(
             @Query("user_id") String eqUserId,
-            @Query("plan_id") String eqPlanId, // Lọc theo đúng Plan đang chọn
+            @Query("plan_id") String eqPlanId,
             @Query("select") String select
     );
 
@@ -347,5 +349,11 @@ public interface SupabaseApiService {
     // API Xóa sạch thực đơn của một User (dùng khi Reset mục tiêu)
     @DELETE("user_daily_meals")
     Call<Void> deleteMealsByUserId(@Query("user_id") String userId);
+
+    // API lấy kinh nghiệm
+    @GET("user_experience")
+    Call<List<UserExperience>> getAllUserExperiences(
+            @Query("select") String select
+    );
 
 }

@@ -79,6 +79,34 @@
             android:background="#F0F0F0"
             android:layout_marginBottom="16dp" />
 
+        <!-- KINH NGHIỆM TẬP LUYỆN -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kinh nghiệm tập luyện"
+            android:textStyle="bold"
+            android:textColor="#757575"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_input_rounded"
+            android:layout_marginBottom="20dp">
+            <Spinner
+                android:id="@+id/dialogSpinnerExperience"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="10dp" />
+        </LinearLayout>
+
+        <!-- DIVIDER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="16dp" />
+
         <!-- CÂN NẶNG MỤC TIÊU -->
         <LinearLayout
             android:id="@+id/dialogLayoutTarget"

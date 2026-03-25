@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -10,23 +11,30 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 public class ExerciseActivity extends AppCompatActivity {
 
     private ArrayList<Exercise> exerciseList;
     private int currentIndex = 0;
+    private String todayDate;
 
     private ImageView ivExercise;
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
     private ImageButton btnNext, btnPrevious, btnClose;
     private Button btnPause;
+    private ActivityResultLauncher<Intent> restActivityLauncher;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -40,6 +48,22 @@ public class ExerciseActivity extends AppCompatActivity {
 
         initViews();
 
+        todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        // Lắng nghe (đợi đêm ngược xong)
+        restActivityLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        // Khi nghỉ ngơi xong -> Tăng biến đếm và load bài tập tiếp theo
+                        if (currentIndex < exerciseList.size() - 1) {
+                            currentIndex++;
+                            updateExerciseUI();
+                        }
+                    }
+                }
+        );
+
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_EXERCISE_LIST")) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -50,7 +74,19 @@ public class ExerciseActivity extends AppCompatActivity {
         }
 
         if (exerciseList != null && !exerciseList.isEmpty()) {
-            currentIndex = 0;
+            // Lấy userId hiện tại
+            String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
+
+            SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
+            currentIndex = pref.getInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0);
+
+            if (currentIndex >= exerciseList.size()) {
+                currentIndex = 0;
+                pref.edit()
+                        .putInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0)
+                        .putInt("PROGRESS_" + currentUserId + "_" + todayDate, 0)
+                        .apply();
+            }
             updateExerciseUI();
         } else {
             Toast.makeText(this, "Không có dữ liệu bài tập!", Toast.LENGTH_SHORT).show();
@@ -75,9 +111,24 @@ public class ExerciseActivity extends AppCompatActivity {
         btnClose.setOnClickListener(v -> finish());
 
         btnNext.setOnClickListener(v -> {
+            int completedCount = currentIndex + 1;
+            saveDailyProgress(completedCount);
             if (currentIndex < exerciseList.size() - 1) {
-                currentIndex++;
-                updateExerciseUI();
+                // Lấy tên bài tập tiếp theo để truyền sang màn hình Nghỉ ngơi hiển thị
+                String nextExerciseName = exerciseList.get(currentIndex + 1).getName();
+                if (nextExerciseName == null) nextExerciseName = "Bài tập tiếp theo";
+
+                // Mở màn hình Nghỉ ngơi
+                Intent intent = new Intent(ExerciseActivity.this, RestActivity.class);
+                intent.putExtra("NEXT_EXERCISE_NAME", nextExerciseName);
+
+                // Dùng launcher để phóng intent đi và chờ nó về
+                restActivityLauncher.launch(intent);
+            } else {
+                // 2. NẾU LÀ BÀI CUỐI CÙNG -> LƯU 100% VÀ CHÚC MỪNG
+                Intent intent = new Intent(ExerciseActivity.this, WorkoutCompleteActivity.class);
+                startActivity(intent);
+                finish(); // Đóng luôn màn hình tập hiện tại
             }
         });
 
@@ -133,6 +184,32 @@ public class ExerciseActivity extends AppCompatActivity {
 
         // 5. Ẩn/Hiện nút Next, Previous ở đầu/cuối danh sách
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
-        btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+//        btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+    }
+
+    // =======================================================
+    // HÀM LƯU TIẾN TRÌNH TẬP THEO NGÀY
+    // =======================================================
+    private void saveDailyProgress(int completedExercises) {
+        if (exerciseList == null || exerciseList.isEmpty()) return;
+
+        // Lấy userId hiện tại
+        String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
+
+        SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
+        SharedPreferences.Editor editor = pref.edit();
+
+        // 1. Lưu lại Index có gắn UserID
+        editor.putInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, completedExercises);
+
+        // 2. Tính và lưu phần trăm có gắn UserID
+        int progressPercent = (int) (((float) completedExercises / exerciseList.size()) * 100);
+        int currentSavedPercent = pref.getInt("PROGRESS_" + currentUserId + "_" + todayDate, 0);
+
+        if (progressPercent > currentSavedPercent) {
+            editor.putInt("PROGRESS_" + currentUserId + "_" + todayDate, progressPercent);
+        }
+
+        editor.apply();
     }
 }
