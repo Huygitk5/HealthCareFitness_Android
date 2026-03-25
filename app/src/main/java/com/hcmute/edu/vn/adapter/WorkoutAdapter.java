@@ -58,7 +58,12 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.tvSub.setText("Nghỉ ngơi");
             holder.ivRest.setVisibility(View.VISIBLE);
             holder.btnStart.setVisibility(View.GONE);
-            holder.itemView.setOnClickListener(null);
+            holder.itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(v.getContext(), com.hcmute.edu.vn.activity.RestDayCompleteActivity.class);
+                intent.putExtra("EXTRA_DAY_ID", item.getId());
+                intent.putExtra("EXTRA_PLAN_ID", planId);
+                v.getContext().startActivity(intent);
+            });
         } else {
             holder.tvSub.setText("Danh sách bài tập");
             holder.ivRest.setVisibility(View.GONE);

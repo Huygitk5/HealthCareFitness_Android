@@ -261,7 +261,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ExerciseListActivity.class);
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
-        
+
         if (day.getId() != null) {
             intent.putExtra("EXTRA_DAY_ID", day.getId());
             intent.putExtra("EXTRA_DAY_TITLE", title);
