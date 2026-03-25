@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    BottomSheet Âm nhạc — 2 State UI
+    ─────────────────────────────────────────────────────────────
+    STATE 1 (Mini Player — mặc định):
+      • layoutVolume   → VISIBLE  (Volume Slider dùng AudioManager)
+      • layoutSeekbar  → GONE
+      • layoutSongList → GONE
+
+    STATE 2 (Full Player — nhấn vùng song info hoặc nút Playlist):
+      • layoutVolume   → GONE
+      • layoutSeekbar  → VISIBLE  (Music progress seekbar)
+      • layoutSongList → VISIBLE  (Danh sách bài hát)
+    ─────────────────────────────────────────────────────────────
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootSheetLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_white_rounded_top"
+    android:paddingBottom="24dp">
+
+    <!-- ===== DRAG HANDLE ===== -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:background="#BDBDBD" />
+
+    <!-- ===== HEADER: Title + Close ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:id="@+id/tvSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Âm nhạc"
+            android:textColor="#1A1A1A"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnCloseSheet"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/circle_background"
+            android:contentDescription="Đóng"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#888888" />
+    </RelativeLayout>
+
+    <!-- ===== DIVIDER ===== -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F0F0F0" />
+
+    <!-- ===== TOGGLE "Âm nhạc nền" ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Âm nhạc nền"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchMusic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:checked="true" />
+    </RelativeLayout>
+
+    <!-- ===== SONG INFO ROW (clickable → State 2) ===== -->
+    <!--
+        Nhấn vào vùng này để chuyển sang Full Player (State 2).
+        id: layoutSongInfo
+    -->
+    <RelativeLayout
+        android:id="@+id/layoutSongInfo"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
+
+        <!-- Album art hình tròn -->
+        <ImageView
+            android:id="@+id/ivAlbumArt"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:scaleType="centerCrop"
+            android:layout_centerVertical="true"
+            android:src="@drawable/workout_1"
+            android:clipToOutline="true" />
+
+        <!-- Tên bài hát -->
+        <TextView
+            android:id="@+id/tvCurrentSongTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/ivAlbumArt"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="14dp"
+            android:text="Fresh Day"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!--
+            Thời gian hiện tại / tổng thời gian
+            Màu xanh tương tự ảnh tham chiếu
+        -->
+        <TextView
+            android:id="@+id/tvSongTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/ivAlbumArt"
+            android:layout_below="@id/tvCurrentSongTitle"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="4dp"
+            android:text="00:00/00:00"
+            android:textColor="#4A90D9"
+            android:textSize="13sp" />
+
+        <!-- Mũi tên ">": gợi ý có thể mở full list -->
+        <ImageView
+            android:id="@+id/ivArrowState"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@android:drawable/arrow_down_float"
+            app:tint="#BBBBBB" />
+    </RelativeLayout>
+
+    <!-- ===== 5 NÚT ĐIỀU KHIỂN ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginTop="4dp">
+
+        <!-- Playlist → chuyển State 2 -->
+        <ImageButton
+            android:id="@+id/btnPlaylist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            app:tint="#555555"
+            android:contentDescription="Danh sách phát" />
+
+        <!-- Previous -->
+        <ImageButton
+            android:id="@+id/btnMusicPrevious"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#1A1A1A"
+            android:contentDescription="Bài trước" />
+
+        <!-- Play/Pause (lớn nhất) -->
+        <ImageButton
+            android:id="@+id/btnPlayPause"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1.4"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_pause"
+            app:tint="#1A1A1A"
+            android:contentDescription="Phát / Dừng" />
+
+        <!-- Next -->
+        <ImageButton
+            android:id="@+id/btnMusicNext"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#1A1A1A"
+            android:contentDescription="Bài tiếp" />
+
+        <!-- Repeat -->
+        <ImageButton
+            android:id="@+id/btnRepeat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_rotate"
+            app:tint="#555555"
+            android:contentDescription="Lặp lại" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════
+         STATE 1 — Volume Slider (mặc định VISIBLE)
+         Dùng AudioManager.STREAM_MUSIC để điều chỉnh âm lượng hệ thống
+         ══════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/layoutVolume"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginTop="2dp"
+        android:visibility="visible">
+
+        <!-- Loa nhỏ (âm lượng thấp) -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_lock_silent_mode"
+            app:tint="#AAAAAA" />
+
+        <!--
+            Volume SeekBar — điều khiển âm lượng thực của thiết bị.
+            max được set bằng code (audioManager.getStreamMaxVolume)
+        -->
+        <SeekBar
+            android:id="@+id/seekBarVolume"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:progressTint="#4A90D9"
+            android:thumbTint="#4A90D9" />
+
+        <!-- Loa lớn (âm lượng cao) -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            app:tint="#AAAAAA" />
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════
+         STATE 2 — Music Progress SeekBar (mặc định GONE)
+         Tua nhạc thông qua MusicService.seekTo()
+         ══════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/layoutSeekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="4dp"
+        android:visibility="gone">
+
+        <!-- SeekBar nhạc -->
+        <SeekBar
+            android:id="@+id/seekBarMusic"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:progressTint="#4A90D9"
+            android:thumbTint="#4A90D9"
+            android:max="100" />
+
+        <!-- Nhãn thời gian: start → end -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp">
+
+            <TextView
+                android:id="@+id/tvSeekStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="00:00"
+                android:textColor="#999999"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/tvSeekEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="00:00"
+                android:textColor="#999999"
+                android:textSize="11sp" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <!-- ══════════════════════════════════════════════════════════
+         STATE 2 — Danh sách bài hát (mặc định GONE)
+         ══════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:id="@+id/layoutSongList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSongList"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:overScrollMode="never"
+            android:clipToPadding="false"
+            android:paddingTop="4dp" />
+    </LinearLayout>
+
+</LinearLayout>

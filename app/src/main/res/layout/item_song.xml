@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <!-- Ảnh bìa nhỏ -->
+    <ImageView
+        android:id="@+id/ivSongCover"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/workout_1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Tên bài hát -->
+    <TextView
+        android:id="@+id/tvSongTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#1A1A1A"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/tvSongArtist"
+        app:layout_constraintEnd_toStartOf="@id/ivPlayingIndicator"
+        app:layout_constraintStart_toEndOf="@id/ivSongCover"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Fresh Day" />
+
+    <!-- Tên nghệ sĩ -->
+    <TextView
+        android:id="@+id/tvSongArtist"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#888888"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/ivPlayingIndicator"
+        app:layout_constraintStart_toEndOf="@id/ivSongCover"
+        app:layout_constraintTop_toBottomOf="@id/tvSongTitle"
+        tools:text="Workout Beats" />
+
+    <!-- Icon đang phát (chỉ hiện khi bài đang được chọn) -->
+    <ImageView
+        android:id="@+id/ivPlayingIndicator"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@android:drawable/ic_media_play"
+        android:visibility="invisible"
+        app:tint="#4DAA9A"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

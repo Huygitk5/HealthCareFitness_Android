@@ -11,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,16 +44,12 @@ public class MealSearchActivity extends AppCompatActivity {
     private EditText edtSearchFood;
     private RecyclerView rvFoodSearch;
     private MaterialButton btnSaveMeal;
-
     private FoodVerticalAdapter adapter;
     private List<Food> foodList = new ArrayList<>();
-
     private String targetDate;
     private String targetMealType;
     private String userId;
     private String username;
-
-    // ĐÃ ĐỔI: Chứa danh sách các ID của Nguyên liệu cần tránh (Chính xác tuyệt đối)
     private List<String> restrictedIngredientIds = new ArrayList<>();
     private List<String> userAllergiesList = new ArrayList<>();
 
@@ -61,7 +58,7 @@ public class MealSearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meal_search);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -113,12 +110,6 @@ public class MealSearchActivity extends AppCompatActivity {
         btnSaveMeal.setOnClickListener(v -> saveSelectedMealsToDatabase());
     }
 
-    // ==============================================================
-    // BƯỚC 1: LẤY DANH SÁCH ID NGUYÊN LIỆU BỊ CẤM TỪ DATABASE
-    // ==============================================================
-    // ==============================================================
-    // BƯỚC 1: TẢI DANH SÁCH DỊ ỨNG (CÓ GẮN LOG THEO DÕI)
-    // ==============================================================
     private void loadRestrictedIngredientsThenFoods() {
         if (username == null || username.isEmpty()) {
             loadAllFoods();
@@ -149,7 +140,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                                 // 2. Lưu ID nguyên liệu cấm
                                 if (mc.getRestrictedIngredients() != null) {
-                                    for (com.hcmute.edu.vn.model.ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
+                                    for (ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
                                         if (cri.getIngredientId() != null) {
                                             restrictedIngredientIds.add(cri.getIngredientId());
                                         }
@@ -214,7 +205,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                         // LỌC 2: KIỂM TRA THÀNH PHẦN NGUYÊN LIỆU (Nếu API có trả về)
                         if (isSafe && food.getFoodIngredients() != null) {
-                            for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                            for (FoodIngredient fi : food.getFoodIngredients()) {
                                 if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
                                     String ingName = fi.getIngredient().getName().toLowerCase();
                                     for (String allergyName : userAllergiesList) {
@@ -272,7 +263,7 @@ public class MealSearchActivity extends AppCompatActivity {
         if (adapter == null) return;
 
         // 1. Lấy dữ liệu dạng Map (Món ăn -> Số phần)
-        java.util.Map<Food, Double> selectedFoodsMap = adapter.getSelectedFoodsMap();
+        Map<Food, Double> selectedFoodsMap = adapter.getSelectedFoodsMap();
 
         if (selectedFoodsMap.isEmpty()) {
             Toast.makeText(this, "Vui lòng chọn ít nhất 1 món ăn!", Toast.LENGTH_SHORT).show();
@@ -290,7 +281,7 @@ public class MealSearchActivity extends AppCompatActivity {
         int[] completedCount = {0};
 
         // 2. Lặp qua Map để lấy Món ăn và Số lượng phần ăn
-        for (java.util.Map.Entry<Food, Double> entry : selectedFoodsMap.entrySet()) {
+        for (Map.Entry<Food, Double> entry : selectedFoodsMap.entrySet()) {
             Food selectedFood = entry.getKey();
             Double quantity = entry.getValue();
 
