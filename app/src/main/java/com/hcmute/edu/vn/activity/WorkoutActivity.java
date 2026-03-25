@@ -145,7 +145,8 @@ public class WorkoutActivity extends AppCompatActivity {
         tvWorkoutPlanTitle.setText("Đang tải lộ trình...");
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        apiService.getWorkoutPlanByGoalId("eq." + userGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
+        // GỌI API TÌM GÓI BẰNG CẢ 2 ID
+        apiService.getWorkoutPlanByGoalAndExperience("eq." + userGoalId, "eq." + userExpId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
             @Override
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
