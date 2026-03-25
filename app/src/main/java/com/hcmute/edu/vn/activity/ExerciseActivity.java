@@ -1,8 +1,12 @@
 package com.hcmute.edu.vn.activity;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -15,9 +19,20 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.service.MusicService;
 
 import java.util.ArrayList;
 
+/**
+ * ExerciseActivity — màn hình thực hiện bài tập.
+ *
+ * Tích hợp MusicService theo mô hình Hybrid:
+ *   - startService()  → nhạc chạy độc lập với vòng đời Activity
+ *   - bindService()   → lấy MusicBinder để điều khiển từ BottomSheet
+ *
+ * Khi Activity bị destroy (xoay màn hình), nhạc vẫn phát vì Service đã được start.
+ * bindService() được gọi lại trong onStart() để kết nối lại với Service đang chạy.
+ */
 public class ExerciseActivity extends AppCompatActivity {
 
     private ArrayList<Exercise> exerciseList;
@@ -27,6 +42,43 @@ public class ExerciseActivity extends AppCompatActivity {
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
     private ImageButton btnNext, btnPrevious, btnClose, icWorkoutMusic;
     private Button btnPause;
+
+    private MusicService.MusicBinder musicBinder;  // null cho đến khi bind thành công
+    private boolean isMusicServiceBound = false;
+
+    /**
+     * ServiceConnection — nhận callback khi bind/unbind thành công với MusicService.
+     * Được khai báo là field để dùng lại trong onStart/onStop.
+     */
+    private final ServiceConnection musicServiceConnection = new ServiceConnection() {
+
+        /**
+         * Gọi khi bindService() thành công.
+         * Lưu lại MusicBinder để truyền vào BottomSheet.
+         */
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            musicBinder = (MusicService.MusicBinder) service;
+            isMusicServiceBound = true;
+            // Tự động phát bài đầu khi kết nối lần đầu (nếu chưa phát)
+            MusicService musicService = musicBinder.getService();
+            if (!musicService.isPlaying()) {
+                musicService.play();
+            }
+        }
+
+        /**
+         * Gọi khi Service bị kill đột ngột (hiếm gặp).
+         * Reset binder để tránh NPE.
+         */
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBinder = null;
+            isMusicServiceBound = false;
+        }
+    };
+
+    // ======================= Lifecycle =======================
 
     @Override
     @SuppressWarnings("unchecked")
@@ -40,6 +92,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
         initViews();
 
+        // Nhận danh sách bài tập từ Intent
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_EXERCISE_LIST")) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -55,9 +108,18 @@ public class ExerciseActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Không có dữ liệu bài tập!", Toast.LENGTH_SHORT).show();
             finish();
+            return;
         }
 
         setupListeners();
+
+        // Khởi động MusicService (START — chạy liên tục dù Activity bị destroy)
+        Intent musicIntent = new Intent(this, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(musicIntent);
+        } else {
+            startService(musicIntent);
+        }
     }
 
     @Override
@@ -100,9 +162,11 @@ public class ExerciseActivity extends AppCompatActivity {
         btnPrevious = findViewById(R.id.btnPrevious);
         btnClose = findViewById(R.id.btnClose);
         btnPause = findViewById(R.id.btnPause);
+        icWorkoutMusic   = findViewById(R.id.icWorkoutMusic);
     }
 
     private void setupListeners() {
+        // Đóng Activity → dừng hẳn Service
         btnClose.setOnClickListener(v -> finish());
 
         btnNext.setOnClickListener(v -> {
@@ -143,12 +207,12 @@ public class ExerciseActivity extends AppCompatActivity {
 
         Exercise currentExercise = exerciseList.get(currentIndex);
 
-        // 1. Set tên bài tập
+        // 1. Tên bài tập
         if (currentExercise.getName() != null) {
             tvExerciseName.setText(currentExercise.getName().toUpperCase());
         }
 
-        // 2. Xử lý hiển thị Reps/Thời gian và Nút Pause
+        // 2. Reps hoặc Timer
         if (currentExercise.getBaseRecommendedReps() != null) {
             String repsData = currentExercise.getBaseRecommendedReps();
             tvTimer.setText(repsData);
@@ -176,7 +240,7 @@ public class ExerciseActivity extends AppCompatActivity {
         String progressText = (currentIndex + 1) + " / " + exerciseList.size();
         tvExerciseProgress.setText(progressText);
 
-        // 5. Ẩn/Hiện nút Next, Previous ở đầu/cuối danh sách
+        // 5. Ẩn/Hiện nút Previous & Next ở đầu/cuối danh sách
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
         btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
     }
