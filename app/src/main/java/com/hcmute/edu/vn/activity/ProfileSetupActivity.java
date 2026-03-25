@@ -232,6 +232,29 @@ public class ProfileSetupActivity extends AppCompatActivity {
         View radioButton = rgExperience.findViewById(selectedRbId);
         final int finalExperienceId = (radioButton != null && radioButton.getTag() != null) ? (int) radioButton.getTag() : 1;
 
+        for (int i = 0; i < rgExperience.getChildCount(); i++) {
+            View child = rgExperience.getChildAt(i);
+            if (child instanceof android.widget.RadioButton) {
+                if (((android.widget.RadioButton) child).isChecked()) {
+                    if (child.getTag() != null) {
+                        try {
+                            extractedExperienceId = Integer.parseInt(child.getTag().toString());
+                        } catch (Exception e) {
+                        }
+                    } else {
+                        // Fallback an toàn nếu API lag chưa kịp load tag (tránh hardcode R.id)
+                        String btnText = ((android.widget.RadioButton) child).getText().toString().toLowerCase();
+                        if (btnText.contains("kin") || btnText.contains("intermediate")) {
+                            extractedExperienceId = 2;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        android.util.Log.d("ProfileSetup", "EXPERIENCE ID ĐÃ CHỌN: " + extractedExperienceId);
+        final int finalExperienceId = extractedExperienceId;
         boolean isUserBeginner = (finalExperienceId == 1);
 
         // Convert DOB
