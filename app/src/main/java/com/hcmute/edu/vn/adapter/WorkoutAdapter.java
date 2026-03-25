@@ -15,10 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.activity.ExerciseListActivity;
 import com.hcmute.edu.vn.model.WorkoutDay;
-import com.hcmute.edu.vn.model.Exercise;
-import com.hcmute.edu.vn.model.WorkoutDayExercise;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHolder> {
@@ -66,20 +63,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
 
             View.OnClickListener clickListener = v -> {
                 Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
-                ArrayList<Exercise> exercisesToPass = new ArrayList<>();
-
-                if (item.getExercises() != null) {
-                    for (WorkoutDayExercise wde : item.getExercises()) {
-                        if (wde.getExercise() != null) {
-                            Exercise ex = wde.getExercise();
-                            if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
-                            if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
-                            exercisesToPass.add(ex);
-                        }
-                    }
-                }
-
-                intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
+                intent.putExtra("EXTRA_DAY_ID", item.getId());
                 intent.putExtra("EXTRA_DAY_TITLE", displayTitle);
                 v.getContext().startActivity(intent);
             };
