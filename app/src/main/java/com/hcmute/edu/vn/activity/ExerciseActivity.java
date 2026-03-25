@@ -25,7 +25,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
     private ImageView ivExercise;
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
-    private ImageButton btnNext, btnPrevious, btnClose;
+    private ImageButton btnNext, btnPrevious, btnClose, icWorkoutMusic;
     private Button btnPause;
 
     @Override
