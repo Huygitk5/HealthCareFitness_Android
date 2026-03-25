@@ -164,6 +164,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
         loadExperiences();
     }
 
+    // =========================================================
+    // LOAD FITNESS GOALS
+    // =========================================================
+
     private void loadFitnessGoals() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
         apiService.getAllFitnessGoals("*").enqueue(new Callback<List<FitnessGoal>>() {
@@ -208,6 +212,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             @Override public void onFailure(Call<List<UserExperience>> call, Throwable t) {}
         });
     }
+
+    // =========================================================
+    // SAVE DATA
+    // =========================================================
 
     private void saveProfileData() {
         String fullName = edtFullName.getText().toString().trim();
@@ -311,10 +319,12 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     .putInt("ACTIVITY_INDEX", activityIndex)
                     .apply();
 
+            // === CALCULATE ===
             FitnessCalculator.FitnessResult result = FitnessCalculator.calculate(
                     selectedGoalName, weight, targetW, tdee, gender, isUserBeginner
             );
 
+            // Build User object
             User updateData = new User();
             updateData.setName(fullName);
             updateData.setDateOfBirth(dobFormatted);
@@ -378,6 +388,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             });
         } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
     }
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
 
     private void selectFirstGoalContaining(String keyword) {
         for (int i = 0; i < fitnessGoalList.size(); i++) {
