@@ -60,6 +60,37 @@ public class ExerciseActivity extends AppCompatActivity {
         setupListeners();
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // BIND — kết nối để nhận IBinder điều khiển nhạc
+        Intent musicIntent = new Intent(this, MusicService.class);
+        bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // UNBIND — giải phóng kết nối, nhưng Service vẫn sống (đã startService)
+        if (isMusicServiceBound) {
+            unbindService(musicServiceConnection);
+            isMusicServiceBound = false;
+            musicBinder = null;
+        }
+    }
+
+    /**
+     * Dừng hẳn Service khi Activity bị finish() hoàn toàn (bấm nút Close).
+     * Phân biệt với onStop để tránh dừng nhạc khi chỉ xoay màn hình.
+     */
+    @Override
+    public void finish() {
+        stopService(new Intent(this, MusicService.class));
+        super.finish();
+    }
+
+    // ======================= View Initialization =======================
+
     private void initViews() {
         ivExercise = findViewById(R.id.ivExercise);
         tvExerciseName = findViewById(R.id.tvExerciseName);
