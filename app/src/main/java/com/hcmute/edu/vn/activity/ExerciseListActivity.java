@@ -52,37 +52,31 @@ public class ExerciseListActivity extends AppCompatActivity {
 
         rvExercises.setLayoutManager(new LinearLayoutManager(this));
 
-        // 1. Kiểm tra luồng: Đây là Tập Theo Ngày hay Tập Tự Do?
+        // Nhận ID ngày tập từ màn hình trước và tải dữ liệu mới nhất
         if (getIntent().hasExtra("EXTRA_DAY_ID")) {
-            // LUỒNG TẬP THEO NGÀY CỦA PLAN: Lấy Day ID và gọi API
             String dayId = getIntent().getStringExtra("EXTRA_DAY_ID");
+            String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
+
             TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-            if(tvDayTitle != null) tvDayTitle.setText("Đang tải...");
+            if(tvDayTitle != null) {
+                tvDayTitle.setText(dayTitle != null ? dayTitle : "Đang tải...");
+            }
 
             fetchExercisesForDay(dayId);
 
-            // Sửa lại nhánh này trong onCreate()
         } else if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
+            // Nhánh này dùng riêng cho tính năng tập tự do (Free Workout) khi user tự chọn list bài tập
             exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
-
-            // Nhận thêm Title để hiển thị cho đẹp
-            String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
             TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-            if(tvDayTitle != null) {
-                tvDayTitle.setText(dayTitle != null ? dayTitle : "Danh sách bài tập");
-            }
+            if(tvDayTitle != null) tvDayTitle.setText("Tập Tự Do");
 
             adapter = new ExerciseAdapter(exercises);
             rvExercises.setAdapter(adapter);
-
-            if (exercises == null || exercises.isEmpty()) {
-                Toast.makeText(this, "Ngày này chưa được gán bài tập nào!", Toast.LENGTH_SHORT).show();
-            }
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
-        // Nút START bắt đầu tập
+        // Chuyển danh sách bài tập vào màn hình tập (ExerciseActivity)
         findViewById(R.id.btnStartWorkout).setOnClickListener(v -> {
             if (exercises == null || exercises.isEmpty()) {
                 Toast.makeText(ExerciseListActivity.this, "Danh sách bài tập trống!", Toast.LENGTH_SHORT).show();
@@ -99,64 +93,44 @@ public class ExerciseListActivity extends AppCompatActivity {
         });
     }
 
-    // Hàm gọi API để nạp bài tập
-    // Hàm gọi API để nạp bài tập (Đã được nâng cấp để hiển thị lỗi thật của Supabase)
     private void fetchExercisesForDay(String dayId) {
-        try {
-            SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        String selectQuery = "*, workout_day_exercises(*, exercise:exercises(*))";
 
-            // ĐÃ SỬA: Bỏ chữ "exercises:" đi, gọi thẳng tên bảng trung gian
-            String selectQuery = "*, workout_day_exercises(*, exercise:exercises(*))";
+        apiService.getExercisesForSpecificDay("eq." + dayId, selectQuery).enqueue(new Callback<List<WorkoutDay>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    WorkoutDay day = response.body().get(0);
+                    List<Exercise> fetchedList = new ArrayList<>();
 
-            apiService.getExercisesForSpecificDay("eq." + dayId, selectQuery).enqueue(new Callback<List<WorkoutDay>>() {
-                @Override
-                public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
-                    try {
-                        if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                            WorkoutDay day = response.body().get(0);
-                            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-                            if(tvDayTitle != null) {
-                                int dayOrder = day.getDayOrder() != null ? day.getDayOrder() : 1;
-                                tvDayTitle.setText("Ngày " + dayOrder);
+                    if (day.getExercises() != null) {
+                        for (WorkoutDayExercise wde : day.getExercises()) {
+                            Exercise ex = wde.getExercise();
+                            if (ex != null) {
+                                if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
+                                if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
+                                fetchedList.add(ex);
                             }
-
-                            List<Exercise> fetchedList = new ArrayList<>();
-
-                            // Gọi getExercises() theo đúng tên biến trong Model của bạn
-                            if (day.getExercises() != null) {
-                                for (WorkoutDayExercise wde : day.getExercises()) {
-                                    Exercise ex = wde.getExercise();
-                                    if (ex != null) {
-                                        // Ép kiểu an toàn chống crash
-                                        if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
-                                        if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
-                                        fetchedList.add(ex);
-                                    }
-                                }
-                            }
-
-                            exercises = new ArrayList<>(fetchedList);
-                            adapter = new ExerciseAdapter(exercises);
-                            rvExercises.setAdapter(adapter);
-
-                            if (exercises.isEmpty()) {
-                                Toast.makeText(ExerciseListActivity.this, "Ngày này là ngày nghỉ hoặc chưa có bài tập", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Toast.makeText(ExerciseListActivity.this, "Dữ liệu trả về rỗng từ Server", Toast.LENGTH_SHORT).show();
                         }
-                    } catch (Exception e) {
-                        Toast.makeText(ExerciseListActivity.this, "Lỗi xử lý dữ liệu: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
-                }
 
-                @Override
-                public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {
-                    Toast.makeText(ExerciseListActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    exercises = new ArrayList<>(fetchedList);
+                    adapter = new ExerciseAdapter(exercises);
+                    rvExercises.setAdapter(adapter);
+
+                    if (exercises.isEmpty()) {
+                        Toast.makeText(ExerciseListActivity.this, "Ngày này chưa có bài tập", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(ExerciseListActivity.this, "Không thể lấy danh sách bài tập!", Toast.LENGTH_SHORT).show();
                 }
-            });
-        } catch (Exception e) {
-            Toast.makeText(this, "Lỗi gọi API: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }
+            }
+
+            @Override
+            public void onFailure(Call<List<WorkoutDay>> call, Throwable t) {
+                Toast.makeText(ExerciseListActivity.this, "Lỗi kết nối: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
