@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Layout cho BottomSheet Âm nhạc, thiết kế theo ảnh tham chiếu:
+    - Header: tiêu đề + nút đóng
+    - Toggle "Âm nhạc nền"
+    - Album art tròn + tên bài + thời gian
+    - 5 nút điều khiển: Playlist, Previous, Play/Pause, Next, Repeat
+    - SeekBar + icon âm lượng
+    - RecyclerView danh sách bài hát
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_white_rounded_top"
+    android:paddingBottom="24dp">
+
+    <!-- ===== DRAG HANDLE ===== -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="4dp"
+        android:background="#DDDDDD"
+        android:backgroundTint="#BDBDBD" />
+
+    <!-- ===== HEADER: Title + Close button ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:id="@+id/tvSheetTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Âm nhạc"
+            android:textColor="#1A1A1A"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <!-- Nút đóng BottomSheet (×) -->
+        <ImageButton
+            android:id="@+id/btnCloseSheet"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/circle_background"
+            android:contentDescription="Đóng"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#888888" />
+    </RelativeLayout>
+
+    <!-- ===== DIVIDER ===== -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F0F0F0"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- ===== TOGGLE "Âm nhạc nền" ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Âm nhạc nền"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switchMusic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:checked="true" />
+    </RelativeLayout>
+
+    <!-- ===== SONG INFO ROW: Album art + Title + Duration ===== -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:layout_marginTop="8dp">
+
+        <!-- Album art hình tròn -->
+        <ImageView
+            android:id="@+id/ivAlbumArt"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:scaleType="centerCrop"
+            android:layout_centerVertical="true"
+            android:src="@drawable/workout_1"
+            android:clipToOutline="true" />
+
+        <!-- Tên bài hát -->
+        <TextView
+            android:id="@+id/tvCurrentSongTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/ivAlbumArt"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="12dp"
+            android:text="Fresh Day"
+            android:textColor="#1A1A1A"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <!-- Thời gian: vị trí / tổng -->
+        <TextView
+            android:id="@+id/tvSongTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/ivAlbumArt"
+            android:layout_below="@id/tvCurrentSongTitle"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:text="00:00/00:00"
+            android:textColor="#4DAA9A"
+            android:textSize="13sp" />
+
+        <!-- Icon mũi tên ">" sang playlist đầy đủ -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#BBBBBB" />
+    </RelativeLayout>
+
+    <!-- ===== 5 NÚT ĐIỀU KHIỂN ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginTop="4dp">
+
+        <!-- Nút Playlist -->
+        <ImageButton
+            android:id="@+id/btnPlaylist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_sort_by_size"
+            app:tint="#555555"
+            android:contentDescription="Danh sách phát" />
+
+        <!-- Nút Previous -->
+        <ImageButton
+            android:id="@+id/btnMusicPrevious"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#1A1A1A"
+            android:contentDescription="Bài trước" />
+
+        <!-- Nút Play/Pause (lớn hơn) -->
+        <ImageButton
+            android:id="@+id/btnPlayPause"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1.4"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_pause"
+            app:tint="#1A1A1A"
+            android:contentDescription="Phát / Dừng" />
+
+        <!-- Nút Next -->
+        <ImageButton
+            android:id="@+id/btnMusicNext"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#1A1A1A"
+            android:contentDescription="Bài tiếp" />
+
+        <!-- Nút Repeat -->
+        <ImageButton
+            android:id="@+id/btnRepeat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_rotate"
+            app:tint="#555555"
+            android:contentDescription="Lặp lại" />
+    </LinearLayout>
+
+    <!-- ===== SEEKBAR + ÂM LƯỢNG ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginTop="4dp">
+
+        <!-- Icon âm lượng thấp -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_lock_silent_mode"
+            app:tint="#AAAAAA" />
+
+        <!-- Thanh tiến trình phát nhạc -->
+        <SeekBar
+            android:id="@+id/seekBarMusic"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:progressTint="#4DAA9A"
+            android:thumbTint="#4DAA9A"
+            android:max="100" />
+
+        <!-- Icon âm lượng cao -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_lock_silent_mode_off"
+            app:tint="#AAAAAA" />
+    </LinearLayout>
+
+    <!-- ===== DIVIDER ===== -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#F0F0F0"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- ===== RECYCLER VIEW DANH SÁCH BÀI HÁT ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSongList"
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:overScrollMode="never"
+        android:clipToPadding="false"
+        android:paddingTop="4dp" />
+
+</LinearLayout>
