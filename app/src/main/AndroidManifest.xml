@@ -75,6 +75,15 @@
         <receiver android:name=".receiver.WeightReminderReceiver" android:exported="false" />
         <receiver android:name=".receiver.DailyWorkoutReceiver" />
 
+        <!--
+            MusicService: foregroundServiceType="mediaPlayback" bắt buộc từ Android 10+
+            khi Service phát media và cần startForeground().
+        -->
+        <service
+            android:name=".service.MusicService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
+
 
     </application>
 
