@@ -42,7 +42,8 @@ public class WorkoutHistoryActivity extends AppCompatActivity {
     private Set<String> workoutDates = new HashSet<>();
     private Calendar currentMonthCal;
 
-    private TextView tvEmptyState, tvMonthYear, tvWeekRange, tvWeekSessionCount, tvTotalTime, tvTotalKcal;
+    private TextView tvMonthYear, tvWeekRange, tvWeekSessionCount, tvTotalTime, tvTotalKcal;
+    private View layoutEmptyState;
     private CardView cardCalendar, cardWeekly;
     private GridLayout gridCalendar;
     private RecyclerView rvSessions;
@@ -67,7 +68,7 @@ public class WorkoutHistoryActivity extends AppCompatActivity {
     }
 
     private void initViews() {
-        tvEmptyState = findViewById(R.id.tvEmptyState);
+        layoutEmptyState = findViewById(R.id.layoutEmptyState);
         tvMonthYear = findViewById(R.id.tvMonthYear);
         tvWeekRange = findViewById(R.id.tvWeekRange);
         tvWeekSessionCount = findViewById(R.id.tvWeekSessionCount);
@@ -139,81 +140,147 @@ public class WorkoutHistoryActivity extends AppCompatActivity {
     }
 
     private void showEmptyState() {
-        tvEmptyState.setVisibility(View.VISIBLE);
+        layoutEmptyState.setVisibility(View.VISIBLE);
         cardWeekly.setVisibility(View.GONE);
         findViewById(R.id.tvWeekRange).setVisibility(View.GONE); 
-        // Need to hide Báo cáo hàng tuần label as well but avoiding ID search here for simplicity or relying on parent
     }
 
     private void renderCalendar() {
         gridCalendar.removeAllViews();
-        
-        SimpleDateFormat monthYearFmt = new SimpleDateFormat("MM yyyy", Locale.getDefault());
-        tvMonthYear.setText("thg " + monthYearFmt.format(currentMonthCal.getTime()));
 
-        int firstDayOfWeek = currentMonthCal.get(Calendar.DAY_OF_WEEK);
-        int offset = firstDayOfWeek - 1; // CN = 1 => offset 0
-        
-        int maxDay = currentMonthCal.getActualMaximum(Calendar.DAY_OF_MONTH);
-        
-        int cellSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 44, getResources().getDisplayMetrics());
-        
-        for (int i = 0; i < offset; i++) {
-            TextView emptyTv = new TextView(this);
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            params.height = cellSize;
-            emptyTv.setLayoutParams(params);
-            gridCalendar.addView(emptyTv);
+        int displayedYear = currentMonthCal.get(Calendar.YEAR);
+        int displayedMonth = currentMonthCal.get(Calendar.MONTH);
+
+        Calendar cal = Calendar.getInstance();
+        cal.set(displayedYear, displayedMonth, 1);
+        int firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK) - 1; // 0=CN, 1=T2...
+        int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        for (int i = 0; i < firstDayOfWeek; i++) {
+            gridCalendar.addView(createEmptyCell());
         }
 
-        SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        Calendar cal = (Calendar) currentMonthCal.clone();
-        
-        for (int day = 1; day <= maxDay; day++) {
-            cal.set(Calendar.DAY_OF_MONTH, day);
-            String dateStr = isoFmt.format(cal.getTime());
-            
-            cal.add(Calendar.DAY_OF_MONTH, -1);
-            String prevDateStr = isoFmt.format(cal.getTime());
-            cal.add(Calendar.DAY_OF_MONTH, 2);
-            String nextDateStr = isoFmt.format(cal.getTime());
-            cal.add(Calendar.DAY_OF_MONTH, -1); // restore
-            
-            boolean isWorkout = workoutDates.contains(dateStr);
-            boolean prevWorkout = workoutDates.contains(prevDateStr);
-            boolean nextWorkout = workoutDates.contains(nextDateStr);
+        Calendar today = Calendar.getInstance();
+        int todayDay = today.get(Calendar.DAY_OF_MONTH);
+        int todayMonth = today.get(Calendar.MONTH);
+        int todayYear = today.get(Calendar.YEAR);
 
-            TextView tv = new TextView(this);
-            tv.setText(String.valueOf(day));
-            tv.setGravity(Gravity.CENTER);
-            
-            GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-            params.width = 0;
-            params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-            params.height = cellSize;
-            tv.setLayoutParams(params);
+        for (int day = 1; day <= daysInMonth; day++) {
+            String dateStr = String.format(Locale.getDefault(),
+                "%04d-%02d-%02d", displayedYear, displayedMonth + 1, day);
+            String prevDateStr = String.format(Locale.getDefault(),
+                "%04d-%02d-%02d", displayedYear, displayedMonth + 1, day - 1);
+            String nextDateStr = String.format(Locale.getDefault(),
+                "%04d-%02d-%02d", displayedYear, displayedMonth + 1, day + 1);
 
-            if (isWorkout) {
-                tv.setTextColor(Color.WHITE);
-                if (prevWorkout && nextWorkout) {
-                    tv.setBackgroundResource(R.drawable.bg_streak_middle);
-                } else if (prevWorkout) {
-                    tv.setBackgroundResource(R.drawable.bg_streak_end);
-                } else if (nextWorkout) {
-                    tv.setBackgroundResource(R.drawable.bg_streak_start);
-                } else {
-                    tv.setBackgroundResource(R.drawable.bg_streak_single);
-                }
-                
-                Date cloneDate = cal.getTime();
-                tv.setOnClickListener(v -> renderWeeklyReport(cloneDate));
-            } else {
-                tv.setTextColor(Color.parseColor(cal.getTimeInMillis() > System.currentTimeMillis() ? "#E0E0E0" : "#000000"));
+            boolean isDone     = workoutDates.contains(dateStr);
+            boolean isPrevDone = workoutDates.contains(prevDateStr);
+            boolean isNextDone = workoutDates.contains(nextDateStr);
+            boolean isToday    = (day == todayDay && displayedMonth == todayMonth
+                                   && displayedYear == todayYear);
+            boolean isFuture   = displayedYear > todayYear
+                               || (displayedYear == todayYear
+                                   && displayedMonth > todayMonth)
+                               || (displayedYear == todayYear
+                                   && displayedMonth == todayMonth
+                                   && day > todayDay);
+
+            View cell = createDayCell(day, isDone, isPrevDone, isNextDone, isToday, isFuture);
+            
+            if (isDone) {
+                try {
+                    SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                    Date clickDate = isoFmt.parse(dateStr);
+                    cell.setOnClickListener(v -> renderWeeklyReport(clickDate));
+                } catch (Exception e){}
             }
-            gridCalendar.addView(tv);
+            gridCalendar.addView(cell);
         }
+
+        tvMonthYear.setText("thg " + (displayedMonth + 1) + " " + displayedYear);
+    }
+
+    private View createEmptyCell() {
+        android.widget.FrameLayout cell = new android.widget.FrameLayout(this);
+        int size = dpToPx(40);
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width  = 0;
+        params.height = size;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        cell.setLayoutParams(params);
+        return cell;
+    }
+
+    private View createDayCell(int day, boolean isDone, boolean isPrev, boolean isNext,
+                                 boolean isToday, boolean isFuture) {
+        android.widget.FrameLayout cell = new android.widget.FrameLayout(this);
+        int size = dpToPx(40);
+        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+        params.width  = 0;
+        params.height = size;
+        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        cell.setLayoutParams(params);
+
+        if (isDone) {
+            if (isPrev || isNext) {
+                View band = new View(this);
+                android.widget.FrameLayout.LayoutParams bandParams = new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT, dpToPx(32));
+                bandParams.gravity = android.view.Gravity.CENTER_VERTICAL;
+                band.setLayoutParams(bandParams);
+
+                if (isPrev && isNext) {
+                    band.setBackgroundColor(Color.parseColor("#B5F0DF"));
+                } else if (isPrev) {
+                    band.setBackground(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_streak_half_left));
+                } else {
+                    band.setBackground(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_streak_half_right));
+                }
+                cell.addView(band);
+            }
+
+            View circle = new View(this);
+            android.widget.FrameLayout.LayoutParams circleParams = new android.widget.FrameLayout.LayoutParams(size - dpToPx(4), size - dpToPx(4));
+            circleParams.gravity = android.view.Gravity.CENTER;
+            circle.setLayoutParams(circleParams);
+            circle.setBackground(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_day_single));
+            cell.addView(circle);
+
+            android.widget.ImageView checkIcon = new android.widget.ImageView(this);
+            android.widget.FrameLayout.LayoutParams checkParams = new android.widget.FrameLayout.LayoutParams(dpToPx(16), dpToPx(16));
+            checkParams.gravity = android.view.Gravity.CENTER;
+            checkIcon.setLayoutParams(checkParams);
+            checkIcon.setImageResource(R.drawable.ic_check);
+            checkIcon.setColorFilter(Color.WHITE);
+            cell.addView(checkIcon);
+
+        } else {
+            TextView tvDay = new TextView(this);
+            android.widget.FrameLayout.LayoutParams tvParams = new android.widget.FrameLayout.LayoutParams(
+                android.widget.FrameLayout.LayoutParams.MATCH_PARENT, android.widget.FrameLayout.LayoutParams.MATCH_PARENT);
+            tvDay.setLayoutParams(tvParams);
+            tvDay.setText(String.valueOf(day));
+            tvDay.setGravity(android.view.Gravity.CENTER);
+            tvDay.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+
+            if (isToday) {
+                tvDay.setBackground(androidx.core.content.ContextCompat.getDrawable(this, R.drawable.bg_day_today));
+                tvDay.setTextColor(Color.parseColor("#4DAA9A"));
+                tvDay.setTypeface(null, android.graphics.Typeface.BOLD);
+            } else if (isFuture) {
+                tvDay.setTextColor(Color.parseColor("#BDBDBD"));
+            } else {
+                tvDay.setTextColor(Color.parseColor("#1A1A1A"));
+            }
+
+            cell.addView(tvDay);
+        }
+
+        return cell;
+    }
+
+    private int dpToPx(int dp) {
+        return (int) (dp * getResources().getDisplayMetrics().density);
     }
 
     private void renderWeeklyReport(Date dateInWeek) {

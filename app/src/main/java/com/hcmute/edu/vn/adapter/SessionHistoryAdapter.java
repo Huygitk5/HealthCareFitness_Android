@@ -38,38 +38,69 @@ public class SessionHistoryAdapter extends RecyclerView.Adapter<SessionHistoryAd
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UserWorkoutSession session = sessions.get(position);
 
-        String name = (session.getWorkoutDay() != null && session.getWorkoutDay().getName() != null)
-                ? session.getWorkoutDay().getName() : "Buổi tập";
+        // 1. Tên buổi tập
+        String name = "Buổi tập";
+        if (session.getWorkoutDay() != null && session.getWorkoutDay().getName() != null) {
+            name = session.getWorkoutDay().getName();
+            int dayOrder = session.getWorkoutDay().getDayOrder() != null
+                ? session.getWorkoutDay().getDayOrder() : 0;
+            if (dayOrder > 0) name = "Ngày " + dayOrder + ": " + name;
+        }
         holder.tvSessionName.setText(name);
 
-        long duration = session.getDurationSeconds();
-        if (duration < 60) {
-            holder.tvDuration.setText(duration + "s");
+        // 2. Thời gian
+        long secs = session.getDurationSeconds();
+        String duration;
+        if (secs < 60) {
+            duration = secs + "s";
         } else {
-            holder.tvDuration.setText((duration / 60) + "m " + (duration % 60) + "s");
+            long mins = secs / 60;
+            long remainSecs = secs % 60;
+            duration = mins + "m " + (remainSecs > 0 ? remainSecs + "s" : "");
         }
+        holder.tvSessionDuration.setText(duration);
 
-        holder.tvKcal.setText(String.format(Locale.getDefault(), "%.1f Kcal", session.getEstimatedKcal()));
+        // 3. Kcal
+        double kcal = session.getEstimatedKcal();
+        holder.tvSessionKcal.setText(String.format(Locale.getDefault(), "%.1f Kcal", kcal));
 
-        String displayDate = session.getFinishedAt() != null ? session.getFinishedAt() : session.getStartedAt();
-        if (displayDate != null && displayDate.length() >= 16) {
-            try {
-                SimpleDateFormat inFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm", Locale.getDefault());
-                Date date = inFormat.parse(displayDate.substring(0, 16));
-                SimpleDateFormat outFormat = new SimpleDateFormat("dd 'thg' MM, h:mm a", Locale.getDefault());
-                if (date != null) {
-                    holder.tvSessionDate.setText(outFormat.format(date));
-                }
-            } catch (Exception e) {
-                holder.tvSessionDate.setText(displayDate);
-            }
-        }
+        // 4. Ngày + giờ
+        String timestamp = session.getFinishedAt() != null
+            ? session.getFinishedAt() : session.getStartedAt();
+        holder.tvSessionDate.setText(formatDisplayDate(timestamp));
 
+        // 5. Thumbnail — dùng Glide
         Glide.with(holder.itemView.getContext())
-             .load(R.drawable.workout_1) // Placeholder/default for now
-             .placeholder(R.drawable.bg_circle_primary)
-             .transform(new RoundedCorners(16))
-             .into(holder.ivPlanThumb);
+            .load(R.drawable.workout_1)
+            .placeholder(R.drawable.workout_1)
+            .error(R.drawable.workout_1)
+            .transform(new com.bumptech.glide.load.resource.bitmap.RoundedCorners(24))
+            .into(holder.ivSessionThumb);
+    }
+
+    private String formatDisplayDate(String isoTimestamp) {
+        if (isoTimestamp == null || isoTimestamp.length() < 16) return "";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            Date date = sdf.parse(isoTimestamp.substring(0, 19));
+            if (date == null) return "";
+
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            cal.setTime(date);
+            int day   = cal.get(java.util.Calendar.DAY_OF_MONTH);
+            int month = cal.get(java.util.Calendar.MONTH) + 1;
+            int hour  = cal.get(java.util.Calendar.HOUR_OF_DAY);
+            int min   = cal.get(java.util.Calendar.MINUTE);
+
+            String ampm = hour >= 12 ? "CH" : "SA";
+            int hour12  = hour % 12;
+            if (hour12 == 0) hour12 = 12;
+
+            return String.format(Locale.getDefault(),
+                "%d thg %d\n%d:%02d %s", day, month, hour12, min, ampm);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Override
@@ -78,18 +109,18 @@ public class SessionHistoryAdapter extends RecyclerView.Adapter<SessionHistoryAd
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivPlanThumb;
+        ImageView ivSessionThumb;
         TextView tvSessionName;
-        TextView tvDuration;
-        TextView tvKcal;
+        TextView tvSessionDuration;
+        TextView tvSessionKcal;
         TextView tvSessionDate;
 
         ViewHolder(View view) {
             super(view);
-            ivPlanThumb = view.findViewById(R.id.ivPlanThumb);
+            ivSessionThumb = view.findViewById(R.id.ivSessionThumb);
             tvSessionName = view.findViewById(R.id.tvSessionName);
-            tvDuration = view.findViewById(R.id.tvDuration);
-            tvKcal = view.findViewById(R.id.tvKcal);
+            tvSessionDuration = view.findViewById(R.id.tvSessionDuration);
+            tvSessionKcal = view.findViewById(R.id.tvSessionKcal);
             tvSessionDate = view.findViewById(R.id.tvSessionDate);
         }
     }

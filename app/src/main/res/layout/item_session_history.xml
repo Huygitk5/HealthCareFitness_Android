@@ -2,88 +2,89 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="72dp"
+    android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:paddingVertical="8dp"
-    android:paddingHorizontal="4dp"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:paddingVertical="10dp"
+    android:paddingHorizontal="2dp">
 
+    <!-- Thumbnail bo tròn -->
     <ImageView
-        android:id="@+id/ivPlanThumb"
+        android:id="@+id/ivSessionThumb"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:scaleType="centerCrop"
-        android:background="@drawable/bg_circle_primary" />
+        android:src="@drawable/workout_1" />
 
+    <!-- Tên + stats -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="12dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:layout_marginHorizontal="12dp">
 
         <TextView
             android:id="@+id/tvSessionName"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Tên buổi tập"
-            android:textSize="15sp"
+            android:textColor="#1A1A1A"
+            android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#000000"
             android:singleLine="true"
-            android:ellipsize="end"/>
+            android:ellipsize="end"
+            android:text="Ngày 1: Gym (Full Body)" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="4dp"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginTop="4dp">
 
             <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_workout"
-                app:tint="#2196F3"/>
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_timer"
+                app:tint="#1D9E75" />
 
             <TextView
-                android:id="@+id/tvDuration"
+                android:id="@+id/tvSessionDuration"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0s"
+                android:layout_marginStart="3dp"
+                android:layout_marginEnd="10dp"
+                android:textColor="#1D9E75"
                 android:textSize="12sp"
-                android:textColor="#2196F3"
-                android:layout_marginStart="2dp"/>
-
-            <Space
-                android:layout_width="8dp"
-                android:layout_height="wrap_content"/>
+                android:text="41m 48s" />
 
             <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_nutriton"
-                app:tint="#FF7043"/>
+                android:layout_width="13dp"
+                android:layout_height="13dp"
+                android:src="@drawable/ic_fire"
+                app:tint="#D85A30" />
 
             <TextView
-                android:id="@+id/tvKcal"
+                android:id="@+id/tvSessionKcal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="0.0 Kcal"
+                android:layout_marginStart="3dp"
+                android:textColor="#D85A30"
                 android:textSize="12sp"
-                android:textColor="#FF7043"
-                android:layout_marginStart="2dp"/>
+                android:text="292.6 Kcal" />
+
         </LinearLayout>
     </LinearLayout>
 
+    <!-- Ngày giờ (trailing) -->
     <TextView
         android:id="@+id/tvSessionDate"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="DD thg M, H:MM CH"
-        android:textSize="12sp"
+        android:gravity="end|center_vertical"
         android:textColor="#9E9E9E"
-        android:layout_marginStart="8dp"
-        android:gravity="end|center_vertical"/>
+        android:textSize="11sp"
+        android:lineSpacingExtra="2dp"
+        android:text="25 thg 3\n6:52 CH" />
 
 </LinearLayout>
