@@ -110,6 +110,23 @@ public class MealSearchActivity extends AppCompatActivity {
         btnSaveMeal.setOnClickListener(v -> saveSelectedMealsToDatabase());
     }
 
+    private void loadRestrictedIngredientsThenFoods() {
+        if (username == null || username.isEmpty()) {
+            loadAllFoods();
+            return;
+        }
+
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*, condition_restricted_ingredients(*)))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                restrictedIngredientIds.clear();
+                userAllergiesList.clear(); // Danh sách tên để dự phòng
+
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    User currentUser = response.body().get(0);
 
                     if (currentUser.getUserMedicalConditions() != null) {
                         for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
