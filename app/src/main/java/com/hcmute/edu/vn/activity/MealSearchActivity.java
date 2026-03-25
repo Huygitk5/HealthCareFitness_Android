@@ -113,12 +113,6 @@ public class MealSearchActivity extends AppCompatActivity {
         btnSaveMeal.setOnClickListener(v -> saveSelectedMealsToDatabase());
     }
 
-    // ==============================================================
-    // BƯỚC 1: LẤY DANH SÁCH ID NGUYÊN LIỆU BỊ CẤM TỪ DATABASE
-    // ==============================================================
-    // ==============================================================
-    // BƯỚC 1: TẢI DANH SÁCH DỊ ỨNG (CÓ GẮN LOG THEO DÕI)
-    // ==============================================================
     private void loadRestrictedIngredientsThenFoods() {
         if (username == null || username.isEmpty()) {
             loadAllFoods();
@@ -214,7 +208,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                         // LỌC 2: KIỂM TRA THÀNH PHẦN NGUYÊN LIỆU (Nếu API có trả về)
                         if (isSafe && food.getFoodIngredients() != null) {
-                            for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                            for (FoodIngredient fi : food.getFoodIngredients()) {
                                 if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
                                     String ingName = fi.getIngredient().getName().toLowerCase();
                                     for (String allergyName : userAllergiesList) {
