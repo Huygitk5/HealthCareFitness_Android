@@ -61,10 +61,6 @@ public class ExerciseActivity extends AppCompatActivity {
             musicBinder = (MusicService.MusicBinder) service;
             isMusicServiceBound = true;
             // Tự động phát bài đầu khi kết nối lần đầu (nếu chưa phát)
-            MusicService musicService = musicBinder.getService();
-            if (!musicService.isPlaying()) {
-                musicService.play();
-            }
         }
 
         /**
@@ -136,11 +132,18 @@ public class ExerciseActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        MusicService musicService = musicBinder != null ? musicBinder.getService() : null;
+        boolean shouldStopMusicService = (musicService == null)
+                || !musicService.isPlaying()
+                || !musicService.isBackgroundPlaybackEnabled();
         // UNBIND — giải phóng kết nối, nhưng Service vẫn sống (đã startService)
         if (isMusicServiceBound) {
             unbindService(musicServiceConnection);
             isMusicServiceBound = false;
             musicBinder = null;
+        }
+        if (shouldStopMusicService) {
+            stopService(new Intent(this, MusicService.class));
         }
     }
 
@@ -148,12 +151,6 @@ public class ExerciseActivity extends AppCompatActivity {
      * Dừng hẳn Service khi Activity bị finish() hoàn toàn (bấm nút Close).
      * Phân biệt với onStop để tránh dừng nhạc khi chỉ xoay màn hình.
      */
-    @Override
-    public void finish() {
-        stopService(new Intent(this, MusicService.class));
-        super.finish();
-    }
-
     // ======================= View Initialization =======================
 
     private void initViews() {

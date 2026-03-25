@@ -2,6 +2,7 @@ package com.hcmute.edu.vn.activity;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.ColorStateList;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,10 +16,12 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -64,6 +67,9 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
     // ── State flag ─────────────────────────────────────────────────────────────
     private boolean isFullPlayer = false;
+    private int lastKnownSongIndex = Integer.MIN_VALUE;
+    private int lastKnownRepeatMode = Integer.MIN_VALUE;
+    private boolean lastKnownPlaying = false;
     private boolean userIsSeeking = false; // true khi người dùng đang kéo seekBarMusic
 
     // ── Handler cập nhật SeekBar nhạc định kỳ (500ms) ─────────────────────────
@@ -71,7 +77,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private final Runnable seekBarRunnable = new Runnable() {
         @Override
         public void run() {
-            if (isFullPlayer) updateMusicSeekBar();
+            updateMusicSeekBar();
             handler.postDelayed(this, 500);
         }
     };
@@ -272,7 +278,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         layoutSeekbar.setVisibility(View.GONE);
         layoutSongList.setVisibility(View.GONE);
 
-        tvSheetTitle.setText("Âm nhạc & Giọng nói");
+        tvSheetTitle.setText("Âm nhạc ");
         ivArrowState.setImageResource(android.R.drawable.arrow_down_float);
 
         BottomSheetDialog dialog = (BottomSheetDialog) requireDialog();
@@ -346,10 +352,11 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         // Repeat toggle (UI only — lưu state isRepeat để dùng sau)
         btnRepeat.setOnClickListener(v -> {
             // Tag dùng làm flag: null = off, non-null = on
-            boolean isRepeat = (btnRepeat.getTag() != null);
-            isRepeat = !isRepeat;
-            btnRepeat.setTag(isRepeat ? Boolean.TRUE : null);
-            btnRepeat.setAlpha(isRepeat ? 1.0f : 0.4f);
+            MusicService svc = getService();
+            if (svc == null) return;
+            int repeatMode = svc.cycleRepeatMode();
+            showRepeatModeToast(repeatMode);
+            refreshUI();
         });
         btnRepeat.setAlpha(0.4f); // Mặc định: repeat off
 
@@ -409,24 +416,25 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                 playing ? android.R.drawable.ic_media_pause
                         : android.R.drawable.ic_media_play
         );
+        updateRepeatModeUi(svc.getRepeatMode());
+        updatePreviousButtonUi(svc);
 
         // Switch: đồng bộ với trạng thái service, tắt listener trước để tránh vòng lặp
         switchMusic.setOnCheckedChangeListener(null);
-        switchMusic.setChecked(playing);
+        switchMusic.setChecked(svc.isBackgroundPlaybackEnabled());
         switchMusic.setOnCheckedChangeListener((btn, isChecked) -> {
             MusicService s = getService();
             if (s == null) return;
-            if (isChecked) s.resume(); else s.pause();
-            btnPlayPause.setImageResource(
-                    isChecked ? android.R.drawable.ic_media_pause
-                              : android.R.drawable.ic_media_play
-            );
+            s.setBackgroundPlaybackEnabled(isChecked);
+            showBackgroundPlaybackToast(isChecked);
+            refreshUI();
         });
 
         // Highlight bài đang phát trong danh sách (nếu adapter đã khởi tạo)
         if (songAdapter != null) {
             songAdapter.setCurrentPlayingIndex(svc.getCurrentIndex());
         }
+        capturePlaybackSnapshot(svc);
     }
 
     /**
@@ -437,6 +445,12 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         if (userIsSeeking || !isAdded()) return;
         MusicService svc = getService();
         if (svc == null) return;
+
+        if (hasPlaybackSnapshotChanged(svc)) {
+            refreshUI();
+            svc = getService();
+            if (svc == null) return;
+        }
 
         int position = svc.getCurrentPosition();
         int duration = svc.getDuration();
@@ -451,6 +465,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
         // Cập nhật luôn tvSongTime ở song info row (dù đang ở state nào)
         tvSongTime.setText(formatTime(position) + "/" + formatTime(duration));
+        capturePlaybackSnapshot(svc);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -458,6 +473,97 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // ══════════════════════════════════════════════════════════════════════════
 
     /** Chuyển milliseconds → chuỗi "mm:ss". */
+    private void updateRepeatModeUi(int repeatMode) {
+        if (!isAdded()) return;
+
+        int tintResId;
+        int iconResId = android.R.drawable.ic_menu_rotate;
+        String contentDescription;
+
+        switch (repeatMode) {
+            case MusicService.REPEAT_MODE_ONE:
+                tintResId = R.color.orange_warning;
+                iconResId = android.R.drawable.ic_menu_revert;
+                contentDescription = "Lặp lại bài hiện tại";
+                break;
+            case MusicService.REPEAT_MODE_ALL:
+                tintResId = R.color.primary_green;
+                contentDescription = "Lặp lại toàn bộ danh sách";
+                break;
+            case MusicService.REPEAT_MODE_OFF:
+            default:
+                tintResId = R.color.grey_locked;
+                contentDescription = "Tắt lặp lại";
+                break;
+        }
+
+        int tintColor = ContextCompat.getColor(requireContext(), tintResId);
+        btnRepeat.setImageResource(iconResId);
+        btnRepeat.setImageTintList(ColorStateList.valueOf(tintColor));
+        btnRepeat.setAlpha(repeatMode == MusicService.REPEAT_MODE_OFF ? 0.45f : 1.0f);
+        btnRepeat.setContentDescription(contentDescription);
+    }
+
+    private void updatePreviousButtonUi(MusicService svc) {
+        if (!isAdded()) return;
+
+        boolean canGoPrevious = false;
+        List<Song> songs = svc.getSongList();
+        if (songs != null && !songs.isEmpty()) {
+            canGoPrevious = svc.getCurrentIndex() > 0
+                    || svc.getRepeatMode() == MusicService.REPEAT_MODE_ALL;
+        }
+
+        int tintColor = ContextCompat.getColor(
+                requireContext(),
+                canGoPrevious ? android.R.color.black : R.color.grey_locked
+        );
+
+        btnMusicPrevious.setEnabled(canGoPrevious);
+        btnMusicPrevious.setAlpha(canGoPrevious ? 1.0f : 0.35f);
+        btnMusicPrevious.setImageTintList(ColorStateList.valueOf(tintColor));
+    }
+
+    private void showRepeatModeToast(int repeatMode) {
+        if (!isAdded()) return;
+
+        String message;
+        switch (repeatMode) {
+            case MusicService.REPEAT_MODE_ONE:
+                message = "Đang lặp lại bài hiện tại";
+                break;
+            case MusicService.REPEAT_MODE_ALL:
+                message = "Đang lặp lại toàn bộ danh sách";
+                break;
+            case MusicService.REPEAT_MODE_OFF:
+            default:
+                message = "Đã tắt lặp lại";
+                break;
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void showBackgroundPlaybackToast(boolean enabled) {
+        if (!isAdded()) return;
+
+        String message = enabled
+                ? "Đã bật chạy nhạc nền"
+                : "Đã tắt chạy nhạc nền";
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean hasPlaybackSnapshotChanged(MusicService svc) {
+        return lastKnownSongIndex != svc.getCurrentIndex()
+                || lastKnownPlaying != svc.isPlaying()
+                || lastKnownRepeatMode != svc.getRepeatMode();
+    }
+
+    private void capturePlaybackSnapshot(MusicService svc) {
+        lastKnownSongIndex = svc.getCurrentIndex();
+        lastKnownPlaying = svc.isPlaying();
+        lastKnownRepeatMode = svc.getRepeatMode();
+    }
+
     private String formatTime(int ms) {
         if (ms <= 0) return "00:00";
         int totalSec = ms / 1000;
