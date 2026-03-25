@@ -42,11 +42,16 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // Binder lấy từ ServiceConnection trong ExerciseActivity
     private MusicService.MusicBinder musicBinder;
 
-    // Views
-    private ImageView ivAlbumArt;
-    private TextView tvSongTitle, tvSongTime;
-    private ImageButton btnPlayPause, btnNext, btnPrevious, btnPlaylist, btnRepeat;
-    private SeekBar seekBar;
+    // ── System service ─────────────────────────────────────────────────────────
+    private AudioManager audioManager;
+
+    // ── Views — Mini Player (luôn hiển thị) ───────────────────────────────────
+    private LinearLayout rootSheetLayout;
+    private TextView     tvSheetTitle;
+    private ImageView    ivAlbumArt, ivArrowState;
+    private TextView     tvCurrentSongTitle, tvSongTime;
+    private ImageButton  btnPlayPause, btnMusicNext, btnMusicPrevious;
+    private ImageButton  btnPlaylist, btnRepeat;
     private SwitchCompat switchMusic;
     private RecyclerView rvSongList;
     private SongAdapter songAdapter;
