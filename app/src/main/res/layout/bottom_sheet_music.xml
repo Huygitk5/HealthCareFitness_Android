@@ -233,11 +233,10 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:progressTint="#4DAA9A"
-            android:thumbTint="#4DAA9A"
-            android:max="100" />
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:progressTint="#4A90D9"
+            android:thumbTint="#4A90D9" />
 
         <!-- Icon âm lượng cao -->
         <ImageView
