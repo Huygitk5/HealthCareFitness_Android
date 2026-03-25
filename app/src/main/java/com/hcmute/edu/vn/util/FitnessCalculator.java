@@ -24,7 +24,8 @@ public class FitnessCalculator {
     public static final String PLAN_GAIN_BEGINNER     = "554fb805-1136-4976-b39b-e196bcf5a3af";
     public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480"; // PPL
     // Giữ dáng
-    public static final String PLAN_MAINTAIN          = "a1111111-1111-1111-1111-111111111111";
+    public static final String PLAN_MAINTAIN_BEGINNER         = "7266ec21-85a2-4295-9f14-3232b5d26864";
+    public static final String PLAN_MAINTAIN_INTERMEDIATE     = "22d13d52-3461-4da0-9bd8-f4be811cb25f";
 
     // BMR (Mifflin-St Jeor)
     public static double calcBMR(double weightKg, double heightCm, int age, String gender) {
