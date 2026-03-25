@@ -111,6 +111,43 @@ public class MealSearchActivity extends AppCompatActivity {
     }
 
 
+                    if (currentUser.getUserMedicalConditions() != null) {
+                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
+                            MedicalCondition mc = umc.getMedicalCondition();
+                            if (mc != null) {
+                                // 1. Lưu TÊN dị ứng (Để lọc dự phòng)
+                                String type = mc.getType();
+                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
+                                    userAllergiesList.add(mc.getName().toLowerCase());
+                                }
+
+                                // 2. Lưu ID nguyên liệu cấm
+                                if (mc.getRestrictedIngredients() != null) {
+                                    for (ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
+                                        if (cri.getIngredientId() != null) {
+                                            restrictedIngredientIds.add(cri.getIngredientId());
+                                        }
+                                    }
+                                } else {
+                                    android.util.Log.e("LOC_MON_AN", "CẢNH BÁO: Bệnh '" + mc.getName() + "' trả về restrictedIngredients = NULL (Xem lại Model MedicalCondition)");
+                                }
+                            }
+                        }
+                    }
+                }
+
+                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ ID BỊ CẤM TÌM THẤY: " + restrictedIngredientIds.size());
+                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ TÊN BỊ CẤM TÌM THẤY: " + userAllergiesList.size());
+
+                loadAllFoods(); // Xong xuôi thì qua tải Đồ ăn
+            }
+
+            @Override
+            public void onFailure(Call<List<User>> call, Throwable t) {
+                loadAllFoods();
+            }
+        });
+    }
 
     // ==============================================================
     // BƯỚC 2: TẢI ĐỒ ĂN VÀ LỌC BẰNG CẢ ID LẪN TÊN (KHÔNG THỂ LỌT LƯỚI)
