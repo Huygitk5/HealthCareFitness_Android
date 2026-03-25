@@ -53,6 +53,16 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private ImageButton  btnPlayPause, btnMusicNext, btnMusicPrevious;
     private ImageButton  btnPlaylist, btnRepeat;
     private SwitchCompat switchMusic;
+
+    // ── Views — State 1: Volume ────────────────────────────────────────────────
+    private LinearLayout layoutVolume;
+    private SeekBar      seekBarVolume;
+
+    // ── Views — State 2: Music SeekBar + Song List ────────────────────────────
+    private LinearLayout layoutSeekbar;
+    private LinearLayout layoutSongList;
+    private SeekBar      seekBarMusic;
+    private TextView     tvSeekStart, tvSeekEnd;
     private RecyclerView rvSongList;
     private SongAdapter songAdapter;
 
