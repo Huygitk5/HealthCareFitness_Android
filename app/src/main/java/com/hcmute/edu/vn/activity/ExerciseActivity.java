@@ -88,8 +88,22 @@ public class ExerciseActivity extends AppCompatActivity {
             }
         });
 
-        btnPause.setOnClickListener(v -> {
-            Toast.makeText(ExerciseActivity.this, "Đã bấm Pause", Toast.LENGTH_SHORT).show();
+        btnPause.setOnClickListener(v ->
+                Toast.makeText(ExerciseActivity.this, "Đã bấm Pause", Toast.LENGTH_SHORT).show()
+        );
+
+        /**
+         * Nút âm nhạc → mở MusicBottomSheetFragment.
+         * Truyền MusicBinder vào Fragment để điều khiển trực tiếp Service.
+         */
+        icWorkoutMusic.setOnClickListener(v -> {
+            if (!isMusicServiceBound || musicBinder == null) {
+                Toast.makeText(this, "Đang kết nối dịch vụ nhạc...", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            MusicBottomSheetFragment sheet =
+                    MusicBottomSheetFragment.newInstance(musicBinder);
+            sheet.show(getSupportFragmentManager(), "MusicBottomSheet");
         });
     }
 
