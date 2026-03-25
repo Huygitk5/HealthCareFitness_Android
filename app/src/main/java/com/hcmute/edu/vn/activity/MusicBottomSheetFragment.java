@@ -103,8 +103,21 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         bindViews(view);
         setupRecyclerView();
         setupListeners();
-        refreshUI();                        // Cập nhật UI ngay lần đầu
-        handler.post(updateSeekBarRunnable); // Bắt đầu vòng lặp cập nhật SeekBar
+        refreshUI();                         // Sync UI với trạng thái service ngay lần đầu
+        setupVolumeControl();                // Khởi tạo Volume SeekBar
+        handler.post(seekBarRunnable);       // Bắt đầu vòng lặp cập nhật SeekBar nhạc
+    }
+
+    @Override
+    public void onDismiss(@NonNull DialogInterface dialog) {
+        super.onDismiss(dialog);
+        handler.removeCallbacks(seekBarRunnable);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        handler.removeCallbacks(seekBarRunnable);
     }
 
     // ======================= View Binding =======================
