@@ -201,6 +201,39 @@ public class ProfileActivity extends AppCompatActivity {
         dialogSpinnerActivity.setAdapter(actAdapter);
         dialogSpinnerActivity.setSelection(currentActivityIndex);
 
+        // Sắp xếp danh sách: Đẩy "Beginner" (Người mới) lên vị trí đầu tiên
+        java.util.Collections.sort(experienceList, (e1, e2) -> {
+            String type1 = e1.getUserType() != null ? e1.getUserType() : "";
+            String type2 = e2.getUserType() != null ? e2.getUserType() : "";
+            if (type1.equalsIgnoreCase("Beginner")) return -1;
+            if (type2.equalsIgnoreCase("Beginner")) return 1;
+            return 0; // Các mục khác giữ nguyên thứ tự
+        });
+
+        List<String> expNames = new ArrayList<>();
+        int selectedExpIndex = 0;
+        for (int i = 0; i < experienceList.size(); i++) {
+            String expName = experienceList.get(i).getUserType();
+            if (expName != null) {
+                if (expName.equalsIgnoreCase("Beginner"))
+                    expName = "Người mới";
+                else if (expName.equalsIgnoreCase("Intermediate"))
+                    expName = "Đã có kinh nghiệm";
+            }
+            expNames.add(expName);
+
+            // Tìm vị trí của Kinh nghiệm hiện tại để set mặc định
+            if (experienceList.get(i).getId().equals(currentExperienceId))
+                selectedExpIndex = i;
+        }
+
+        ArrayAdapter<String> expAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, expNames);
+        expAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        if (dialogSpinnerExperience != null) {
+            dialogSpinnerExperience.setAdapter(expAdapter);
+            dialogSpinnerExperience.setSelection(selectedExpIndex);
+        }
+
         // --- Pre-fill target weight ---
         if (currentTargetWeight != null && currentTargetWeight > 0)
             dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
