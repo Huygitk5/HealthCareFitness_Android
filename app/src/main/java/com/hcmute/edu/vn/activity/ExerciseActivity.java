@@ -78,6 +78,12 @@ public class ExerciseActivity extends AppCompatActivity {
             String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
 
             SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
+            
+            String sessionKey = "SESSION_START_" + currentUserId + "_" + todayDate;
+            if (pref.getLong(sessionKey, 0) == 0) {
+                pref.edit().putLong(sessionKey, System.currentTimeMillis()).apply();
+            }
+
             currentIndex = pref.getInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0);
 
             if (currentIndex >= exerciseList.size()) {
@@ -126,8 +132,14 @@ public class ExerciseActivity extends AppCompatActivity {
                 restActivityLauncher.launch(intent);
             } else {
                 // 2. NẾU LÀ BÀI CUỐI CÙNG -> LƯU 100% VÀ CHÚC MỪNG
-                Intent intent = new Intent(ExerciseActivity.this, WorkoutCompleteActivity.class);
-                startActivity(intent);
+                Intent intentComplete = new Intent(ExerciseActivity.this, WorkoutCompleteActivity.class);
+                if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
+                    intentComplete.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+                }
+                if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+                    intentComplete.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+                }
+                startActivity(intentComplete);
                 finish(); // Đóng luôn màn hình tập hiện tại
             }
         });

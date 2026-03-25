@@ -71,6 +71,7 @@
         <activity android:name=".activity.MealSwapActivity" android:exported="false" />
         <activity android:name=".activity.RestActivity" android:exported="false"/>
         <activity android:name=".activity.WorkoutCompleteActivity" android:exported="false"/>
+        <activity android:name=".activity.WorkoutHistoryActivity" android:exported="false" android:screenOrientation="portrait"/>
 
         <receiver android:name=".receiver.WaterReminderReceiver" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ChatbotActivity" android:windowSoftInputMode="adjustResize" android:exported="false" />
