@@ -32,7 +32,7 @@ import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
-import retrofit2.http.DELETE; // Nhớ import thư viện này ở trên cùng nhé
+import retrofit2.http.DELETE;
 public interface SupabaseApiService {
 
     // =================================================================================
@@ -351,7 +351,7 @@ public interface SupabaseApiService {
     Call<Void> deleteMealsByUserId(@Query("user_id") String userId);
 
     // API lấy kinh nghiệm
-    @GET("user_experiences")
+    @GET("user_experience")
     Call<List<UserExperience>> getAllUserExperiences(
             @Query("select") String select
     );

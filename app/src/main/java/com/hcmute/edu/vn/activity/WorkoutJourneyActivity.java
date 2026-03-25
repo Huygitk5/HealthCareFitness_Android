@@ -245,7 +245,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                 }
             }
             intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
-            intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + day.getDayOrder() + ": " + day.getName());
+            intent.putExtra("EXTRA_DAY_TITLE", title + ": " + (day.getName() != null ? day.getName() : "Bài tập"));
         }
         startActivity(intent);
     }

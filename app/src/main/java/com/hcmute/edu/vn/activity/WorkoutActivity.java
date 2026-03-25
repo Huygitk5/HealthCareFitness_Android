@@ -82,7 +82,7 @@ public class WorkoutActivity extends AppCompatActivity {
         int newExpId = pref.getInt("USER_EXPERIENCE_ID", 1);
         boolean hasChanged = pref.getBoolean("TARGET_CHANGED", false);
 
-        if (newGoalId != userGoalId || newExpId != userExpId || hasChanged || currentPlanId.isEmpty()) {
+        if (newGoalId != userGoalId || newExpId != userExpId || hasChanged || currentPlanId == null || currentPlanId.isEmpty()) {
             userGoalId = newGoalId;
             userExpId = newExpId;
             pref.edit().putBoolean("TARGET_CHANGED", false).apply();
@@ -171,7 +171,10 @@ public class WorkoutActivity extends AppCompatActivity {
                     // Luôn gọi Today Workout SAU KHI đã có currentPlanId mới
                     setupTodayWorkout(currentPlanId);
                 } else {
+                    currentPlanId = "";
                     tvWorkoutPlanTitle.setText("Chưa có lộ trình cho mục tiêu này");
+                    tvTodayWorkoutTitle.setText("Chưa có lộ trình");
+                    cardTodayWorkout.setOnClickListener(null);
                 }
             }
             @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
@@ -213,7 +216,7 @@ public class WorkoutActivity extends AppCompatActivity {
                     WorkoutDay day1 = response.body().get(0);
                     tvTodayWorkoutTitle.setText("Ngày 1: " + day1.getName());
                     ivTodayWorkout.setImageResource(R.drawable.workout_1);
-                    setupClickForTodayWorkout(day1.getId(), 1);
+                    setupClickForTodayWorkout(day1.getId(), 1, day1.getName());
                 } else {
                     tvTodayWorkoutTitle.setText("Bắt đầu lộ trình mới!");
                     cardTodayWorkout.setOnClickListener(v -> {
@@ -233,7 +236,8 @@ public class WorkoutActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    int nextDayOrder = response.body().get(0).getDayOrder() + 1;
+                    Integer orderObj = response.body().get(0).getDayOrder();
+                    int nextDayOrder = (orderObj != null ? orderObj : 0) + 1;
                     fetchNextWorkoutDayByOrder(planId, nextDayOrder);
                 }
             }
@@ -252,7 +256,7 @@ public class WorkoutActivity extends AppCompatActivity {
                     int order = (orderObj != null) ? orderObj : 0;
                     tvTodayWorkoutTitle.setText("Ngày " + order + ": " + nextDay.getName());
                     ivTodayWorkout.setImageResource(R.drawable.workout_2);
-                    setupClickForTodayWorkout(nextDay.getId(), nextDay.getDayOrder());
+                    setupClickForTodayWorkout(nextDay.getId(), order, nextDay.getName());
                 } else {
                     tvTodayWorkoutTitle.setText("Bạn đã hoàn thành lộ trình. Hãy đổi Mục tiêu!");
                     cardTodayWorkout.setOnClickListener(null);
@@ -262,11 +266,11 @@ public class WorkoutActivity extends AppCompatActivity {
         });
     }
 
-    private void setupClickForTodayWorkout(String nextDayId, int order) {
+    private void setupClickForTodayWorkout(String nextDayId, int order, String dayName) {
         cardTodayWorkout.setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
             intent.putExtra("EXTRA_DAY_ID", nextDayId);
-            intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order);
+            intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order + ": " + (dayName != null ? dayName : ""));
             startActivity(intent);
         });
     }

@@ -7,27 +7,27 @@ public class UserExperience {
     @SerializedName("id")
     private Integer id;
 
-    @SerializedName("name")
-    private String name;
+    @SerializedName("user_type")
+    private String userType;
 
-    public UserExperience(Integer id, String name) {
+    public UserExperience(Integer id, String userType) {
         this.id = id;
-        this.name =name;
+        this.userType = userType;
     }
 
     public Integer getId() {
         return id;
     }
 
-    public String getName() {
-        return name;
+    public String getUserType() {
+        return userType;
     }
 
     public void setId(Integer id) {
         this.id = id;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUserType(String userType) {
+        this.userType = userType;
     }
 }

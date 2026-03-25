@@ -61,7 +61,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile_setup);
         EdgeToEdge.enable(this);
-        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(),
+                getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         edtFullName = findViewById(R.id.edtFullName);
@@ -96,21 +97,25 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
 
             @Override
             public void afterTextChanged(android.text.Editable s) {
-                if (isFormatting) return;
+                if (isFormatting)
+                    return;
                 isFormatting = true;
                 String digits = s.toString().replaceAll("[^\\d]", "");
                 StringBuilder formatted = new StringBuilder();
                 for (int i = 0; i < digits.length(); i++) {
                     formatted.append(digits.charAt(i));
-                    if ((i == 1 || i == 3) && i < digits.length() - 1) formatted.append("/");
+                    if ((i == 1 || i == 3) && i < digits.length() - 1)
+                        formatted.append("/");
                 }
                 if (!isDeleting && (digits.length() == 2 || digits.length() == 4))
                     formatted.append("/");
-                if (formatted.length() > 10) formatted.delete(10, formatted.length());
+                if (formatted.length() > 10)
+                    formatted.delete(10, formatted.length());
                 edtDOB.setText(formatted.toString());
                 edtDOB.setSelection(formatted.length());
                 isFormatting = false;
@@ -135,13 +140,15 @@ public class ProfileSetupActivity extends AppCompatActivity {
                             double currentBmi = calculateBMI(Double.parseDouble(wStr), Double.parseDouble(hStr));
                             if (currentBmi > 24.9 && (isMaintain || selectedName.contains("tăng"))) {
                                 Toast.makeText(ProfileSetupActivity.this,
-                                        "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                                        "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!",
+                                        Toast.LENGTH_LONG).show();
                                 selectFirstGoalContaining("giảm");
                                 return;
                             }
                             if (currentBmi < 18.5 && (isMaintain || selectedName.contains("giảm"))) {
                                 Toast.makeText(ProfileSetupActivity.this,
-                                        "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                                        "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!",
+                                        Toast.LENGTH_LONG).show();
                                 selectFirstGoalContaining("tăng");
                                 return;
                             }
@@ -151,12 +158,14 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     }
 
                     layoutTargetWeight.setVisibility(isMaintain ? View.GONE : View.VISIBLE);
-                    if (isMaintain) edtTargetWeight.setText("");
+                    if (isMaintain)
+                        edtTargetWeight.setText("");
                 }
             }
 
             @Override
-            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {
+            }
         });
 
         btnComplete.setOnClickListener(v -> saveProfileData());
@@ -176,7 +185,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     fitnessGoalList = response.body();
                     List<String> goalNames = new ArrayList<>();
-                    for (FitnessGoal goal : fitnessGoalList) goalNames.add(goal.getName());
+                    for (FitnessGoal goal : fitnessGoalList)
+                        goalNames.add(goal.getName());
 
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
                             ProfileSetupActivity.this, android.R.layout.simple_spinner_item, goalNames);
@@ -186,7 +196,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {}
+            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {
+            }
         });
     }
 
@@ -201,15 +212,40 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
                     for (int i = 0; i < experienceList.size(); i++) {
                         android.widget.RadioButton rb = new android.widget.RadioButton(ProfileSetupActivity.this);
-                        rb.setText(experienceList.get(i).getName());
+
+                        String expName = experienceList.get(i).getUserType();
+                        if (expName != null) {
+                            if (expName.equalsIgnoreCase("Beginner"))
+                                expName = "Người mới";
+                            else if (expName.equalsIgnoreCase("Intermediate"))
+                                expName = "Đã có kinh nghiệm";
+                        }
+                        rb.setText(expName);
+
                         rb.setId(View.generateViewId()); // Tạo ID động
                         rb.setTag(experienceList.get(i).getId()); // Lưu ID database vào Tag
+
+                        // Đảm bảo UI giống file XML
+                        android.widget.RadioGroup.LayoutParams params = new android.widget.RadioGroup.LayoutParams(
+                                0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+                        rb.setLayoutParams(params);
+                        rb.setTextSize(15);
+                        try {
+                            rb.setButtonTintList(android.content.res.ColorStateList
+                                    .valueOf(android.graphics.Color.parseColor("#2196F3")));
+                        } catch (Exception e) {
+                        }
+
                         rgExperience.addView(rb);
-                        if (i == 0) rb.setChecked(true); // Check mặc định cái đầu
+                        if (i == 0)
+                            rgExperience.check(rb.getId()); // Check mặc định cái đầu
                     }
                 }
             }
-            @Override public void onFailure(Call<List<UserExperience>> call, Throwable t) {}
+
+            @Override
+            public void onFailure(Call<List<UserExperience>> call, Throwable t) {
+            }
         });
     }
 
@@ -228,9 +264,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
             return;
         }
 
-        int selectedRbId = rgExperience.getCheckedRadioButtonId();
-        View radioButton = rgExperience.findViewById(selectedRbId);
-        final int finalExperienceId = (radioButton != null && radioButton.getTag() != null) ? (int) radioButton.getTag() : 1;
+        // LẤY EXPERIENCE ID TỪ RADIOGROUP THEO CÁCH CHẮC CHẮN NHẤT
+        int extractedExperienceId = 1; // Mặc định
 
         for (int i = 0; i < rgExperience.getChildCount(); i++) {
             View child = rgExperience.getChildAt(i);
@@ -292,8 +327,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             if (layoutTargetWeight.getVisibility() == View.VISIBLE) {
                 String tw = edtTargetWeight.getText().toString().trim();
                 if (!tw.isEmpty()) {
-                    try { targetWeightValue = Float.parseFloat(tw); }
-                    catch (NumberFormatException e) {}
+                    try {
+                        targetWeightValue = Float.parseFloat(tw);
+                    } catch (NumberFormatException e) {
+                    }
                 }
             }
 
@@ -305,13 +342,14 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 Calendar dobCal = Calendar.getInstance();
                 dobCal.setTime(new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dobFormatted));
                 age = Calendar.getInstance().get(Calendar.YEAR) - dobCal.get(Calendar.YEAR);
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
 
             // Activity level
             int activityIndex = spinnerActivityLevel.getSelectedItemPosition();
 
             double bmi = calculateBMI(weight, height);
-            double bmr  = FitnessCalculator.calcBMR(weight, height, age, gender);
+            double bmr = FitnessCalculator.calcBMR(weight, height, age, gender);
             double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
             double targetW = (targetWeightValue != null && targetWeightValue > 0) ? targetWeightValue : weight;
 
@@ -324,17 +362,29 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 double targetBmi = targetWeightValue / (heightM * heightM);
 
                 if (isLose) {
-                    if (targetWeightValue >= weight) { showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return; }
-                    if (targetBmi < 18.5) { showError("Cấm! Mức này quá thấp để giảm. Hãy điều chỉnh lại!"); return; }
-                }
-                else if (isGain) {
-                    if (targetWeightValue <= weight) { showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return; }
-                    if (targetBmi > 23.0) { showError("Cấm! Mức này quá cao để tăng. Hãy điều chỉnh lại!"); return; }
+                    if (targetWeightValue >= weight) {
+                        showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!");
+                        return;
+                    }
+                    if (targetBmi < 18.5) {
+                        showError("Cấm! Mức này quá thấp để giảm. Hãy điều chỉnh lại!");
+                        return;
+                    }
+                } else if (isGain) {
+                    if (targetWeightValue <= weight) {
+                        showError("Cân nặng mục tiêu phải lớn hơn hiện tại!");
+                        return;
+                    }
+                    if (targetBmi > 23.0) {
+                        showError("Cấm! Mức này quá cao để tăng. Hãy điều chỉnh lại!");
+                        return;
+                    }
                 }
             }
 
             if (!isMaintain && targetWeightValue == null) {
-                showError("Vui lòng nhập cân nặng mục tiêu!"); return;
+                showError("Vui lòng nhập cân nặng mục tiêu!");
+                return;
             }
 
             getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
@@ -344,8 +394,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
             // === CALCULATE ===
             FitnessCalculator.FitnessResult result = FitnessCalculator.calculate(
-                    selectedGoalName, weight, targetW, tdee, gender, isUserBeginner
-            );
+                    selectedGoalName, weight, targetW, tdee, gender, isUserBeginner);
 
             // Build User object
             User updateData = new User();
@@ -358,7 +407,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
             updateData.setUserExperienceId(finalExperienceId);
             updateData.setTarget(targetWeightValue);
             updateData.setCurrentDailyCalories(result.dailyCalories);
-            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
+            if (result.targetDate != null)
+                updateData.setTargetDate(result.targetDate);
 
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
@@ -373,43 +423,75 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
 
-                        apiService.getWorkoutPlanByGoalAndExperience("eq." + selectedGoalId, "eq." + finalExperienceId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
-                            @Override
-                            public void onResponse(Call<List<WorkoutPlan>> planCall, Response<List<WorkoutPlan>> planResponse) {
-                                if (planResponse.isSuccessful() && planResponse.body() != null && !planResponse.body().isEmpty()) {
-                                    updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
-                                }
-
-                                apiService.updateUserProfile("eq." + receivedUsername, updateData).enqueue(new Callback<Void>() {
+                        // TÌM GÓI TẬP BẰNG CẢ 2 KHÓA NGOẠI: GOAL VÀ EXPERIENCE
+                        apiService.getWorkoutPlanByGoalAndExperience("eq." + selectedGoalId, "eq." + finalExperienceId,
+                                "*").enqueue(new Callback<List<WorkoutPlan>>() {
                                     @Override
-                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
-                                        if (profileResponse.isSuccessful()) {
+                                    public void onResponse(Call<List<WorkoutPlan>> planCall,
+                                            Response<List<WorkoutPlan>> planResponse) {
+                                        if (planResponse.isSuccessful() && planResponse.body() != null
+                                                && !planResponse.body().isEmpty()) {
+                                            updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
+                                        }
 
-                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
-                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
-                                                    .apply();
+                                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                                .enqueue(new Callback<Void>() {
+                                                    @Override
+                                                    public void onResponse(Call<Void> call,
+                                                            Response<Void> profileResponse) {
+                                                        if (profileResponse.isSuccessful()) {
 
-                                            double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
-                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
-                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(), userId, finalWeight, finalHeight, bmiVal, now);
-                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
-                                                @Override public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
-                                                @Override public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
-                                            });
-                                        } else { showError("Lỗi cập nhật!"); }
+                                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
+                                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
+                                                                    .apply();
+
+                                                            double bmiVal = finalWeight
+                                                                    / Math.pow(finalHeight / 100.0, 2);
+                                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+                                                                    Locale.getDefault()).format(new Date());
+                                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                                                    userId, finalWeight, finalHeight, bmiVal, now);
+                                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                                                @Override
+                                                                public void onResponse(Call<Void> call,
+                                                                        Response<Void> logResponse) {
+                                                                    goToHome(userId);
+                                                                }
+
+                                                                @Override
+                                                                public void onFailure(Call<Void> call, Throwable t) {
+                                                                    goToHome(userId);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            showError("Lỗi cập nhật!");
+                                                        }
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Call<Void> call, Throwable t) {
+                                                        showError("Lỗi mạng!");
+                                                    }
+                                                });
                                     }
-                                    @Override public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
+
+                                    @Override
+                                    public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
+                                        showError("Lỗi lấy kế hoạch tập!");
+                                    }
                                 });
-                            }
-                            @Override
-                            public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) { showError("Lỗi lấy kế hoạch tập!"); }
-                        });
                     }
                 }
-                @Override public void onFailure(Call<List<User>> call, Throwable t) { showError("Lỗi mạng!"); }
+
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) {
+                    showError("Lỗi mạng!");
+                }
             });
-        } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
+        } catch (NumberFormatException e) {
+            showError("Chiều cao, cân nặng phải là số!");
+        }
     }
 
     // =========================================================
@@ -426,7 +508,8 @@ public class ProfileSetupActivity extends AppCompatActivity {
     }
 
     private double calculateBMI(double weightKg, double heightCm) {
-        if (heightCm <= 0) return 0;
+        if (heightCm <= 0)
+            return 0;
         return weightKg / Math.pow(heightCm / 100.0, 2);
     }
 
