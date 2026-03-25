@@ -248,7 +248,9 @@ public class WorkoutActivity extends AppCompatActivity {
             public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     WorkoutDay nextDay = response.body().get(0);
-                    tvTodayWorkoutTitle.setText("Ngày " + nextDay.getDayOrder() + ": " + nextDay.getName());
+                    Integer orderObj = nextDay.getDayOrder();
+                    int order = (orderObj != null) ? orderObj : 0;
+                    tvTodayWorkoutTitle.setText("Ngày " + order + ": " + nextDay.getName());
                     ivTodayWorkout.setImageResource(R.drawable.workout_2);
                     setupClickForTodayWorkout(nextDay.getId(), nextDay.getDayOrder());
                 } else {
