@@ -73,7 +73,7 @@ public class WorkoutDetailActivity extends AppCompatActivity {
                                 data.clear();
                                 data.addAll(plan.getDays());
 
-                                adapter = new WorkoutAdapter(data);
+                                adapter = new WorkoutAdapter(data, planId);
                                 rvWorkoutDays.setAdapter(adapter);
                             } else {
                                 Toast.makeText(WorkoutDetailActivity.this, "Gói tập chưa có ngày nào!", Toast.LENGTH_SHORT).show();

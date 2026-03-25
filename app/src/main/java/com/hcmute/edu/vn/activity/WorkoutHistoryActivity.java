@@ -113,6 +113,7 @@ public class WorkoutHistoryActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         allSessions = response.body();
                         if (allSessions.isEmpty()) {
+                            renderCalendar();
                             showEmptyState();
                             return;
                         }
@@ -139,7 +140,6 @@ public class WorkoutHistoryActivity extends AppCompatActivity {
 
     private void showEmptyState() {
         tvEmptyState.setVisibility(View.VISIBLE);
-        cardCalendar.setVisibility(View.GONE);
         cardWeekly.setVisibility(View.GONE);
         findViewById(R.id.tvWeekRange).setVisibility(View.GONE); 
         // Need to hide Báo cáo hàng tuần label as well but avoiding ID search here for simplicity or relying on parent

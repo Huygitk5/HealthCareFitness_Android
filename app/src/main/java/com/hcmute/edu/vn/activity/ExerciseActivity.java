@@ -155,6 +155,13 @@ public class ExerciseActivity extends AppCompatActivity {
                 intent.putStringArrayListExtra("LIST_NAMES", exerciseNames);
                 intent.putExtra("LIST_DURATIONS", exerciseDurations);
 
+                if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
+                    intent.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+                }
+                if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+                    intent.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+                }
+
                 startActivity(intent);
                 finish(); // Đóng luôn màn hình tập hiện tại
             }

@@ -71,12 +71,26 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                 .saveWorkoutSession(session)
                 .enqueue(new Callback<Void>() {
                     @Override public void onResponse(Call<Void> call, Response<Void> response) {
-                        wpPref.edit().remove("SESSION_START_" + userId + "_" + todayDate).apply();
+                        if (response.isSuccessful()) {
+                            wpPref.edit().remove("SESSION_START_" + userId + "_" + todayDate).apply();
+                            // Toast báo lưu thành công
+                            android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Đã đẩy phiên tập lên Supabase!", android.widget.Toast.LENGTH_SHORT).show();
+                        } else {
+                            try {
+                                String errorBody = response.errorBody() != null ? response.errorBody().string() : "No error body";
+                                Log.e("WorkoutComplete", "API Error: " + errorBody);
+                                android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Lỗi API: " + errorBody, android.widget.Toast.LENGTH_LONG).show();
+                            } catch(Exception e) {}
+                        }
                     }
                     @Override public void onFailure(Call<Void> call, Throwable t) {
                         Log.e("WorkoutComplete", "Failed to save session: " + t.getMessage());
+                        android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Lỗi mạng: " + t.getMessage(), android.widget.Toast.LENGTH_LONG).show();
                     }
                 });
+        } else {
+            // Không đủ điều kiện lưu
+            android.widget.Toast.makeText(this, "Không thể lưu lịch sử! startMillis=" + startMillis + ", plan=" + planId + ", day=" + dayId, android.widget.Toast.LENGTH_LONG).show();
         }
 
         MaterialButton btnBackToHome = findViewById(R.id.btnBackToHome);
