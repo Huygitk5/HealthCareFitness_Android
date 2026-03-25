@@ -158,4 +158,12 @@ public class User {
     public void setTargetDate(String targetDate) {
         this.targetDate = targetDate;
     }
+
+    public Integer getUserExperienceId() {
+        return userExperienceId;
+    }
+
+    public void setUserExperienceId(Integer userExperienceId) {
+        this.userExperienceId = userExperienceId;
+    }
 }
