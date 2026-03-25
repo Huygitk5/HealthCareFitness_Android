@@ -18,13 +18,14 @@ public class FitnessCalculator {
 
     // WORKOUT PLAN IDs (hard-coded theo Supabase)
     // Giảm mỡ
-    public static final String PLAN_LOSE_BEGINNER     = "05fea3e9-377e-4108-bee3-15a78150dc43"; // Advanced/HIIT
-    public static final String PLAN_LOSE_INTERMEDIATE = "05fea3e9-377e-4108-bee3-15a78150dc43";
+//    public static final String PLAN_LOSE_BEGINNER     = "7266ec21-85a2-4295-9f14-3232b5d26864"; // Advanced/HIIT
+//    public static final String PLAN_LOSE_INTERMEDIATE = "7266ec21-85a2-4295-9f14-3232b5d26864";
     // Tăng cơ
-    public static final String PLAN_GAIN_BEGINNER     = "a1111111-1111-1111-1111-111111111111"; // Beginner full-body
-    public static final String PLAN_GAIN_INTERMEDIATE = "a2222222-2222-2222-2222-222222222222"; // PPL
+    public static final String PLAN_GAIN_BEGINNER     = "554fb805-1136-4976-b39b-e196bcf5a3af";
+    public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480"; // PPL
     // Giữ dáng
-    public static final String PLAN_MAINTAIN          = "a1111111-1111-1111-1111-111111111111";
+    public static final String PLAN_MAINTAIN_BEGINNER         = "7266ec21-85a2-4295-9f14-3232b5d26864";
+    public static final String PLAN_MAINTAIN_INTERMEDIATE     = "22d13d52-3461-4da0-9bd8-f4be811cb25f";
 
     // BMR (Mifflin-St Jeor)
     public static double calcBMR(double weightKg, double heightCm, int age, String gender) {
@@ -67,7 +68,7 @@ public class FitnessCalculator {
             // ---- GIỮ DÁNG ----
             r.dailyCalories      = tdee;
             r.dailyCaloriesToBurn = 0;
-            r.workoutPlanId      = PLAN_MAINTAIN;
+            r.workoutPlanId      = isBeginner ? PLAN_MAINTAIN_BEGINNER : PLAN_MAINTAIN_INTERMEDIATE;
             r.weeksToTarget      = 0;
 
         } else if (isLose) {
@@ -88,7 +89,7 @@ public class FitnessCalculator {
             double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
 
-            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
+//            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
 
         } else {
             // ---- TĂNG CƠ ----

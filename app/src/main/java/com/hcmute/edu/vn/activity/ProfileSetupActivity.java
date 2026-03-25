@@ -24,6 +24,7 @@ import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.FitnessGoal;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.util.FitnessCalculator;
+import com.hcmute.edu.vn.model.WorkoutPlan;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -226,12 +227,14 @@ public class ProfileSetupActivity extends AppCompatActivity {
             double weight = Double.parseDouble(weightStr);
 
             // Goal
-            int selectedGoalId = 1;
+            final int selectedGoalId;
             String selectedGoalName = "";
             if (!fitnessGoalList.isEmpty() && spinnerFitnessGoal.getSelectedItemPosition() >= 0) {
                 FitnessGoal g = fitnessGoalList.get(spinnerFitnessGoal.getSelectedItemPosition());
                 selectedGoalId = g.getId();
                 selectedGoalName = g.getName();
+            } else {
+                selectedGoalId = 1;
             }
 
             // Target weight
@@ -351,30 +354,46 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
-
-                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
-                                .enqueue(new Callback<Void>() {
+                        // LẤY GÓI TẬP ĐÚNG THEO MỤC TIÊU VÀ LƯU VÀO USER NGAY LÚC SETUP PROFILE
+                        apiService.getWorkoutPlanByGoalId("eq." + selectedGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
                             @Override
-                            public void onResponse(Call<Void> call, Response<Void> profileResponse) {
-                                if (profileResponse.isSuccessful()) {
-                                    // Lưu BMI log
-                                    double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
-                                    String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
-                                            Locale.getDefault()).format(new Date());
-                                    BmiLog log = new BmiLog(UUID.randomUUID().toString(),
-                                            userId, finalWeight, finalHeight, bmiVal, now);
-                                    apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
-                                        @Override
-                                        public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
+                            public void onResponse(Call<List<WorkoutPlan>> planCall, Response<List<WorkoutPlan>> planResponse) {
+                                if (planResponse.isSuccessful() && planResponse.body() != null && !planResponse.body().isEmpty()) {
+                                    updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
+                                }
+                                apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                        .enqueue(new Callback<Void>() {
+                                    @Override
+                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
+                                        if (profileResponse.isSuccessful()) {
+                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
+                                                    .apply();
+                                            // Lưu BMI log
+                                            double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
+                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+                                                    Locale.getDefault()).format(new Date());
+                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                                    userId, finalWeight, finalHeight, bmiVal, now);
+                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                                @Override
+                                                public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
 
-                                        @Override
-                                        public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
-                                    });
-                                } else { showError("Lỗi cập nhật!"); }
+                                                @Override
+                                                public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
+                                            });
+                                        } else { showError("Lỗi cập nhật!"); }
+                                    }
+                                    @Override
+                                    public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
+                                });
+
                             }
                             @Override
-                            public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
-                        });
+                            public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
+                                showError("Lỗi lấy kế hoạch tập!");
+                            }
+                        }); // Kết thúc block getWorkoutPlanByGoalId
                     }
                 }
                 @Override

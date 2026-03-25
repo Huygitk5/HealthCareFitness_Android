@@ -95,7 +95,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
 
         rvWorkoutDays.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
 
-        // KHẮC PHỤC 1: Gán Listener ngay lập tức để không bị "chết" nút
         View.OnClickListener workoutClickListener = v -> {
             if (todayWorkoutDay != null) {
                 openDayExercises(todayWorkoutDay);
@@ -132,7 +131,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     User user = response.body().get(0);
                     
-                    // KHẮC PHỤC 2: Tự động khôi phục userId và currentPlanId nếu bị trống
                     if (userId == null || userId.isEmpty()) {
                         userId = user.getId();
                         getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putString("KEY_USER_ID", userId).apply();
@@ -145,8 +143,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                     }
 
                     int[] journeyDays = calcJourneyDays(user.getCreatedAt(), user.getTargetDate());
-                    totalPlanDays = journeyDays[0];
-                    loadCompletedSessionsThenPlan(journeyDays[1]);
+                    loadCompletedSessionsThenPlan();
                     tvHeroTitle.setText("Your Journey:\n" + resolveGoalName(user.getFitnessGoalId()));
                 }
             }
@@ -154,23 +151,28 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         });
     }
 
-    private void loadCompletedSessionsThenPlan(int daysSinceStart) {
+    private void loadCompletedSessionsThenPlan() {
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
         api.getUserWorkoutHistory("eq." + userId, "*").enqueue(new Callback<List<UserWorkoutSession>>() {
             @Override
             public void onResponse(Call<List<UserWorkoutSession>> call, Response<List<UserWorkoutSession>> response) {
                 completedDayIds.clear();
                 if (response.isSuccessful() && response.body() != null) {
-                    for (UserWorkoutSession s : response.body()) if (s.getDayId() != null) completedDayIds.add(s.getDayId());
+                    for (UserWorkoutSession s : response.body()) {
+                        // CHỈ lấy các buổi tập của gói tập hiện tại!
+                        if (s.getPlanId() != null && s.getPlanId().equals(currentPlanId) && s.getDayId() != null) {
+                            completedDayIds.add(s.getDayId());
+                        }
+                    }
                     tvStreak.setText("🔥 " + calcStreak(response.body()) + " Day Streak");
                 }
-                loadPlanDays(daysSinceStart);
+                loadPlanDays();
             }
-            @Override public void onFailure(Call<List<UserWorkoutSession>> call, Throwable t) { loadPlanDays(daysSinceStart); }
+            @Override public void onFailure(Call<List<UserWorkoutSession>> call, Throwable t) { loadPlanDays(); }
         });
     }
 
-    private void loadPlanDays(int daysSinceStart) {
+    private void loadPlanDays() {
         if (currentPlanId == null || currentPlanId.isEmpty()) return;
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
         api.getWorkoutPlanById("eq." + currentPlanId, "*,workout_days(*, workout_day_exercises(*, exercise:exercises(*)))").enqueue(new Callback<List<WorkoutPlan>>() {
@@ -182,7 +184,20 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                         allDays = plan.getDays();
                         java.util.Collections.sort(allDays, (a, b) -> Integer.compare(a.getDayOrder() != null ? a.getDayOrder() : 0, b.getDayOrder() != null ? b.getDayOrder() : 0));
                         
-                        int currentDayIndex = (daysSinceStart % allDays.size());
+                        totalPlanDays = allDays.size();
+                        
+                        int targetIndex = 0;
+                        for (int i = 0; i < allDays.size(); i++) {
+                            if (!completedDayIds.contains(allDays.get(i).getId())) {
+                                targetIndex = i;
+                                break;
+                            }
+                        }
+                        if (targetIndex == 0 && !allDays.isEmpty() && completedDayIds.contains(allDays.get(0).getId())) {
+                            targetIndex = allDays.size() - 1;
+                        }
+
+                        int currentDayIndex = targetIndex;
                         todayWorkoutDay = allDays.get(currentDayIndex);
                         boolean todayDone = completedDayIds.contains(todayWorkoutDay.getId());
 

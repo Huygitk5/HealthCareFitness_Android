@@ -34,6 +34,7 @@ import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.util.FitnessCalculator;
+import com.hcmute.edu.vn.model.WorkoutPlan;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -119,6 +120,28 @@ public class ProfileActivity extends AppCompatActivity {
             } else {
                 setupWaterReminder(false);
                 Toast.makeText(this, "Đã tắt nhắc nhở uống nước", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Xử lý nút Switch Nhắc nhở luyện tập
+        SwitchCompat switchWorkout = findViewById(R.id.switchWorkoutReminder);
+        boolean isWorkoutReminderOn = pref.getBoolean("WORKOUT_REMINDER", false);
+        switchWorkout.setChecked(isWorkoutReminderOn);
+
+        switchWorkout.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            pref.edit().putBoolean("WORKOUT_REMINDER", isChecked).apply();
+
+            if (isChecked) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 102);
+                    }
+                }
+                setupWorkoutReminder(true);
+                Toast.makeText(this, "Đã bật nhắc nhở lúc 17:00 hằng ngày!", Toast.LENGTH_SHORT).show();
+            } else {
+                setupWorkoutReminder(false);
+                Toast.makeText(this, "Đã tắt nhắc nhở luyện tập", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -296,23 +319,61 @@ public class ProfileActivity extends AppCompatActivity {
             btnSave.setText("Đang lưu...");
             btnSave.setEnabled(false);
 
+            final int finalNewGoalId = newGoalId;
+            final Float finalNewTarget = newTarget;
+            final double finalNewDailyCalories = result.dailyCalories;
+
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+            apiService.getWorkoutPlanByGoalId("eq." + finalNewGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
                 @Override
-                public void onResponse(Call<Void> call, Response<Void> response) {
-                    if (response.isSuccessful()) {
-                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
-                        loadUserProfile();
-                        dialog.dismiss();
-                    } else {
-                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
-                        btnSave.setText("LƯU");
-                        btnSave.setEnabled(true);
+                public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                    String newPlanId = null;
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        newPlanId = response.body().get(0).getId();
                     }
+
+                    User updateData = new User();
+                    updateData.setFitnessGoalId(finalNewGoalId);
+                    updateData.setTarget(finalNewTarget);
+                    updateData.setCurrentDailyCalories(finalNewDailyCalories);
+                    if (newPlanId != null) {
+                        updateData.setCurrentWorkoutPlanId(newPlanId);
+                    }
+
+                    apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
+                        @Override
+                        public void onResponse(Call<Void> call2, Response<Void> response2) {
+                            if (response2.isSuccessful()) {
+                                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                        .putInt("USER_FITNESS_GOAL_ID", finalNewGoalId)
+                                        .putBoolean("TARGET_CHANGED", true)
+                                        .apply();
+
+                                Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
+
+                                currentGoalId = finalNewGoalId;
+                                currentTargetWeight = finalNewTarget;
+                                loadUserProfile();
+                                dialog.dismiss();
+                            } else {
+                                Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
+                                btnSave.setText("LƯU");
+                                btnSave.setEnabled(true);
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<Void> call2, Throwable t) {
+                            Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                            btnSave.setText("LƯU");
+                            btnSave.setEnabled(true);
+                        }
+                    });
                 }
+
                 @Override
-                public void onFailure(Call<Void> call, Throwable t) {
-                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
+                public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
+                    Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT).show();
                     btnSave.setText("LƯU");
                     btnSave.setEnabled(true);
                 }
@@ -381,6 +442,42 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void setupWorkoutReminder(boolean isEnable) {
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.DailyWorkoutReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 102, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        if (!isEnable) {
+            if (alarmManager != null) {
+                alarmManager.cancel(pendingIntent);
+            }
+            return;
+        }
+
+        // Cài đặt giờ là 17:00:00
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, 17);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        // Nếu hiện tại đã qua 5h chiều, thì hẹn sang 5h chiều ngày mai
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        // Lặp lại mỗi ngày (INTERVAL_DAY)
+        if (alarmManager != null) {
+            alarmManager.setRepeating(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    android.app.AlarmManager.INTERVAL_DAY,
+                    pendingIntent
+            );
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -401,6 +498,13 @@ public class ProfileActivity extends AppCompatActivity {
                     currentUserId = currentUser.getId();
                     currentGoalId = currentUser.getFitnessGoalId();
                     currentTargetWeight = currentUser.getTarget();
+
+                    // Luôn cập nhật Goal ID vào máy mỗi khi load profile
+                    if (currentGoalId != null) {
+                        getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                .putInt("USER_FITNESS_GOAL_ID", currentGoalId)
+                                .apply();
+                    }
 
                     currentHeight = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
                     currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
@@ -725,7 +829,8 @@ public class ProfileActivity extends AppCompatActivity {
             overridePendingTransition(0, 0);
         });
         navWorkout.setOnClickListener(v -> {
-            Intent i = new Intent(ProfileActivity.this, WorkoutJourneyActivity.class);
+            // Chuyển sang WorkoutActivity thay vì WorkoutJourneyActivity
+            Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i);
             overridePendingTransition(0, 0);
