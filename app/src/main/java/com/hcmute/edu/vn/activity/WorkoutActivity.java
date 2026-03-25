@@ -268,11 +268,19 @@ public class WorkoutActivity extends AppCompatActivity {
 
     private void setupClickForTodayWorkout(String nextDayId, int order, String dayName) {
         cardTodayWorkout.setOnClickListener(v -> {
-            Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
-            intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
-            intent.putExtra("EXTRA_DAY_ID", nextDayId);
-            intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order + ": " + (dayName != null ? dayName : ""));
-            startActivity(intent);
+            boolean isRestDay = dayName != null && dayName.toLowerCase().contains("ngh");
+            if (isRestDay) {
+                Intent intent = new Intent(WorkoutActivity.this, RestDayCompleteActivity.class);
+                intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
+                intent.putExtra("EXTRA_DAY_ID", nextDayId);
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
+                intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
+                intent.putExtra("EXTRA_DAY_ID", nextDayId);
+                intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order + ": " + (dayName != null ? dayName : ""));
+                startActivity(intent);
+            }
         });
     }
 
