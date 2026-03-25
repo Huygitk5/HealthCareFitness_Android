@@ -126,8 +126,11 @@ public class ExerciseActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         // BIND — kết nối để nhận IBinder điều khiển nhạc
-        Intent musicIntent = new Intent(this, MusicService.class);
-        bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
+        // Guard: tránh bind nhiều lần nếu Service vẫn còn bound (ví dụ sau onStop sớm)
+        if (!isMusicServiceBound) {
+            Intent musicIntent = new Intent(this, MusicService.class);
+            bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     @Override
