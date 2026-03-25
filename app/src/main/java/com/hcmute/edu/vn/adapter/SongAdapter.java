@@ -59,7 +59,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         boolean isPlaying = (position == currentPlayingIndex);
         holder.ivPlayingIndicator.setVisibility(isPlaying ? View.VISIBLE : View.INVISIBLE);
         holder.itemView.setOnClickListener(v -> {
-            if (listener != null) listener.onSongClick(holder.getAdapterPosition());
+            int pos = holder.getBindingAdapterPosition();
+            if (listener != null && pos != RecyclerView.NO_POSITION) listener.onSongClick(pos);
         });
     }
 
