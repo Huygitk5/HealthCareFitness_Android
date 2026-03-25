@@ -246,6 +246,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
     private void openDayExercises(WorkoutDay day) {
         if (day == null) return;
         Intent intent = new Intent(this, ExerciseListActivity.class);
+        intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
         
         if (day.getId() != null) {
@@ -319,5 +320,10 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         findViewById(R.id.nav_home).setOnClickListener(v -> { startActivity(new Intent(this, HomeActivity.class).setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)); overridePendingTransition(0, 0); });
         findViewById(R.id.nav_nutrition).setOnClickListener(v -> { startActivity(new Intent(this, NutritionActivity.class).setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)); overridePendingTransition(0, 0); });
         findViewById(R.id.nav_profile).setOnClickListener(v -> { startActivity(new Intent(this, ProfileActivity.class).setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)); overridePendingTransition(0, 0); });
+        
+        View navHistory = findViewById(R.id.nav_history);
+        if (navHistory != null) {
+            navHistory.setOnClickListener(v -> startActivity(new Intent(this, WorkoutHistoryActivity.class)));
+        }
     }
 }

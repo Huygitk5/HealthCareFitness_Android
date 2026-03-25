@@ -269,6 +269,7 @@ public class WorkoutActivity extends AppCompatActivity {
     private void setupClickForTodayWorkout(String nextDayId, int order, String dayName) {
         cardTodayWorkout.setOnClickListener(v -> {
             Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
+            intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
             intent.putExtra("EXTRA_DAY_ID", nextDayId);
             intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order + ": " + (dayName != null ? dayName : ""));
             startActivity(intent);

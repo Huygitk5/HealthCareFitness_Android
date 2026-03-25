@@ -86,6 +86,13 @@ public class ExerciseListActivity extends AppCompatActivity {
             Intent intent = new Intent(ExerciseListActivity.this, ExerciseActivity.class);
             intent.putExtra("EXTRA_EXERCISE_LIST", exercises);
 
+            if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+                intent.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+            }
+            if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
+                intent.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+            }
+
             if (getIntent().hasExtra("IS_FREE_WORKOUT")) {
                 intent.putExtra("IS_FREE_WORKOUT", getIntent().getBooleanExtra("IS_FREE_WORKOUT", false));
             }

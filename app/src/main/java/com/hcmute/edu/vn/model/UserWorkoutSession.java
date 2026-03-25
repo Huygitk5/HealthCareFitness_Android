@@ -17,6 +17,8 @@ public class UserWorkoutSession {
     private String startedAt;
     @SerializedName("finished_at")
     private String finishedAt;
+    @SerializedName("workout_days")
+    private WorkoutDay workoutDay;
     @SerializedName("logs")
     private List<UserWorkoutExerciseLog> logs;
 
@@ -84,6 +86,34 @@ public class UserWorkoutSession {
 
     public void setLogs(List<UserWorkoutExerciseLog> logs) {
         this.logs = logs;
+    }
+
+    public WorkoutDay getWorkoutDay() {
+        return workoutDay;
+    }
+
+    public void setWorkoutDay(WorkoutDay workoutDay) {
+        this.workoutDay = workoutDay;
+    }
+
+    public long getDurationSeconds() {
+        if (startedAt == null || finishedAt == null) return 0;
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault());
+            java.util.Date start = sdf.parse(startedAt.substring(0, Math.min(startedAt.length(), 19)));
+            java.util.Date end   = sdf.parse(finishedAt.substring(0, Math.min(finishedAt.length(), 19)));
+            if (start == null || end == null) return 0;
+            return Math.max(0, (end.getTime() - start.getTime()) / 1000);
+        } catch (Exception e) { return 0; }
+    }
+
+    public double getEstimatedKcal() {
+        return (getDurationSeconds() / 60.0) * 7.0;
+    }
+
+    public String getDateString() {
+        if (startedAt == null || startedAt.length() < 10) return "";
+        return startedAt.substring(0, 10);
     }
 }
 
