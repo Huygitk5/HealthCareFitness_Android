@@ -1,12 +1,12 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
 }
 
 android {
     namespace = "com.hcmute.edu.vn"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.hcmute.edu.vn"
@@ -16,6 +16,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        val properties = Properties()
+        properties.load(project.rootProject.file("local.properties").inputStream())
+        buildConfigField("String", "GEMINI_API_KEY", "\"${properties.getProperty("GEMINI_API_KEY")}\"")
     }
 
     buildTypes {
@@ -31,6 +35,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
@@ -41,4 +48,16 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    implementation("com.google.code.gson:gson:2.10.1")
+    // Thư viện Retrofit để gọi API
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    // Thư viện Gson để tự động parse JSON thành Model Java
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Thư viện OkHttp để cấu hình Header (Interceptor) cho Supabase
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Thư viện vẽ biểu đồ
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Thêm thư viện tải ảnh Glide
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 }

@@ -3,14 +3,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    android:fitsSystemWindows="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="32dp"
-        android:gravity="center_horizontal">
+        android:gravity="center">
 
         <ImageView
             android:layout_width="100dp"
@@ -68,29 +69,11 @@
             android:layout_height="55dp"
             android:background="@drawable/bg_input_rounded"
             android:hint="dd/mm/yyyy"
-            android:inputType="date"
+            android:inputType="number"
+            android:maxLength="10"
             android:paddingStart="20dp"
             android:paddingEnd="20dp"
             android:layout_marginBottom="15dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Address"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="5dp"/>
-
-        <EditText
-            android:id="@+id/edtAddress"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:background="@drawable/bg_input_rounded"
-            android:hint="City, Country"
-            android:inputType="textPostalAddress"
-            android:paddingStart="20dp"
-            android:paddingEnd="20dp"
-            android:layout_marginBottom="20dp"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -172,8 +155,7 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:text="Male"
-                android:textSize="16dp"
-                android:buttonTint="#2196F3"/>
+                android:textSize="16sp" android:buttonTint="#2196F3"/>
 
             <RadioButton
                 android:id="@+id/rbFemale"
@@ -181,8 +163,7 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:text="Female"
-                android:textSize="16dp"
-                android:buttonTint="#2196F3"/>
+                android:textSize="16sp" android:buttonTint="#2196F3"/>
 
             <RadioButton
                 android:id="@+id/rbOther"
@@ -190,9 +171,118 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:text="Other"
-                android:textSize="16dp"
+                android:textSize="16sp" android:buttonTint="#2196F3"/>
+        </RadioGroup>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mục tiêu của bạn là gì?"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/spinnerFitnessGoal"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_input_rounded"
+            android:paddingStart="10dp" />
+
+        <!-- Label Activity Level -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Mức độ vận động hàng ngày"
+            android:textSize="14sp"
+            android:textColor="#555555"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Spinner Activity Level -->
+        <Spinner
+            android:id="@+id/spinnerActivityLevel"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input_rounded"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"/>
+
+        <!-- Ghi chú nhỏ -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚠️ Mức vận động ảnh hưởng đến lượng calo cần nạp mỗi ngày"
+            android:textSize="12sp"
+            android:textColor="#9E9E9E"
+            android:layout_marginBottom="8dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Kinh nghiệm tập luyện"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rgExperience"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <RadioButton
+                android:id="@+id/rbBeginner"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Người mới"
+                android:textSize="15sp"
+                android:checked="true"
+                android:buttonTint="#2196F3"/>
+
+            <RadioButton
+                android:id="@+id/rbIntermediate"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Đã có kinh nghiệm"
+                android:textSize="15sp"
                 android:buttonTint="#2196F3"/>
         </RadioGroup>
+
+        <LinearLayout
+            android:id="@+id/layoutTargetWeight"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cân nặng mong muốn (kg)"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:layout_marginBottom="8dp" />
+
+            <EditText
+                android:id="@+id/edtTargetWeight"
+                android:layout_width="match_parent"
+                android:layout_height="55dp"
+                android:background="@drawable/bg_input_rounded"
+                android:hint="VD: 60.5"
+                android:inputType="numberDecimal"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp"/>
+        </LinearLayout>
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnComplete"
