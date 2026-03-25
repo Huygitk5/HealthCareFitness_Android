@@ -245,6 +245,19 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
 
     private void openDayExercises(WorkoutDay day) {
         if (day == null) return;
+
+        // Kiểm tra ngày nghỉ
+        String dayName = day.getName() != null ? day.getName() : "";
+        boolean isRestDay = dayName.toLowerCase().contains("ngh")
+                || (day.getExercises() != null && day.getExercises().isEmpty());
+        if (isRestDay) {
+            Intent intent = new Intent(this, RestDayCompleteActivity.class);
+            intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
+            intent.putExtra("EXTRA_DAY_ID", day.getId());
+            startActivity(intent);
+            return;
+        }
+
         Intent intent = new Intent(this, ExerciseListActivity.class);
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
