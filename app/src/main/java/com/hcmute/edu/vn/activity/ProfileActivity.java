@@ -122,6 +122,28 @@ public class ProfileActivity extends AppCompatActivity {
             }
         });
 
+        // Xử lý nút Switch Nhắc nhở luyện tập
+        SwitchCompat switchWorkout = findViewById(R.id.switchWorkoutReminder);
+        boolean isWorkoutReminderOn = pref.getBoolean("WORKOUT_REMINDER", false);
+        switchWorkout.setChecked(isWorkoutReminderOn);
+
+        switchWorkout.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            pref.edit().putBoolean("WORKOUT_REMINDER", isChecked).apply();
+
+            if (isChecked) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 102);
+                    }
+                }
+                setupWorkoutReminder(true);
+                Toast.makeText(this, "Đã bật nhắc nhở lúc 17:00 hằng ngày!", Toast.LENGTH_SHORT).show();
+            } else {
+                setupWorkoutReminder(false);
+                Toast.makeText(this, "Đã tắt nhắc nhở luyện tập", Toast.LENGTH_SHORT).show();
+            }
+        });
+
         btnLogout.setOnClickListener(v -> {
             Intent loginIntent = new Intent(ProfileActivity.this, LoginActivity.class);
             loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -376,6 +398,42 @@ public class ProfileActivity extends AppCompatActivity {
                     android.app.AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
                     intervalMillis,
+                    pendingIntent
+            );
+        }
+    }
+
+    private void setupWorkoutReminder(boolean isEnable) {
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.DailyWorkoutReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 102, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        if (!isEnable) {
+            if (alarmManager != null) {
+                alarmManager.cancel(pendingIntent);
+            }
+            return;
+        }
+
+        // Cài đặt giờ là 17:00:00
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, 17);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        // Nếu hiện tại đã qua 5h chiều, thì hẹn sang 5h chiều ngày mai
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        // Lặp lại mỗi ngày (INTERVAL_DAY)
+        if (alarmManager != null) {
+            alarmManager.setRepeating(
+                    android.app.AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    android.app.AlarmManager.INTERVAL_DAY,
                     pendingIntent
             );
         }
