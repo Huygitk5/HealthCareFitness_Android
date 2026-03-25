@@ -1,9 +1,11 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -11,6 +13,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.database.SupabaseApiService;
+import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.model.UserWorkoutSession;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.UUID;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 import com.hcmute.edu.vn.adapter.CompletedExerciseAdapter; // Nhớ import Adapter nhé
 
 import java.util.ArrayList;
@@ -32,6 +46,53 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
         TextView tvTotalExercises = findViewById(R.id.tvTotalExercises);
         TextView tvTotalCalories = findViewById(R.id.tvTotalCalories);
         TextView tvTotalTime = findViewById(R.id.tvTotalTime);
+        String userId  = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
+        String planId  = getIntent().getStringExtra("EXTRA_PLAN_ID");
+        String dayId   = getIntent().getStringExtra("EXTRA_DAY_ID");
+        String todayDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        SharedPreferences wpPref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
+        long startMillis = wpPref.getLong("SESSION_START_" + userId + "_" + todayDate, 0);
+        long endMillis   = System.currentTimeMillis();
+
+        if (startMillis > 0 && planId != null && dayId != null) {
+            SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            UserWorkoutSession session = new UserWorkoutSession(
+                UUID.randomUUID().toString(),
+                userId,
+                planId,
+                dayId,
+                isoFmt.format(new Date(startMillis)),
+                isoFmt.format(new Date(endMillis)),
+                null
+            );
+
+            SupabaseClient.getClient().create(SupabaseApiService.class)
+                .saveWorkoutSession(session)
+                .enqueue(new Callback<Void>() {
+                    @Override public void onResponse(Call<Void> call, Response<Void> response) {
+                        if (response.isSuccessful()) {
+                            wpPref.edit().remove("SESSION_START_" + userId + "_" + todayDate).apply();
+                            // Toast báo lưu thành công
+                            android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Đã đẩy phiên tập lên Supabase!", android.widget.Toast.LENGTH_SHORT).show();
+                        } else {
+                            try {
+                                String errorBody = response.errorBody() != null ? response.errorBody().string() : "No error body";
+                                Log.e("WorkoutComplete", "API Error: " + errorBody);
+                                android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Lỗi API: " + errorBody, android.widget.Toast.LENGTH_LONG).show();
+                            } catch(Exception e) {}
+                        }
+                    }
+                    @Override public void onFailure(Call<Void> call, Throwable t) {
+                        Log.e("WorkoutComplete", "Failed to save session: " + t.getMessage());
+                        android.widget.Toast.makeText(WorkoutCompleteActivity.this, "Lỗi mạng: " + t.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                    }
+                });
+        } else {
+            // Không đủ điều kiện lưu
+            android.widget.Toast.makeText(this, "Không thể lưu lịch sử! startMillis=" + startMillis + ", plan=" + planId + ", day=" + dayId, android.widget.Toast.LENGTH_LONG).show();
+        }
+
         MaterialButton btnBackToHome = findViewById(R.id.btnBackToHome);
         RecyclerView rvCompletedExercises = findViewById(R.id.rvCompletedExercises);
 
@@ -69,5 +130,4 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
             finish();
         });
     }
-
 }

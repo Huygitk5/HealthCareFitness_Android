@@ -150,6 +150,13 @@ public interface SupabaseApiService {
             @Query("select") String select
     );
 
+    @GET("user_workout_sessions")
+    Call<List<UserWorkoutSession>> getSessionsByUser(
+        @Query("user_id") String userId,
+        @Query("select")  String select,
+        @Query("order")   String order
+    );
+
     // Tìm buổi tập cho "Today plan"
     @GET("workout_days")
     Call<List<WorkoutDay>> getNextWorkoutDay(

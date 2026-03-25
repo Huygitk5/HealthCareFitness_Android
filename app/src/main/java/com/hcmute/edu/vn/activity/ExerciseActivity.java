@@ -80,6 +80,12 @@ public class ExerciseActivity extends AppCompatActivity {
             String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
 
             SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
+
+            String sessionKey = "SESSION_START_" + currentUserId + "_" + todayDate;
+            if (pref.getLong(sessionKey, 0) == 0) {
+                pref.edit().putLong(sessionKey, System.currentTimeMillis()).apply();
+            }
+
             currentIndex = pref.getInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0);
 
             if (currentIndex >= exerciseList.size()) {
@@ -148,6 +154,13 @@ public class ExerciseActivity extends AppCompatActivity {
                 // Gửi danh sách bài và thời gian từng bài
                 intent.putStringArrayListExtra("LIST_NAMES", exerciseNames);
                 intent.putExtra("LIST_DURATIONS", exerciseDurations);
+
+                if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
+                    intent.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+                }
+                if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+                    intent.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+                }
 
                 startActivity(intent);
                 finish(); // Đóng luôn màn hình tập hiện tại
