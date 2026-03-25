@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Layout cho BottomSheet Âm nhạc, thiết kế theo ảnh tham chiếu:
-    - Header: tiêu đề + nút đóng
-    - Toggle "Âm nhạc nền"
-    - Album art tròn + tên bài + thời gian
-    - 5 nút điều khiển: Playlist, Previous, Play/Pause, Next, Repeat
-    - SeekBar + icon âm lượng
-    - RecyclerView danh sách bài hát
+    BottomSheet Âm nhạc — 2 State UI
+    ─────────────────────────────────────────────────────────────
+    STATE 1 (Mini Player — mặc định):
+      • layoutVolume   → VISIBLE  (Volume Slider dùng AudioManager)
+      • layoutSeekbar  → GONE
+      • layoutSongList → GONE
+
+    STATE 2 (Full Player — nhấn vùng song info hoặc nút Playlist):
+      • layoutVolume   → GONE
+      • layoutSeekbar  → VISIBLE  (Music progress seekbar)
+      • layoutSongList → VISIBLE  (Danh sách bài hát)
+    ─────────────────────────────────────────────────────────────
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootSheetLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
@@ -24,13 +30,12 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
         android:layout_marginBottom="4dp"
-        android:background="#DDDDDD"
-        android:backgroundTint="#BDBDBD" />
+        android:background="#BDBDBD" />
 
-    <!-- ===== HEADER: Title + Close button ===== -->
+    <!-- ===== HEADER: Title + Close ===== -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="52dp"
         android:paddingStart="20dp"
         android:paddingEnd="12dp">
 
@@ -41,14 +46,13 @@
             android:layout_centerVertical="true"
             android:text="Âm nhạc"
             android:textColor="#1A1A1A"
-            android:textSize="18sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
-        <!-- Nút đóng BottomSheet (×) -->
         <ImageButton
             android:id="@+id/btnCloseSheet"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:background="@drawable/circle_background"
@@ -61,8 +65,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#F0F0F0"
-        android:layout_marginBottom="8dp"/>
+        android:background="#F0F0F0" />
 
     <!-- ===== TOGGLE "Âm nhạc nền" ===== -->
     <RelativeLayout
@@ -88,19 +91,27 @@
             android:checked="true" />
     </RelativeLayout>
 
-    <!-- ===== SONG INFO ROW: Album art + Title + Duration ===== -->
+    <!-- ===== SONG INFO ROW (clickable → State 2) ===== -->
+    <!--
+        Nhấn vào vùng này để chuyển sang Full Player (State 2).
+        id: layoutSongInfo
+    -->
     <RelativeLayout
+        android:id="@+id/layoutSongInfo"
         android:layout_width="match_parent"
         android:layout_height="72dp"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="4dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true">
 
         <!-- Album art hình tròn -->
         <ImageView
             android:id="@+id/ivAlbumArt"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:scaleType="centerCrop"
             android:layout_centerVertical="true"
             android:src="@drawable/workout_1"
@@ -112,8 +123,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/ivAlbumArt"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginTop="14dp"
             android:text="Fresh Day"
             android:textColor="#1A1A1A"
             android:textSize="15sp"
@@ -121,26 +132,30 @@
             android:maxLines="1"
             android:ellipsize="end" />
 
-        <!-- Thời gian: vị trí / tổng -->
+        <!--
+            Thời gian hiện tại / tổng thời gian
+            Màu xanh tương tự ảnh tham chiếu
+        -->
         <TextView
             android:id="@+id/tvSongTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/ivAlbumArt"
             android:layout_below="@id/tvCurrentSongTitle"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="14dp"
             android:layout_marginTop="4dp"
             android:text="00:00/00:00"
-            android:textColor="#4DAA9A"
+            android:textColor="#4A90D9"
             android:textSize="13sp" />
 
-        <!-- Icon mũi tên ">" sang playlist đầy đủ -->
+        <!-- Mũi tên ">": gợi ý có thể mở full list -->
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:id="@+id/ivArrowState"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@android:drawable/ic_media_next"
+            android:src="@android:drawable/arrow_down_float"
             app:tint="#BBBBBB" />
     </RelativeLayout>
 
@@ -150,11 +165,11 @@
         android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
         android:layout_marginTop="4dp">
 
-        <!-- Nút Playlist -->
+        <!-- Playlist → chuyển State 2 -->
         <ImageButton
             android:id="@+id/btnPlaylist"
             android:layout_width="0dp"
@@ -165,7 +180,7 @@
             app:tint="#555555"
             android:contentDescription="Danh sách phát" />
 
-        <!-- Nút Previous -->
+        <!-- Previous -->
         <ImageButton
             android:id="@+id/btnMusicPrevious"
             android:layout_width="0dp"
@@ -176,7 +191,7 @@
             app:tint="#1A1A1A"
             android:contentDescription="Bài trước" />
 
-        <!-- Nút Play/Pause (lớn hơn) -->
+        <!-- Play/Pause (lớn nhất) -->
         <ImageButton
             android:id="@+id/btnPlayPause"
             android:layout_width="0dp"
@@ -187,7 +202,7 @@
             app:tint="#1A1A1A"
             android:contentDescription="Phát / Dừng" />
 
-        <!-- Nút Next -->
+        <!-- Next -->
         <ImageButton
             android:id="@+id/btnMusicNext"
             android:layout_width="0dp"
@@ -198,7 +213,7 @@
             app:tint="#1A1A1A"
             android:contentDescription="Bài tiếp" />
 
-        <!-- Nút Repeat -->
+        <!-- Repeat -->
         <ImageButton
             android:id="@+id/btnRepeat"
             android:layout_width="0dp"
@@ -210,26 +225,34 @@
             android:contentDescription="Lặp lại" />
     </LinearLayout>
 
-    <!-- ===== SEEKBAR + ÂM LƯỢNG ===== -->
+    <!-- ══════════════════════════════════════════════════════════
+         STATE 1 — Volume Slider (mặc định VISIBLE)
+         Dùng AudioManager.STREAM_MUSIC để điều chỉnh âm lượng hệ thống
+         ══════════════════════════════════════════════════════════ -->
     <LinearLayout
+        android:id="@+id/layoutVolume"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:gravity="center_vertical"
+        android:layout_height="52dp"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:layout_marginTop="4dp">
+        android:layout_marginTop="2dp"
+        android:visibility="visible">
 
-        <!-- Icon âm lượng thấp -->
+        <!-- Loa nhỏ (âm lượng thấp) -->
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@android:drawable/ic_lock_silent_mode"
             app:tint="#AAAAAA" />
 
-        <!-- Thanh tiến trình phát nhạc -->
+        <!--
+            Volume SeekBar — điều khiển âm lượng thực của thiết bị.
+            max được set bằng code (audioManager.getStreamMaxVolume)
+        -->
         <SeekBar
-            android:id="@+id/seekBarMusic"
+            android:id="@+id/seekBarVolume"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -238,7 +261,7 @@
             android:progressTint="#4A90D9"
             android:thumbTint="#4A90D9" />
 
-        <!-- Icon âm lượng cao -->
+        <!-- Loa lớn (âm lượng cao) -->
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
@@ -312,13 +335,13 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="4dp" />
 
-    <!-- ===== RECYCLER VIEW DANH SÁCH BÀI HÁT ===== -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvSongList"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:overScrollMode="never"
-        android:clipToPadding="false"
-        android:paddingTop="4dp" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSongList"
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:overScrollMode="never"
+            android:clipToPadding="false"
+            android:paddingTop="4dp" />
+    </LinearLayout>
 
 </LinearLayout>
