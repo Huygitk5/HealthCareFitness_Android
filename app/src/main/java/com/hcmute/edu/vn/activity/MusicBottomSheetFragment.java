@@ -230,7 +230,21 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
             }
         }
 
-        updatePlayPauseIcon(service.isPlaying());
+        boolean playing = service.isPlaying();
+        updatePlayPauseIcon(playing);
+        // Đồng bộ trạng thái switch với service — tắt listener trước để tránh vòng lặp vô hạn
+        switchMusic.setOnCheckedChangeListener(null);
+        switchMusic.setChecked(playing);
+        switchMusic.setOnCheckedChangeListener((btn, isChecked) -> {
+            MusicService svc = getService();
+            if (svc == null) return;
+            if (isChecked) {
+                svc.resume();
+            } else {
+                svc.pause();
+            }
+            updatePlayPauseIcon(isChecked);
+        });
         if (songAdapter != null) {
             songAdapter.setCurrentPlayingIndex(service.getCurrentIndex());
         }
