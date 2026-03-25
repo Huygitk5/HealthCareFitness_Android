@@ -134,18 +134,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         // Nút đóng BottomSheet
         requireView().findViewById(R.id.btnCloseSheet).setOnClickListener(v -> dismiss());
 
-        // Toggle bật/tắt nhạc nền
-        switchMusic.setOnCheckedChangeListener((btn, isChecked) -> {
-            MusicService service = getService();
-            if (service == null) return;
-            if (isChecked) {
-                service.resume();
-            } else {
-                service.pause();
-            }
-            updatePlayPauseIcon(isChecked);
-        });
-
         // Play / Pause
         btnPlayPause.setOnClickListener(v -> {
             MusicService service = getService();
