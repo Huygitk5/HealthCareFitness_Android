@@ -16,6 +16,7 @@ import androidx.cardview.widget.CardView;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
@@ -69,7 +70,6 @@ public class WorkoutActivity extends AppCompatActivity {
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
         tvCurrentTime.setText(sdf.format(new Date()));
 
-        // Không gọi API ở đây nữa để tránh lỗi không update khi chuyển tab
     }
 
     @Override
@@ -92,7 +92,7 @@ public class WorkoutActivity extends AppCompatActivity {
     }
 
     private void setupWindowInsets() {
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.workout), (v, insets) -> {
@@ -116,7 +116,6 @@ public class WorkoutActivity extends AppCompatActivity {
         cardTodayWorkout = findViewById(R.id.cardTodayWorkout);
         cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
 
-        // Ẩn 3 cái Tab cũ đi
         TextView tvBeginner = findViewById(R.id.tvBeginner);
         TextView tvIntermediate = findViewById(R.id.tvIntermediate);
         TextView tvAdvanced = findViewById(R.id.tvAdvanced);
