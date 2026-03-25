@@ -29,7 +29,8 @@ public class ExerciseActivity extends AppCompatActivity {
     private ArrayList<Exercise> exerciseList;
     private int currentIndex = 0;
     private String todayDate;
-
+    private long currentExerciseStartTime;
+    private long[] exerciseDurations;
     private ImageView ivExercise;
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
     private ImageButton btnNext, btnPrevious, btnClose;
@@ -74,11 +75,12 @@ public class ExerciseActivity extends AppCompatActivity {
         }
 
         if (exerciseList != null && !exerciseList.isEmpty()) {
+            exerciseDurations = new long[exerciseList.size()];
             // Lấy userId hiện tại
             String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
 
             SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
-            
+
             String sessionKey = "SESSION_START_" + currentUserId + "_" + todayDate;
             if (pref.getLong(sessionKey, 0) == 0) {
                 pref.edit().putLong(sessionKey, System.currentTimeMillis()).apply();
@@ -117,6 +119,7 @@ public class ExerciseActivity extends AppCompatActivity {
         btnClose.setOnClickListener(v -> finish());
 
         btnNext.setOnClickListener(v -> {
+            exerciseDurations[currentIndex] += (System.currentTimeMillis() - currentExerciseStartTime);
             int completedCount = currentIndex + 1;
             saveDailyProgress(completedCount);
             if (currentIndex < exerciseList.size() - 1) {
@@ -131,20 +134,34 @@ public class ExerciseActivity extends AppCompatActivity {
                 // Dùng launcher để phóng intent đi và chờ nó về
                 restActivityLauncher.launch(intent);
             } else {
-                // 2. NẾU LÀ BÀI CUỐI CÙNG -> LƯU 100% VÀ CHÚC MỪNG
-                Intent intentComplete = new Intent(ExerciseActivity.this, WorkoutCompleteActivity.class);
-                if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
-                    intentComplete.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+                // TÍNH TOÁN DỮ LIỆU ĐỂ TRUYỀN SANG MÀN HÌNH CHÚC MỪNG
+                long totalTime = 0;
+                ArrayList<String> exerciseNames = new ArrayList<>();
+                for (int i = 0; i < exerciseList.size(); i++) {
+                    totalTime += exerciseDurations[i];
+                    exerciseNames.add(exerciseList.get(i).getName());
                 }
-                if (getIntent().hasExtra("EXTRA_DAY_ID")) {
-                    intentComplete.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
-                }
-                startActivity(intentComplete);
+
+                // Tính tạm Calo (Ví dụ: 8 kcal / phút)
+                double totalMinutes = totalTime / 60000.0;
+                double totalCalories = totalMinutes * 8.0;
+
+                Intent intent = new Intent(ExerciseActivity.this, WorkoutCompleteActivity.class);
+                intent.putExtra("TOTAL_EXERCISES", exerciseList.size());
+                intent.putExtra("TOTAL_TIME_MILLIS", totalTime);
+                intent.putExtra("TOTAL_CALORIES", totalCalories);
+
+                // Gửi danh sách bài và thời gian từng bài
+                intent.putStringArrayListExtra("LIST_NAMES", exerciseNames);
+                intent.putExtra("LIST_DURATIONS", exerciseDurations);
+
+                startActivity(intent);
                 finish(); // Đóng luôn màn hình tập hiện tại
             }
         });
 
         btnPrevious.setOnClickListener(v -> {
+            exerciseDurations[currentIndex] += (System.currentTimeMillis() - currentExerciseStartTime);
             if (currentIndex > 0) {
                 currentIndex--;
                 updateExerciseUI();
@@ -196,7 +213,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
         // 5. Ẩn/Hiện nút Next, Previous ở đầu/cuối danh sách
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
-//        btnNext.setVisibility(currentIndex == exerciseList.size() - 1 ? View.INVISIBLE : View.VISIBLE);
+        currentExerciseStartTime = System.currentTimeMillis();
     }
 
     // =======================================================
