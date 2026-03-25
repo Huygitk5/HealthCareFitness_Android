@@ -227,8 +227,12 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
     private void openDayExercises(WorkoutDay day) {
         if (day == null) return;
         Intent intent = new Intent(this, ExerciseListActivity.class);
-        if (day.getId() != null) intent.putExtra("EXTRA_DAY_ID", day.getId());
-        else {
+        String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
+        
+        if (day.getId() != null) {
+            intent.putExtra("EXTRA_DAY_ID", day.getId());
+            intent.putExtra("EXTRA_DAY_TITLE", title);
+        } else {
             ArrayList<Exercise> exercisesToPass = new ArrayList<>();
             if (day.getExercises() != null) {
                 for (WorkoutDayExercise wde : day.getExercises()) {
@@ -241,7 +245,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                 }
             }
             intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
-            intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + day.getDayOrder() + ": " + day.getName());
+            intent.putExtra("EXTRA_DAY_TITLE", title + ": " + (day.getName() != null ? day.getName() : "Bài tập"));
         }
         startActivity(intent);
     }
