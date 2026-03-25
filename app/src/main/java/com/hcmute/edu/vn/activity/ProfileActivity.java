@@ -63,6 +63,7 @@ public class ProfileActivity extends AppCompatActivity {
     List<FitnessGoal> fitnessGoalList = new ArrayList<>();
     Integer currentGoalId = 1;
     Float currentTargetWeight = null;
+    Integer currentExperienceId = 1; // 🔥 BIẾN MỚI LƯU KINH NGHIỆM
 
     Double currentHeight = 0.0;
     Double currentWeight = 0.0;
@@ -159,9 +160,6 @@ public class ProfileActivity extends AppCompatActivity {
         setupBottomNavigation();
     }
 
-    // ==============================================================
-    // HÀM HIỂN THỊ DIALOG ĐỔI MỤC TIÊU (ĐÃ TÍCH HỢP 3 RÀO CHẮN BẢO VỆ)
-    // ==============================================================
     private void showEditGoalDialog() {
         if (fitnessGoalList.isEmpty()) {
             Toast.makeText(this, "Đang tải dữ liệu, vui lòng thử lại sau!", Toast.LENGTH_SHORT).show();
@@ -204,7 +202,6 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentTargetWeight != null && currentTargetWeight > 0)
             dialogEdtTarget.setText(String.valueOf(currentTargetWeight));
 
-        // --- Goal spinner listener (ẩn/hiện ô cân nặng mục tiêu + validate BMI) ---
         final int finalSelectedIndex = selectedIndex;
         dialogSpinnerGoal.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -212,7 +209,6 @@ public class ProfileActivity extends AppCompatActivity {
                 String selectedName = goalNames.get(position).toLowerCase();
                 boolean isMaintain = selectedName.contains("giữ");
 
-                // BMI guard (chỉ check khi đổi sang goal khác)
                 if (position != finalSelectedIndex && currentHeight != null && currentHeight > 0
                         && currentWeight != null && currentWeight > 0) {
                     double currentBmi = currentWeight / Math.pow(currentHeight / 100.0, 2);
@@ -260,7 +256,6 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
 
-            // --- Validate target vs current weight ---
             boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
             boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
             if (newTarget != null && currentHeight != null && currentHeight > 0) {
@@ -288,7 +283,6 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             }
 
-            // === TÍNH TOÁN VỚI FitnessCalculator ===
             double bmr = FitnessCalculator.calcBMR(
                     currentWeight != null ? currentWeight : 60,
                     currentHeight != null ? currentHeight : 165,
@@ -300,14 +294,6 @@ public class ProfileActivity extends AppCompatActivity {
             FitnessCalculator.FitnessResult result =
                     FitnessCalculator.calculate(selectedGoalName, currentWeight != null ? currentWeight : 60,
                             targetW, tdee, currentGender, isUserBeginner);
-
-            // Build update payload
-            User updateData = new User();
-            updateData.setFitnessGoalId(newGoalId);
-            updateData.setTarget(newTarget);
-            updateData.setCurrentDailyCalories(result.dailyCalories);
-            updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
-            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
 
             // Lưu activity index vào SharedPrefs
             getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
@@ -324,7 +310,8 @@ public class ProfileActivity extends AppCompatActivity {
             final double finalNewDailyCalories = result.dailyCalories;
 
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            apiService.getWorkoutPlanByGoalId("eq." + finalNewGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
+            // TÌM GÓI TẬP BẰNG CẢ MỤC TIÊU VÀ KINH NGHIỆM
+            apiService.getWorkoutPlanByGoalAndExperience("eq." + finalNewGoalId, "eq." + currentExperienceId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
                 @Override
                 public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                     String newPlanId = null;
@@ -444,7 +431,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void setupWorkoutReminder(boolean isEnable) {
         android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.DailyWorkoutReceiver.class);
+        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WorkoutReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 102, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         if (!isEnable) {
@@ -454,7 +441,6 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
-        // Cài đặt giờ là 17:00:00
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         calendar.set(Calendar.HOUR_OF_DAY, 17);
@@ -462,12 +448,10 @@ public class ProfileActivity extends AppCompatActivity {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
-        // Nếu hiện tại đã qua 5h chiều, thì hẹn sang 5h chiều ngày mai
         if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
             calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
 
-        // Lặp lại mỗi ngày (INTERVAL_DAY)
         if (alarmManager != null) {
             alarmManager.setRepeating(
                     android.app.AlarmManager.RTC_WAKEUP,
@@ -499,10 +483,16 @@ public class ProfileActivity extends AppCompatActivity {
                     currentGoalId = currentUser.getFitnessGoalId();
                     currentTargetWeight = currentUser.getTarget();
 
-                    // Luôn cập nhật Goal ID vào máy mỗi khi load profile
+                    // LẤY VÀ LƯU EXPERINCE ID
+                    if (currentUser.getUserExperienceId() != null) {
+                        currentExperienceId = currentUser.getUserExperienceId();
+                    }
+
+                    // Luôn cập nhật Goal ID và Experience ID vào máy mỗi khi load profile
                     if (currentGoalId != null) {
                         getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
                                 .putInt("USER_FITNESS_GOAL_ID", currentGoalId)
+                                .putInt("USER_EXPERIENCE_ID", currentExperienceId)
                                 .apply();
                     }
 
@@ -713,7 +703,7 @@ public class ProfileActivity extends AppCompatActivity {
                             boolean isChecked = !checkBox.isChecked();
                             checkBox.setChecked(isChecked);
 
-                            if (isChecked) {
+                            if(isChecked) {
                                 cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
                                 cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
                             } else {
@@ -829,7 +819,6 @@ public class ProfileActivity extends AppCompatActivity {
             overridePendingTransition(0, 0);
         });
         navWorkout.setOnClickListener(v -> {
-            // Chuyển sang WorkoutActivity thay vì WorkoutJourneyActivity
             Intent i = new Intent(ProfileActivity.this, WorkoutActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(i);

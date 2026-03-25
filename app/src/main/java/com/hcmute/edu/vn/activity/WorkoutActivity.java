@@ -39,6 +39,7 @@ public class WorkoutActivity extends AppCompatActivity {
 
     private String currentPlanId = "";
     private int userGoalId = -1;
+    private int userExpId = -1;
 
     private TextView tvWorkoutPlanTitle;
     private ImageView ivWorkoutPlan;
@@ -77,13 +78,14 @@ public class WorkoutActivity extends AppCompatActivity {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         int newGoalId = pref.getInt("USER_FITNESS_GOAL_ID", 1);
+        int newExpId = pref.getInt("USER_EXPERIENCE_ID", 1);
         boolean hasChanged = pref.getBoolean("TARGET_CHANGED", false);
 
-        // Nếu ID mục tiêu khác HOẶC có cờ báo đã thay đổi
-        if (newGoalId != userGoalId || hasChanged || currentPlanId.isEmpty()) {
+        if (newGoalId != userGoalId || newExpId != userExpId || hasChanged || currentPlanId.isEmpty()) {
             userGoalId = newGoalId;
+            userExpId = newExpId;
             pref.edit().putBoolean("TARGET_CHANGED", false).apply();
-            fetchWorkoutPlanByGoalId();
+            fetchWorkoutPlan();
         } else {
             setupTodayWorkout(currentPlanId);
         }
@@ -141,7 +143,8 @@ public class WorkoutActivity extends AppCompatActivity {
         });
     }
 
-    private void fetchWorkoutPlanByGoalId() {
+    // TÌM PLAN DỰA TRÊN CẢ GOAL VÀ EXPERIENCE
+    private void fetchWorkoutPlan() {
         tvWorkoutPlanTitle.setText("Đang tải lộ trình...");
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
@@ -163,7 +166,6 @@ public class WorkoutActivity extends AppCompatActivity {
                         ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv3);
                     }
 
-                    // Luôn gọi Today Workout SAU KHI đã có currentPlanId mới
                     setupTodayWorkout(currentPlanId);
                 } else {
                     tvWorkoutPlanTitle.setText("Chưa có lộ trình cho mục tiêu này");
