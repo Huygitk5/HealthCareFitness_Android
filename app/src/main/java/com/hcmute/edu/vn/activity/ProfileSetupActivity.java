@@ -186,7 +186,28 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {
+            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {}
+        });
+    }
+
+    private void loadExperiences() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.getAllUserExperiences("*").enqueue(new Callback<List<UserExperience>>() {
+            @Override
+            public void onResponse(Call<List<UserExperience>> call, Response<List<UserExperience>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    experienceList = response.body();
+                    rgExperience.removeAllViews();
+
+                    for (int i = 0; i < experienceList.size(); i++) {
+                        android.widget.RadioButton rb = new android.widget.RadioButton(ProfileSetupActivity.this);
+                        rb.setText(experienceList.get(i).getName());
+                        rb.setId(View.generateViewId()); // Tạo ID động
+                        rb.setTag(experienceList.get(i).getId()); // Lưu ID database vào Tag
+                        rgExperience.addView(rb);
+                        if (i == 0) rb.setChecked(true); // Check mặc định cái đầu
+                    }
+                }
             }
         });
     }
