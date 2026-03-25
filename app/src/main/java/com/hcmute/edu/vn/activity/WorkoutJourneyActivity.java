@@ -203,11 +203,30 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
 
                         tvTodaySub.setText("NGÀY " + (todayWorkoutDay.getDayOrder() != null ? todayWorkoutDay.getDayOrder() : (currentDayIndex + 1)));
                         tvTodayName.setText(todayWorkoutDay.getName() != null ? todayWorkoutDay.getName() : "Ngày tập");
-                        tvTodayPercent.setText(todayDone ? "100%" : "0%");
-                        animateProgress(pbTodayCircular, todayDone ? 100 : 0, 1000);
+                        // =======================================================
+                        // ĐÃ SỬA: CHỈ SET 100% NẾU ĐÃ TẬP XONG, CÒN LẠI THÌ LẤY TỪ BỘ NHỚ
+                        // =======================================================
+                        // Lấy tiến độ từ bộ nhớ máy ra trước
+                        String todayDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+                        int currentProgress = getSharedPreferences("WorkoutProgress", MODE_PRIVATE)
+                                .getInt("PROGRESS_" + userId + "_" + todayDate, 0);
 
-                        if (todayDone) {
-                            btnTodayAction.setText("✅ HOÀN THÀNH");
+                        // Hôm nay CHỈ ĐƯỢC COI LÀ XONG khi tiến độ trong máy đạt 100%
+                        // HOẶC hệ thống đã chốt sổ trên Server (completedDayIds có chứa ID) NHƯNG bạn đã qua ngày mới (progress bị reset về 0)
+                        boolean isActuallyDone = (currentProgress == 100) ||
+                                (completedDayIds.contains(todayWorkoutDay.getId()) && currentProgress == 0);
+
+                        if (isActuallyDone) {
+                            tvTodayPercent.setText("100%");
+                            animateProgress(pbTodayCircular, 100, 1000);
+                        } else {
+                            tvTodayPercent.setText(currentProgress + "%");
+                            animateProgress(pbTodayCircular, currentProgress, 1000);
+                        }
+
+                        // Cập nhật lại logic nút bấm cho đồng bộ
+                        if (isActuallyDone) {
+                            btnTodayAction.setText("BẮT ĐẦU LẠI");
                             btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
                         } else {
                             btnTodayAction.setText("BẮT ĐẦU");

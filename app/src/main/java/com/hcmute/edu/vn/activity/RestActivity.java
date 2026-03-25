@@ -13,7 +13,7 @@ import com.hcmute.edu.vn.R;
 public class RestActivity extends AppCompatActivity {
 
     private TextView tvTimer, tvNextExerciseName;
-    private MaterialButton btnMinus5, btnPlus5, btnSkipRest;
+    private MaterialButton btnMinus10, btnPlus10, btnSkipRest;
 
     // Biến thời gian (Mặc định 20 giây)
     private int timeLeft = 20;
@@ -30,8 +30,8 @@ public class RestActivity extends AppCompatActivity {
         // 1. Ánh xạ View
         tvTimer = findViewById(R.id.tvTimer);
         tvNextExerciseName = findViewById(R.id.tvNextExerciseName);
-        btnMinus5 = findViewById(R.id.btnMinus5);
-        btnPlus5 = findViewById(R.id.btnPlus5);
+        btnMinus10 = findViewById(R.id.btnMinus10);
+        btnPlus10 = findViewById(R.id.btnPlus10);
         btnSkipRest = findViewById(R.id.btnSkipRest);
 
         // 2. Nhận tên bài tập tiếp theo từ Intent (Nếu có)
@@ -43,14 +43,14 @@ public class RestActivity extends AppCompatActivity {
         updateTimerUI(); // Hiển thị số 20s lên màn hình ngay lập tức
 
         // 3. Bắt sự kiện các nút
-        btnMinus5.setOnClickListener(v -> {
-            timeLeft -= 5;
+        btnMinus10.setOnClickListener(v -> {
+            timeLeft -= 10;
             if (timeLeft < 1) timeLeft = 1; // Không cho âm, tối thiểu 1s để kịp bấm qua bài
             updateTimerUI();
         });
 
-        btnPlus5.setOnClickListener(v -> {
-            timeLeft += 5;
+        btnPlus10.setOnClickListener(v -> {
+            timeLeft += 10;
             updateTimerUI();
         });
 

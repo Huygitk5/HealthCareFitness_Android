@@ -43,13 +43,13 @@
         android:weightSum="3">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMinus5"
+            android:id="@+id/btnMinus10"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:text="- 5s"
+            android:text="- 10s"
             android:textColor="#FF5722"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -64,20 +64,20 @@
             android:layout_marginHorizontal="4dp"
             android:layout_weight="1"
             android:backgroundTint="#2196F3"
-            android:text="Tiếp tục\nngay"
+            android:text="Tiếp tục"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold"
             app:cornerRadius="16dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPlus5"
+            android:id="@+id/btnPlus10"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="60dp"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="+ 5s"
+            android:text="+ 10s"
             android:textColor="#4CAF50"
             android:textSize="18sp"
             android:textStyle="bold"
