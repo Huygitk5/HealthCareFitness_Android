@@ -118,8 +118,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         receivedUsername = getIntent().getStringExtra("KEY_REGISTER_USER");
 
-//        loadFitnessGoals();
-
         // --- Spinner Fitness Goal ---
         spinnerFitnessGoal.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -282,12 +280,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
             boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
             boolean isMaintain = selectedGoalName.toLowerCase().contains("giữ");
-//            if (isLose && targetWeightValue != null && targetWeightValue >= weight) {
-//                showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
-//            }
-//            if (isGain && targetWeightValue != null && targetWeightValue <= weight) {
-//                showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
-//            }
             if (targetWeightValue != null && !isMaintain) {
                 double heightM = height / 100.0;
                 double targetBmi = targetWeightValue / (heightM * heightM);
@@ -337,8 +329,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             updateData.setCurrentDailyCalories(result.dailyCalories);
             updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
             if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
-
-//            calculateFitnessMetrics(updateData, weight, height, age, gender, selectedGoalName, targetWeightValue != null ? targetWeightValue.doubleValue() : weight);
 
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
