@@ -90,7 +90,7 @@ public interface SupabaseApiService {
 
     // Lấy Gói tập dựa trên Khóa ngoại Mục tiêu (Fitness Goals)
     @GET("workout_plans")
-    Call<List<WorkoutPlan>> getWorkoutPlanByGoalId(
+    Call<List<WorkoutPlan>> getWorkoutPlanByGoalAndExperience(
             @Query("fitness_goal_id") String eqGoalId,
             @Query("select") String select
     );
