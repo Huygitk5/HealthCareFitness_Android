@@ -87,9 +87,6 @@ public class FitnessCalculator {
             boolean isMale = "Male".equalsIgnoreCase(gender);
             double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
-
-//            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
-
         } else {
             // ---- TĂNG CƠ ----
             double weightDiff    = targetWeight - currentWeight;
