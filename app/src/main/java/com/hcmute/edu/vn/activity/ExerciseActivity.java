@@ -10,6 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
@@ -27,6 +29,7 @@ public class ExerciseActivity extends AppCompatActivity {
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
     private ImageButton btnNext, btnPrevious, btnClose;
     private Button btnPause;
+    private ActivityResultLauncher<Intent> restActivityLauncher;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -39,6 +42,20 @@ public class ExerciseActivity extends AppCompatActivity {
         controller.setAppearanceLightStatusBars(true);
 
         initViews();
+
+        // Lắng nghe (đợi đêm ngược xong)
+        restActivityLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK) {
+                        // Khi nghỉ ngơi xong -> Tăng biến đếm và load bài tập tiếp theo
+                        if (currentIndex < exerciseList.size() - 1) {
+                            currentIndex++;
+                            updateExerciseUI();
+                        }
+                    }
+                }
+        );
 
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_EXERCISE_LIST")) {
@@ -76,8 +93,16 @@ public class ExerciseActivity extends AppCompatActivity {
 
         btnNext.setOnClickListener(v -> {
             if (currentIndex < exerciseList.size() - 1) {
-                currentIndex++;
-                updateExerciseUI();
+                // Lấy tên bài tập tiếp theo để truyền sang màn hình Nghỉ ngơi hiển thị
+                String nextExerciseName = exerciseList.get(currentIndex + 1).getName();
+                if (nextExerciseName == null) nextExerciseName = "Bài tập tiếp theo";
+
+                // Mở màn hình Nghỉ ngơi
+                Intent intent = new Intent(ExerciseActivity.this, RestActivity.class);
+                intent.putExtra("NEXT_EXERCISE_NAME", nextExerciseName);
+
+                // Dùng launcher để phóng intent đi và chờ nó về
+                restActivityLauncher.launch(intent);
             }
         });
 
