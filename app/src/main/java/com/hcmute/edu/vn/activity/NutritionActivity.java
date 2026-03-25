@@ -28,6 +28,7 @@ import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserDailyMeal;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
+import com.hcmute.edu.vn.util.FitnessCalculator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -62,7 +63,11 @@ public class NutritionActivity extends AppCompatActivity {
     private List<UserDailyMeal> lunchList = new ArrayList<>();
     private List<UserDailyMeal> dinnerList = new ArrayList<>();
 
+    private List<String> currentAllergies = new ArrayList<>();
+
     private double targetCalories = 0.0;
+    private double targetCaloriesToBurn = 0.0; // kcal cần đốt qua tập (giảm mỡ)
+    private String currentGoalName = ""; // "giảm" / "tăng" / "giữ"
     private double targetCarb = 0.0;
     private double targetProtein = 0.0;
     private double targetFat = 0.0;
@@ -72,6 +77,10 @@ public class NutritionActivity extends AppCompatActivity {
     private Calendar currentWeekBase;
 
     private ActivityResultLauncher<Intent> addMealLauncher;
+
+    private List<String> restrictedIngredientIds = new ArrayList<>();
+
+    List<String> userAllergies = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,6 +119,13 @@ public class NutritionActivity extends AppCompatActivity {
                     }
                 }
         );
+
+        if (getIntent().hasExtra("EXTRA_ALLERGIES")) {
+            userAllergies = getIntent().getStringArrayListExtra("EXTRA_ALLERGIES");
+        }
+        if (userAllergies == null) {
+            userAllergies = new ArrayList<>();
+        }
     }
 
     @Override
@@ -251,6 +267,7 @@ public class NutritionActivity extends AppCompatActivity {
         Intent intent = new Intent(NutritionActivity.this, MealSearchActivity.class);
         intent.putExtra("EXTRA_DATE", apiDateFormat.format(selectedDate));
         intent.putExtra("EXTRA_MEAL_TYPE", mealType);
+        intent.putStringArrayListExtra("EXTRA_ALLERGIES", new ArrayList<>(currentAllergies));
         addMealLauncher.launch(intent);
     }
 
@@ -286,56 +303,151 @@ public class NutritionActivity extends AppCompatActivity {
     private void triggerAIGeneration() {
         isGeneratingMeals = true;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.searchFoods(new java.util.HashMap<>()).enqueue(new Callback<List<Food>>() {
+
+        java.util.Map<String, String> queryMap = new java.util.HashMap<>();
+        queryMap.put("select", "*, food_ingredients(*, ingredients(*))");
+
+        apiService.searchFoods(queryMap).enqueue(new Callback<List<Food>>() {
             @Override
             public void onResponse(Call<List<Food>> call, Response<List<Food>> res) {
-                if (res.isSuccessful() && res.body() != null) autoGenerateWeeklyMeals(res.body());
-                else isGeneratingMeals = false;
+                if (res.isSuccessful() && res.body() != null) {
+                    autoGenerateWeeklyMeals(res.body());
+                } else {
+                    isGeneratingMeals = false;
+                }
             }
-            @Override public void onFailure(Call<List<Food>> call, Throwable t) { isGeneratingMeals = false; }
+            @Override public void onFailure(Call<List<Food>> call, Throwable t) {
+                isGeneratingMeals = false;
+            }
         });
     }
 
-    private void autoGenerateWeeklyMeals(List<Food> safeFoods) {
-        if (safeFoods == null || safeFoods.isEmpty() || targetCalories <= 0) { isGeneratingMeals = false; return; }
-        Calendar cal = Calendar.getInstance(); cal.setTime(selectedDate);
+    private void autoGenerateWeeklyMeals(List<Food> allFoods) {
+        if (allFoods == null || allFoods.isEmpty() || targetCalories <= 0) {
+            isGeneratingMeals = false;
+            return;
+        }
+
+        // --- LỌC THỰC PHẨM DỊ ỨNG ---
+        List<Food> safeFoods = filterSafeFoods(allFoods);
+        if (safeFoods.isEmpty()) safeFoods = allFoods;
+
+        // --- PHÂN LOẠI MÓN ĂN THEO GOAL ---
+        // Giảm mỡ  : ưu tiên protein cao, carb thấp
+        // Tăng cơ  : ưu tiên carb & protein cao
+        // Giữ dáng : cân bằng
+        List<Food> breakfastPool = new ArrayList<>();
+        List<Food> lunchPool = new ArrayList<>();
+        List<Food> dinnerPool = new ArrayList<>();
+
+        for (Food food : safeFoods) {
+            double cal = food.getCalories() != null ? food.getCalories() : 0;
+            if (cal <= 0) continue;
+
+            double protein = food.getProteinG() != null ? food.getProteinG() : 0;
+            double carb    = food.getCarbG()    != null ? food.getCarbG()    : 0;
+            double fat     = food.getFatG()     != null ? food.getFatG()     : 0;
+
+            // Tính "protein density" = protein% trong tổng macro
+            double totalMacro = protein + carb + fat;
+            double proteinPct = totalMacro > 0 ? protein / totalMacro : 0;
+
+            boolean isHighProtein = proteinPct >= 0.3;   // ≥30% protein
+            boolean isLowCalDense = cal < 350;            // Nhẹ — phù hợp bữa sáng
+
+            // Phân loại đơn giản
+            if (isLowCalDense) {
+                breakfastPool.add(food);
+            } else if (isHighProtein) {
+                lunchPool.add(food);    // Bữa trưa: ưu tiên protein
+                dinnerPool.add(food);
+            } else {
+                lunchPool.add(food);
+                dinnerPool.add(food);
+            }
+        }
+
+        // Fallback nếu pool rỗng
+        if (breakfastPool.isEmpty()) breakfastPool.addAll(safeFoods);
+        if (lunchPool.isEmpty())     lunchPool.addAll(safeFoods);
+        if (dinnerPool.isEmpty())    dinnerPool.addAll(safeFoods);
+
+        // --- TỶ LỆ PHÂN BỔ CALO THEO BỮA (theo goal) ---
+        double bfRatio, lunchRatio, dinnerRatio;
+        if (currentGoalName.contains("giảm")) {
+            // Giảm mỡ: bữa tối nhẹ hơn (không muốn carb ban đêm)
+            bfRatio = 0.35; lunchRatio = 0.40; dinnerRatio = 0.25;
+        } else if (currentGoalName.contains("tăng")) {
+            // Tăng cơ: bữa trưa nhiều nhất (carb cho tập luyện)
+            bfRatio = 0.30; lunchRatio = 0.40; dinnerRatio = 0.30;
+        } else {
+            // Giữ dáng: đều nhau
+            bfRatio = 0.25; lunchRatio = 0.40; dinnerRatio = 0.35;
+        }
+
+        double[] targets  = { targetCalories * bfRatio, targetCalories * lunchRatio, targetCalories * dinnerRatio };
+        String[] types    = { "BREAKFAST", "LUNCH", "DINNER" };
+        List<Food>[] pools = new List[]{ breakfastPool, lunchPool, dinnerPool };
+
+        // --- GENERATE THỰC ĐƠN CHO 7 NGÀY  ---
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(selectedDate);
         cal.set(Calendar.HOUR_OF_DAY, 12);
-        int diff = (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) ? 6 : (cal.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY);
-        cal.add(Calendar.DAY_OF_MONTH, -diff);
+        int dow  = cal.get(Calendar.DAY_OF_WEEK);
+        int diff = (dow == Calendar.SUNDAY) ? 6 : (dow - Calendar.MONDAY);
+        cal.add(Calendar.DAY_OF_MONTH, -diff); // đầu tuần (Thứ Hai)
 
         List<UserDailyMeal> generatedMeals = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        double[] targets = {targetCalories * 0.25, targetCalories * 0.40, targetCalories * 0.35};
-        String[] types = {"BREAKFAST", "LUNCH", "DINNER"};
 
-        for (int i = 0; i < 7; i++) {
+        for (int day = 0; day < 7; day++) {
             String dateStr = sdf.format(cal.getTime());
-            for (int m = 0; m < 3; m++) {
-                double currentTarget = targets[m], accumulatedCal = 0;
-                int count = 0;
-                while (accumulatedCal < currentTarget - 15 && count < 6) {
-                    Food f = safeFoods.get((int) (Math.random() * safeFoods.size()));
+
+            for (int mealIdx  = 0; mealIdx < 3; mealIdx++) {
+                double mealTarget      = targets[mealIdx];
+                List<Food> pool        = pools[mealIdx];
+                double accumulatedCal  = 0;
+                int attempts           = 0;
+                int addedFoods         = 0;
+                int maxFoodsPerMeal    = 4;
+
+                while (accumulatedCal < mealTarget - 20 && addedFoods < maxFoodsPerMeal && attempts < 15) {
+                    attempts++;
+                    Food f      = pool.get((int)(Math.random() * pool.size()));
                     double fCal = (f.getCalories() != null && f.getCalories() > 0) ? f.getCalories() : 100;
-                    double multiplier = Math.max(0.3, Math.min(Math.round(((currentTarget - accumulatedCal) / fCal) * 10.0) / 10.0, 3.0));
-                    if (count > 0 && (accumulatedCal + fCal * multiplier) > currentTarget + 50) {
-                         multiplier = 0.3;
-                         if (accumulatedCal + fCal * multiplier > currentTarget + 50) continue;
+
+                    // Tính số phần ăn cần để đạt phần còn thiếu, làm tròn 0.5
+                    double needed     = mealTarget - accumulatedCal;
+                    double rawMult    = needed / fCal;
+                    double multiplier = Math.round(rawMult * 2.0) / 2.0;  // làm tròn đến 0.5
+                    multiplier        = Math.max(0.5, Math.min(multiplier, 3.0));
+
+                    if (accumulatedCal + fCal * multiplier > mealTarget + 50) {
+                        multiplier = 0.5;
                     }
-                    generatedMeals.add(new UserDailyMeal(userId, dateStr, types[m], f.getId(), multiplier));
-                    accumulatedCal += (fCal * multiplier);
-                    count++;
+
+                    generatedMeals.add(new UserDailyMeal(
+                            userId, dateStr, types[mealIdx], f.getId(), multiplier));
+                    accumulatedCal += fCal * multiplier;
+                    addedFoods++;
                 }
             }
             cal.add(Calendar.DAY_OF_MONTH, 1);
         }
 
+        // --- LƯU LÊN SUPABASE ---
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
         apiService.addMultipleDailyMeals(generatedMeals).enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> res) {
-                new android.os.Handler().postDelayed(() -> { isGeneratingMeals = false; loadMealsForSelectedDate(); }, 1000);
+                new android.os.Handler().postDelayed(() -> {
+                    isGeneratingMeals = false;
+                    loadMealsForSelectedDate();
+                }, 1000);
             }
-            @Override public void onFailure(Call<Void> call, Throwable t) { isGeneratingMeals = false; }
+            @Override public void onFailure(Call<Void> call, Throwable t) {
+                isGeneratingMeals = false;
+            }
         });
     }
 
@@ -380,7 +492,10 @@ public class NutritionActivity extends AppCompatActivity {
     private void loadUserAllergies() {
         if (username == null || username.isEmpty()) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.getUserByUsername("eq." + username, "*, user_medical_conditions(*, medical_conditions(*))").enqueue(new Callback<List<User>>() {
+
+        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*, condition_restricted_ingredients(*)))";
+
+        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> res) {
                 if (res.isSuccessful() && res.body() != null && !res.body().isEmpty()) {
@@ -389,18 +504,183 @@ public class NutritionActivity extends AppCompatActivity {
                         userId = u.getId();
                         getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putString("KEY_USER_ID", userId).apply();
                     }
-                    if (u.getCurrentDailyCalories() != null) calculateTargetMacros(u.getCurrentDailyCalories(), u.getFitnessGoalId() != null ? u.getFitnessGoalId() : 3);
+
+                    if (u.getCurrentDailyCalories() != null) {
+                        calculateTargetMacros(u.getCurrentDailyCalories(), u.getFitnessGoalId() != null ? u.getFitnessGoalId() : 3);
+                    }
+
+                    currentAllergies.clear();
+                    restrictedIngredientIds.clear();
+
+                    if (u.getUserMedicalConditions() != null) {
+                        for (UserMedicalCondition umc : u.getUserMedicalConditions()) {
+                            MedicalCondition mc = umc.getMedicalCondition();
+                            if (mc != null) {
+                                // 1. Lấy tên dị ứng để hiển thị UI
+                                if (mc.getType() != null) {
+                                    String type = mc.getType().toLowerCase();
+                                    if (type.contains("allergy") || type.contains("dị ứng")) {
+                                        currentAllergies.add(mc.getName());
+                                    }
+                                }
+                                // 2. Lấy ID nguyên liệu cấm để AI né ra
+                                if (mc.getRestrictedIngredients() != null) {
+                                    for (com.hcmute.edu.vn.model.ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
+                                        if (cri.getIngredientId() != null) {
+                                            restrictedIngredientIds.add(cri.getIngredientId());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    setupWarningDisplay(currentAllergies);
                     loadMealsForSelectedDate();
                 }
             }
-            @Override public void onFailure(Call<List<User>> call, Throwable t) { loadMealsForSelectedDate(); }
+            @Override public void onFailure(Call<List<User>> call, Throwable t) {
+                loadMealsForSelectedDate();
+            }
         });
     }
 
-    private void calculateTargetMacros(double tdee, int goalId) {
-        double pR = 0.3, cR = 0.4, fR = 0.3;
-        if (goalId == 1) { pR = 0.4; cR = 0.3; fR = 0.3; } else if (goalId == 2) { pR = 0.3; cR = 0.5; fR = 0.2; }
-        targetCalories = tdee; targetProtein = (tdee * pR) / 4.0; targetCarb = (tdee * cR) / 4.0; targetFat = (tdee * fR) / 9.0;
+
+    // -----------------------------------------------------------------------
+    // FILTER SAFE FOODS
+    // -----------------------------------------------------------------------
+
+    private List<Food> filterSafeFoods(List<Food> allFoods) {
+        List<Food> safeFoods = new ArrayList<>();
+        for (Food food : allFoods) {
+            boolean isSafe = true;
+
+            // Lọc theo tên món
+            if (food.getName() != null) {
+                String foodName = food.getName().toLowerCase();
+                for (String allergy : currentAllergies) {
+                    if (allergy != null && !allergy.isEmpty()) {
+                        String keyword = allergy.toLowerCase()
+                                .replace("dị ứng", "").replace("allergy", "").trim();
+                        if (!keyword.isEmpty() && foodName.contains(keyword)) {
+                            isSafe = false; break;
+                        }
+                    }
+                }
+            }
+
+            // Lọc theo nguyên liệu
+            if (isSafe && food.getFoodIngredients() != null) {
+                for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                    if (fi.getIngredientId() != null
+                            && restrictedIngredientIds.contains(fi.getIngredientId())) {
+                        isSafe = false; break;
+                    }
+                    if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
+                        String ingName = fi.getIngredient().getName().toLowerCase();
+                        for (String allergy : currentAllergies) {
+                            if (allergy != null && !allergy.isEmpty()) {
+                                String keyword = allergy.toLowerCase()
+                                        .replace("dị ứng", "").replace("allergy", "").trim();
+                                if (!keyword.isEmpty() && ingName.contains(keyword)) {
+                                    isSafe = false; break;
+                                }
+                            }
+                        }
+                    }
+                    if (!isSafe) break;
+                }
+            }
+
+            if (isSafe) safeFoods.add(food);
+        }
+        return safeFoods;
+    }
+
+    private void setupWarningDisplay(List<String> dataList) {
+        if (dataList.isEmpty()) {
+            tvAllergiesWarning.setText("⚠️ Cần tránh: Không có");
+            cardAllergiesWarning.setOnClickListener(null);
+            return;
+        }
+
+        StringBuilder displayStr = new StringBuilder();
+        for (int i = 0; i < dataList.size(); i++) {
+            if (i < 3) displayStr.append("• ").append(dataList.get(i)).append("\n");
+        }
+        if (dataList.size() > 3) {
+            int extra = dataList.size() - 3;
+            displayStr.append("+ ").append(extra).append(" mục khác...");
+        }
+        tvAllergiesWarning.setText("⚠️ Cần tránh:\n" + displayStr.toString().trim());
+        cardAllergiesWarning.setOnClickListener(v -> showCustomChipDialog("Thực phẩm cần tránh", dataList, true));
+    }
+
+    private void showCustomChipDialog(String title, List<String> items, boolean isAllergy) {
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
+        TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
+        com.google.android.material.chip.ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
+        com.google.android.material.button.MaterialButton btnDialogClose = dialogView.findViewById(R.id.btnDialogClose);
+
+        tvDialogTitle.setText(title);
+
+        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        for (String itemName : items) {
+            TextView chip = new TextView(this);
+            chip.setText(itemName);
+            chip.setTextSize(14f);
+            chip.setTypeface(null, android.graphics.Typeface.BOLD);
+            int padX = (int) (16 * getResources().getDisplayMetrics().density);
+            int padY = (int) (8 * getResources().getDisplayMetrics().density);
+            chip.setPadding(padX, padY, padX, padY);
+
+            android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
+            chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+            chipGradient.setCornerRadius(100f);
+
+            if (isAllergy) {
+                chipGradient.setColors(new int[]{android.graphics.Color.parseColor("#FFE0B2"), android.graphics.Color.parseColor("#FFCCBC")});
+                chip.setTextColor(android.graphics.Color.parseColor("#BF360C"));
+            } else {
+                chipGradient.setColors(new int[]{android.graphics.Color.parseColor("#E0F2F1"), android.graphics.Color.parseColor("#B2DFDB")});
+                chip.setTextColor(android.graphics.Color.parseColor("#004D40"));
+            }
+            chip.setBackground(chipGradient);
+            chipGroupItems.addView(chip);
+        }
+
+        btnDialogClose.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    /**
+     * Tính macro targets từ dailyCalories + goalId.
+     * Đồng thời lưu currentGoalName để dùng trong generate meal.
+     */
+    private void calculateTargetMacros(double dailyCalories, int goalId) {
+        // Tỷ lệ macro theo mục tiêu
+        double pRatio, cRatio, fRatio;
+        if (goalId == 1) {          // Giảm mỡ: protein cao hơn, carb thấp hơn
+            pRatio = 0.35; cRatio = 0.35; fRatio = 0.30;
+            currentGoalName = "giảm";
+        } else if (goalId == 2) {   // Tăng cơ: carb cao hơn để có năng lượng tập
+            pRatio = 0.30; cRatio = 0.50; fRatio = 0.20;
+            currentGoalName = "tăng";
+        } else {                    // Giữ dáng
+            pRatio = 0.30; cRatio = 0.40; fRatio = 0.30;
+            currentGoalName = "giữ";
+        }
+
+        targetCalories = dailyCalories;
+        targetProtein  = (dailyCalories * pRatio) / 4.0;
+        targetCarb     = (dailyCalories * cRatio) / 4.0;
+        targetFat      = (dailyCalories * fRatio) / 9.0;
     }
 
     private void deleteMealFromDatabase(UserDailyMeal meal) {
@@ -418,6 +698,7 @@ public class NutritionActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_TARGET_DATE", apiDateFormat.format(selectedDate));
         intent.putExtra("EXTRA_MEAL_TYPE", oldMeal.getMealType());
         intent.putExtra("EXTRA_TARGET_KCAL", (oldMeal.getFood().getCalories() != null ? oldMeal.getFood().getCalories() : 0.0) * oldMeal.getQuantityMultiplier());
+        intent.putStringArrayListExtra("EXTRA_ALLERGIES", new ArrayList<>(currentAllergies));
         addMealLauncher.launch(intent);
     }
 
