@@ -49,11 +49,14 @@ public class MusicService extends Service {
      */
     public static List<Song> getMockSongs() {
         List<Song> list = new ArrayList<>();
-        list.add(new Song(1, "Fresh Day",       "Workout Beats",  0, 0));
-        list.add(new Song(2, "Energy Boost",    "Gym Vibes",      0, 0));
-        list.add(new Song(3, "Push The Limit",  "FitRhythm",      0, 0));
-        list.add(new Song(4, "Morning Run",     "ActiveSound",    0, 0));
-        list.add(new Song(5, "Power Up",        "BeatFit",        0, 0));
+        // TODO: Thay R.raw.xxx bằng tên file mp3 thực tế bạn đặt trong res/raw/
+        // Ví dụ: nếu file là res/raw/fresh_day.mp3  → R.raw.fresh_day
+        //        nếu file là res/raw/energy_boost.mp3 → R.raw.energy_boost
+        list.add(new Song(1, "Fresh Day",       "Workout Beats",  R.raw.fresh_day,      0));
+        list.add(new Song(2, "Energy Boost",    "Gym Vibes",      R.raw.energy_boost,   0));
+        list.add(new Song(3, "Push The Limit",  "FitRhythm",      R.raw.push_the_limit, 0));
+        list.add(new Song(4, "Morning Run",     "ActiveSound",    R.raw.morning_run,    0));
+        list.add(new Song(5, "Power Up",        "BeatFit",        R.raw.power_up,       0));
         return list;
     }
     // =========================================================
