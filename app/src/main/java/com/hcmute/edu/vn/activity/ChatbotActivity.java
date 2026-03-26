@@ -70,7 +70,7 @@ public class ChatbotActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             // Lấy kích thước của cả System Bars (thanh trạng thái) VÀ Bàn phím (ime)
-            androidx.core.graphics.Insets insetsToApply = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+           Insets insetsToApply = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
 
             if (topBar != null) {
                 // Né camera (tai thỏ) ở phía trên
