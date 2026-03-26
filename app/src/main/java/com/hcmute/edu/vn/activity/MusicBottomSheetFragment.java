@@ -497,6 +497,180 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                 break;
         }
 
+        btnPlayPause.setOnClickListener(v -> {
+            MusicService svc = getService();
+            if (svc == null) return;
+            if (svc.isPlaying()) svc.pause();
+            else {
+                if (svc.getDuration() == 0) svc.play();
+                else svc.resume();
+            }
+            refreshUI();
+        });
+
+        btnMusicNext.setOnClickListener(v -> {
+            MusicService svc = getService();
+            if (svc != null) { svc.next(); refreshUI(); }
+        });
+
+        btnMusicPrevious.setOnClickListener(v -> {
+            MusicService svc = getService();
+            if (svc != null) { svc.previous(); refreshUI(); }
+        });
+
+        btnRepeat.setOnClickListener(v -> {
+            MusicService svc = getService();
+            if (svc == null) return;
+            showRepeatModeToast(svc.cycleRepeatMode());
+            refreshUI();
+        });
+        btnRepeat.setAlpha(0.4f);
+
+        // Nút thêm nhạc
+        if (btnAddMusic != null) {
+            btnAddMusic.setOnClickListener(v -> checkPermissionAndPickFile());
+        }
+
+        seekBarMusic.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {}
+            @Override public void onStartTrackingTouch(SeekBar sb) { userIsSeeking = true; }
+            @Override public void onStopTrackingTouch(SeekBar sb) {
+                userIsSeeking = false;
+                MusicService svc = getService();
+                if (svc != null && svc.getDuration() > 0) {
+                    svc.seekTo((int) ((sb.getProgress() / 100.0f) * svc.getDuration()));
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Volume Control
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void setupVolumeControl() {
+        if (audioManager == null) return;
+        int maxVol     = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        seekBarVolume.setMax(maxVol);
+        seekBarVolume.setProgress(currentVol);
+        seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, progress, 0);
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // State Switching
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void switchToFullPlayer() {
+        if (isFullPlayer) return;
+        isFullPlayer = true;
+        TransitionManager.beginDelayedTransition(rootSheetLayout);
+        layoutVolume.setVisibility(View.GONE);
+        layoutSeekbar.setVisibility(View.VISIBLE);
+        layoutSongList.setVisibility(View.VISIBLE);
+        tvSheetTitle.setText("Danh sách phát");
+        ivArrowState.setImageResource(android.R.drawable.arrow_up_float);
+        BottomSheetBehavior<?> behavior = ((BottomSheetDialog) requireDialog()).getBehavior();
+        behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+        updateMusicSeekBar();
+        if (songAdapter != null) {
+            songAdapter.setCurrentPlayingIndex(getService() != null
+                    ? getService().getCurrentIndex() : -1);
+        }
+    }
+
+    private void switchToMiniPlayer() {
+        if (!isFullPlayer) return;
+        isFullPlayer = false;
+        TransitionManager.beginDelayedTransition(rootSheetLayout);
+        layoutVolume.setVisibility(View.VISIBLE);
+        layoutSeekbar.setVisibility(View.GONE);
+        layoutSongList.setVisibility(View.GONE);
+        tvSheetTitle.setText("Âm nhạc");
+        ivArrowState.setImageResource(android.R.drawable.arrow_down_float);
+        BottomSheetBehavior<?> behavior = ((BottomSheetDialog) requireDialog()).getBehavior();
+        behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // UI Update
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void refreshUI() {
+        MusicService svc = getService();
+        if (svc == null) return;
+
+        Song song = svc.getCurrentSong();
+        if (song != null) {
+            tvCurrentSongTitle.setText(song.getTitle());
+            ivAlbumArt.setImageResource(
+                    song.getCoverResId() != 0 ? song.getCoverResId() : R.drawable.workout_1);
+        }
+
+        int pos = svc.getCurrentPosition();
+        int dur = svc.getDuration();
+        tvSongTime.setText(formatTime(pos) + "/" + formatTime(dur));
+
+        btnPlayPause.setImageResource(svc.isPlaying()
+                ? android.R.drawable.ic_media_pause
+                : android.R.drawable.ic_media_play);
+
+        updateRepeatModeUi(svc.getRepeatMode());
+        updatePreviousButtonUi(svc);
+
+        switchMusic.setOnCheckedChangeListener(null);
+        switchMusic.setChecked(svc.isBackgroundPlaybackEnabled());
+        switchMusic.setOnCheckedChangeListener((btn, isChecked) -> {
+            MusicService s = getService();
+            if (s == null) return;
+            s.setBackgroundPlaybackEnabled(isChecked);
+            showBackgroundPlaybackToast(isChecked);
+        });
+
+        if (songAdapter != null) songAdapter.setCurrentPlayingIndex(svc.getCurrentIndex());
+        capturePlaybackSnapshot(svc);
+    }
+
+    private void updateMusicSeekBar() {
+        if (userIsSeeking || !isAdded()) return;
+        MusicService svc = getService();
+        if (svc == null) return;
+
+        if (hasPlaybackSnapshotChanged(svc)) { refreshUI(); svc = getService(); }
+        if (svc == null) return;
+
+        int position = svc.getCurrentPosition();
+        int duration = svc.getDuration();
+        if (duration > 0) seekBarMusic.setProgress((int) ((position / (float) duration) * 100));
+        tvSeekStart.setText(formatTime(position));
+        tvSeekEnd.setText(formatTime(duration));
+        tvSongTime.setText(formatTime(position) + "/" + formatTime(duration));
+        capturePlaybackSnapshot(svc);
+    }
+
+    private void updateRepeatModeUi(int repeatMode) {
+        if (!isAdded()) return;
+        int tintResId;
+        int iconResId = android.R.drawable.ic_menu_rotate;
+        switch (repeatMode) {
+            case MusicService.REPEAT_MODE_ONE:
+                tintResId = R.color.orange_warning;
+                iconResId = android.R.drawable.ic_menu_revert;
+                break;
+            case MusicService.REPEAT_MODE_ALL:
+                tintResId = R.color.primary_green;
+                break;
+            default:
+                tintResId = R.color.grey_locked;
+                break;
+        }
         int tintColor = ContextCompat.getColor(requireContext(), tintResId);
         btnRepeat.setImageResource(iconResId);
         btnRepeat.setImageTintList(ColorStateList.valueOf(tintColor));
