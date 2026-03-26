@@ -19,6 +19,7 @@ import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.activity.ExerciseActivity;
 import com.hcmute.edu.vn.model.Song;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,6 +57,10 @@ public class MusicService extends Service {
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // Lifecycle
+    // ══════════════════════════════════════════════════════════════════════════
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -66,7 +71,6 @@ public class MusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(TAG, "onStartCommand: Service started");
         startForeground(NOTIF_ID, buildNotification());
         return START_STICKY;
     }
@@ -74,13 +78,12 @@ public class MusicService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.d(TAG, "onBind: Client bound");
         return binder;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        return true;
+        return true; // onRebind được gọi khi client bind lại
     }
 
     @Override
@@ -101,30 +104,90 @@ public class MusicService extends Service {
         Log.d(TAG, "onDestroy: MusicService destroyed");
     }
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // Playback — CORE (hỗ trợ cả rawResId và URL)
+    // ══════════════════════════════════════════════════════════════════════════
+    /**
+     * Phát bài hát tại currentIndex.
+     * - Nếu bài hát có URL (Supabase / file local) → dùng setDataSource()
+     * - Nếu bài hát có rawResId               → dùng MediaPlayer.create()
+     */
     public void play() {
         if (songList == null || songList.isEmpty()) return;
 
         Song song = songList.get(currentIndex);
-        if (song.getRawResId() == 0) {
-            Log.w(TAG, "play: rawResId = 0, skip song '" + song.getTitle() + "'");
-            isPrepared = false;
-            return;
-        }
 
+        // Giải phóng player cũ trước khi tạo mới — tránh Memory Leak
         releasePlayer();
+
+        if (song.isUrlBased()) {
+            // ── Nguồn URL (Supabase Storage hoặc đường dẫn file) ─────────────
+            playFromUrl(song);
+        } else if (song.isRawResource()) {
+            // ── Nguồn Raw Resource (nhạc đóng gói sẵn trong app) ─────────────
+            playFromRaw(song);
+        } else {
+            Log.w(TAG, "play: bài '" + song.getTitle() + "' không có nguồn nhạc hợp lệ");
+            isPrepared = false;
+        }
+    }
+
+    /** Phát từ URL — dùng setDataSource + prepareAsync để không block Main Thread */
+    private void playFromUrl(Song song) {
+        try {
+            mediaPlayer = new MediaPlayer();
+
+            // QUAN TRỌNG: phải reset() trước setDataSource để tránh IllegalStateException
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(song.getUrl());
+
+            mediaPlayer.setOnPreparedListener(mp -> {
+                isPrepared = true;
+                mp.start();
+                updateNotification();
+                Log.d(TAG, "playFromUrl: đang phát '" + song.getTitle() + "'");
+            });
+
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                Log.e(TAG, "playFromUrl: lỗi phát nhạc what=" + what + " extra=" + extra);
+                isPrepared = false;
+                return true; // true = đã xử lý lỗi, không gọi OnCompletionListener
+            });
+
+            mediaPlayer.setOnCompletionListener(mp -> handleSongCompletion());
+
+            // prepareAsync() — không block UI thread
+            mediaPlayer.prepareAsync();
+
+        } catch (IOException e) {
+            Log.e(TAG, "playFromUrl: IOException - " + e.getMessage());
+            isPrepared = false;
+            releasePlayer();
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "playFromUrl: URL không hợp lệ - " + e.getMessage());
+            isPrepared = false;
+            releasePlayer();
+        }
+    }
+
+    /** Phát từ Raw Resource — dùng MediaPlayer.create() (sync, chỉ dùng cho file nhỏ local) */
+    private void playFromRaw(Song song) {
         mediaPlayer = MediaPlayer.create(this, song.getRawResId());
         if (mediaPlayer == null) {
+            Log.e(TAG, "playFromRaw: MediaPlayer.create() trả về null cho rawResId=" + song.getRawResId());
             isPrepared = false;
-            Log.e(TAG, "play: MediaPlayer.create() returned null for rawResId=" + song.getRawResId());
             return;
         }
-
         isPrepared = true;
         mediaPlayer.setOnCompletionListener(mp -> handleSongCompletion());
         mediaPlayer.start();
         updateNotification();
-        Log.d(TAG, "play: playing '" + song.getTitle() + "'");
+        Log.d(TAG, "playFromRaw: đang phát '" + song.getTitle() + "'");
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Playback Controls
+    // ══════════════════════════════════════════════════════════════════════════
 
     public void pause() {
         if (mediaPlayer != null && isPrepared && mediaPlayer.isPlaying()) {
@@ -181,57 +244,80 @@ public class MusicService extends Service {
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // Song List Management
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Thêm một bài hát upload từ Supabase vào cuối danh sách.
+     * Gọi từ MusicBottomSheetFragment sau khi upload thành công.
+     */
+    public void addSong(Song song) {
+        if (songList == null) songList = new ArrayList<>();
+        songList.add(song);
+        Log.d(TAG, "addSong: đã thêm '" + song.getTitle() + "', tổng=" + songList.size());
+    }
+
+    /**
+     * Thay thế toàn bộ danh sách nhạc (ví dụ sau khi load từ Supabase).
+     * Giữ nguyên bài đang phát nếu vẫn còn trong list mới.
+     */
+    public void setSongList(List<Song> newList) {
+        if (newList == null || newList.isEmpty()) return;
+        songList = newList;
+        // Reset index về 0 nếu index hiện tại vượt quá kích thước list mới
+        if (currentIndex >= songList.size()) {
+            currentIndex = 0;
+        }
+        Log.d(TAG, "setSongList: tổng=" + songList.size() + " bài");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Getters
+    // ══════════════════════════════════════════════════════════════════════════
+
     public boolean isPlaying() {
         return mediaPlayer != null && isPrepared && mediaPlayer.isPlaying();
     }
 
     public int getCurrentPosition() {
         if (mediaPlayer != null && isPrepared) {
-            return mediaPlayer.getCurrentPosition();
+            try { return mediaPlayer.getCurrentPosition(); }
+            catch (IllegalStateException e) { return 0; }
         }
         return 0;
     }
 
     public int getDuration() {
         if (mediaPlayer != null && isPrepared) {
-            return mediaPlayer.getDuration();
+            try { return mediaPlayer.getDuration(); }
+            catch (IllegalStateException e) { return 0; }
         }
         return 0;
     }
 
-    public int getCurrentIndex() {
-        return currentIndex;
-    }
+    public int getCurrentIndex()    { return currentIndex; }
+    public List<Song> getSongList() { return songList; }
+    public int getRepeatMode()      { return repeatMode; }
 
     public Song getCurrentSong() {
-        if (songList != null && !songList.isEmpty()) {
+        if (songList != null && !songList.isEmpty() && currentIndex < songList.size()) {
             return songList.get(currentIndex);
         }
         return null;
     }
 
-    public List<Song> getSongList() {
-        return songList;
-    }
-
-    public int getRepeatMode() {
-        return repeatMode;
-    }
-
     public int cycleRepeatMode() {
         repeatMode = (repeatMode + 1) % 3;
-        Log.d(TAG, "cycleRepeatMode: repeatMode=" + repeatMode);
         return repeatMode;
     }
 
-    public boolean isBackgroundPlaybackEnabled() {
-        return backgroundPlaybackEnabled;
-    }
+    public boolean isBackgroundPlaybackEnabled()            { return backgroundPlaybackEnabled; }
+    public void setBackgroundPlaybackEnabled(boolean val)   { backgroundPlaybackEnabled = val; }
 
-    public void setBackgroundPlaybackEnabled(boolean enabled) {
-        backgroundPlaybackEnabled = enabled;
-        Log.d(TAG, "setBackgroundPlaybackEnabled: " + enabled);
-    }
+    // ══════════════════════════════════════════════════════════════════════════
+    // Internal Helpers
+    // ══════════════════════════════════════════════════════════════════════════
 
     private void handleSongCompletion() {
         if (songList == null || songList.isEmpty()) return;
@@ -269,11 +355,12 @@ public class MusicService extends Service {
         play();
     }
 
+    /** Giải phóng MediaPlayer an toàn — ngăn Memory Leak */
     private void releasePlayer() {
         if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
+            try {
+                if (mediaPlayer.isPlaying()) mediaPlayer.stop();
+            } catch (IllegalStateException ignored) {}
             mediaPlayer.release();
             mediaPlayer = null;
             isPrepared = false;
@@ -284,10 +371,10 @@ public class MusicService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "Nhac tap luyen",
+                    "Nhạc tập luyện",
                     NotificationManager.IMPORTANCE_LOW
             );
-            channel.setDescription("Hien thi bai hat dang phat trong luc tap luyen");
+            channel.setDescription("Hiển thị bài hát đang phát trong lúc tập luyện");
             NotificationManager nm = getSystemService(NotificationManager.class);
             if (nm != null) {
                 nm.createNotificationChannel(channel);
@@ -297,7 +384,7 @@ public class MusicService extends Service {
 
     private Notification buildNotification() {
         Song current = getCurrentSong();
-        String title = current != null ? current.getTitle() : "Dang phat nhac";
+        String title = current != null ? current.getTitle() : "Đang phát nhạcen";
         String artist = current != null ? current.getArtist() : "";
 
         Intent openIntent = new Intent(this, ExerciseActivity.class);

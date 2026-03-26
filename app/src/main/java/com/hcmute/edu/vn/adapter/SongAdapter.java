@@ -14,10 +14,6 @@ import com.hcmute.edu.vn.model.Song;
 
 import java.util.List;
 
-/**
- * Adapter hiển thị danh sách bài hát trong RecyclerView của BottomSheet âm nhạc.
- * Tự động highlight bài đang phát bằng ivPlayingIndicator.
- */
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder> {
 
     /** Interface callback khi người dùng chọn một bài hát. */
@@ -94,9 +90,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
         SongViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivCover           = itemView.findViewById(R.id.ivSongCover);
-            tvTitle           = itemView.findViewById(R.id.tvSongTitle);
-            tvArtist          = itemView.findViewById(R.id.tvSongArtist);
+            ivCover = itemView.findViewById(R.id.ivSongCover);
+            tvTitle = itemView.findViewById(R.id.tvSongTitle);
+            tvArtist = itemView.findViewById(R.id.tvSongArtist);
             ivPlayingIndicator = itemView.findViewById(R.id.ivPlayingIndicator);
         }
     }
