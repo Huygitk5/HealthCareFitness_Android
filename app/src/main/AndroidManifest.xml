@@ -59,6 +59,10 @@
             android:exported="false"  />
 
         <activity
+            android:name=".activity.RestDayCompleteActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.WorkoutJourneyActivity"
             android:exported="false"  />
 

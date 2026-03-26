@@ -12,13 +12,13 @@ import com.hcmute.edu.vn.R;
 
 public class RestActivity extends AppCompatActivity {
 
-    private TextView tvTimer, tvNextExerciseName;
-    private MaterialButton btnMinus10, btnPlus10, btnSkipRest;
+    private TextView tvTimer, tvNextExerciseName, tvTopSkip;
+    private MaterialButton btnMinus20, btnPlus20, btnSkipRest;
+    private android.widget.ProgressBar progressBarTimer;
 
-    // Biến thời gian (Mặc định 20 giây)
     private int timeLeft = 20;
+    private int maxTime = 20;
 
-    // Bộ đếm thời gian linh hoạt
     private Handler timerHandler = new Handler(Looper.getMainLooper());
     private Runnable timerRunnable;
 
@@ -26,39 +26,41 @@ public class RestActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rest);
+        
+        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#F4F7F6"));
+        androidx.core.view.WindowInsetsControllerCompat wic = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        wic.setAppearanceLightStatusBars(true);
 
-        // 1. Ánh xạ View
         tvTimer = findViewById(R.id.tvTimer);
         tvNextExerciseName = findViewById(R.id.tvNextExerciseName);
-        btnMinus10 = findViewById(R.id.btnMinus10);
-        btnPlus10 = findViewById(R.id.btnPlus10);
+        tvTopSkip = findViewById(R.id.tvTopSkip);
+        btnMinus20 = findViewById(R.id.btnMinus20);
+        btnPlus20 = findViewById(R.id.btnPlus20);
         btnSkipRest = findViewById(R.id.btnSkipRest);
+        progressBarTimer = findViewById(R.id.progressBarTimer);
 
-        // 2. Nhận tên bài tập tiếp theo từ Intent (Nếu có)
         String nextExercise = getIntent().getStringExtra("NEXT_EXERCISE_NAME");
         if (nextExercise != null && !nextExercise.isEmpty()) {
-            tvNextExerciseName.setText("Tiếp theo: " + nextExercise);
+            tvNextExerciseName.setText(nextExercise);
         }
 
-        updateTimerUI(); // Hiển thị số 20s lên màn hình ngay lập tức
+        updateTimerUI();
 
-        // 3. Bắt sự kiện các nút
-        btnMinus10.setOnClickListener(v -> {
-            timeLeft -= 10;
-            if (timeLeft < 1) timeLeft = 1; // Không cho âm, tối thiểu 1s để kịp bấm qua bài
+        btnMinus20.setOnClickListener(v -> {
+            timeLeft -= 20;
+            if (timeLeft < 1) timeLeft = 1;
             updateTimerUI();
         });
 
-        btnPlus10.setOnClickListener(v -> {
-            timeLeft += 10;
+        btnPlus20.setOnClickListener(v -> {
+            timeLeft += 20;
+            if (timeLeft > maxTime) maxTime = timeLeft;
             updateTimerUI();
         });
 
-        btnSkipRest.setOnClickListener(v -> {
-            finishRestAndGoNext();
-        });
+        btnSkipRest.setOnClickListener(v -> finishRestAndGoNext());
+        tvTopSkip.setOnClickListener(v -> finishRestAndGoNext());
 
-        // 4. Bắt đầu đếm ngược
         startTimer();
     }
 
@@ -66,34 +68,29 @@ public class RestActivity extends AppCompatActivity {
         timerRunnable = new Runnable() {
             @Override
             public void run() {
-                timeLeft--;
-                updateTimerUI();
-
-                if (timeLeft <= 0) {
-                    // Hết giờ -> Tự động qua bài
-                    finishRestAndGoNext();
-                } else {
-                    // Lặp lại việc đếm ngược sau 1000ms (1 giây)
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerUI();
                     timerHandler.postDelayed(this, 1000);
+                } else {
+                    finishRestAndGoNext();
                 }
             }
         };
-        // Kích hoạt ngay nhịp đếm đầu tiên
         timerHandler.postDelayed(timerRunnable, 1000);
     }
 
     private void updateTimerUI() {
         tvTimer.setText(String.valueOf(timeLeft));
+        // Cập nhật Progress Bar (giảm dần)
+        int progress = (int) (((float) timeLeft / maxTime) * 100);
+        progressBarTimer.setProgress(progress);
     }
 
     private void finishRestAndGoNext() {
-        // Ngắt bộ đếm để tránh lỗi rò rỉ bộ nhớ (Memory Leak)
         if (timerHandler != null && timerRunnable != null) {
             timerHandler.removeCallbacks(timerRunnable);
         }
-
-        // Đóng màn hình nghỉ ngơi, quay lại bài tập tiếp theo
-        // (Nếu bạn dùng StartActivityForResult thì set kết quả ở đây)
         setResult(RESULT_OK);
         finish();
     }
@@ -101,7 +98,6 @@ public class RestActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Cực kỳ quan trọng: Nếu user bấm nút Back thoát app giữa chừng, phải tắt đồng hồ
         if (timerHandler != null && timerRunnable != null) {
             timerHandler.removeCallbacks(timerRunnable);
         }
