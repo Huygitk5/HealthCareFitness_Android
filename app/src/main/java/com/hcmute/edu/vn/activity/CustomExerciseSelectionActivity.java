@@ -82,8 +82,8 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
     private void setupStepIndicator() {
         // --- BƯỚC 1 (Đã hoàn thành) ---
         tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
-        tvStep1Circle.setTextColor(android.graphics.Color.WHITE);
-        tvStep1Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
+        tvStep1Circle.setTextColor(Color.WHITE);
+        tvStep1Title.setTextColor(Color.parseColor("#589A8D"));
         tvStep1Title.setTypeface(null, android.graphics.Typeface.BOLD);
 
         // --- BƯỚC 2 (Đã hoàn thành) ---
