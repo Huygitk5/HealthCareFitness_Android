@@ -27,7 +27,6 @@ public class RestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rest);
         
-        // Status bar trắng - đồng bộ với nền màn hình
         getWindow().setStatusBarColor(android.graphics.Color.parseColor("#F4F7F6"));
         androidx.core.view.WindowInsetsControllerCompat wic = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         wic.setAppearanceLightStatusBars(true);

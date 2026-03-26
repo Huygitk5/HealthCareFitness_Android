@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,7 +25,6 @@ import com.hcmute.edu.vn.model.ConditionRestrictedMuscle;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
-
 import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
 import com.hcmute.edu.vn.model.WorkoutDayExercise;
@@ -392,7 +390,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         intent.putExtra("EXTRA_DAY_ID", day.getId());
         
-        // ĐÃ SỬA: DB có sẵn "Ngày X: ...", dùng trực tiếp thay vì tự cộng thêm chuỗi "Ngày"
         intent.putExtra("EXTRA_DAY_TITLE", dayNameFromDb);
 
         ArrayList<Exercise> exercisesToPass = new ArrayList<>();

@@ -54,7 +54,7 @@ public class ExerciseListActivity extends AppCompatActivity {
 
         // Nhận ID ngày tập từ màn hình trước và tải dữ liệu mới nhất
         if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
-            // Nhánh này dùng cho: bài tập đã được lọc theo bệnh lý từ Journey HOẶC tập tự do
+            // Bài tập đã được lọc theo bệnh lý từ Journey HOẶC tập tự do
             exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
             TextView tvDayTitle = findViewById(R.id.tvDayTitle);
             String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
@@ -64,7 +64,7 @@ public class ExerciseListActivity extends AppCompatActivity {
             rvExercises.setAdapter(adapter);
 
         } else if (getIntent().hasExtra("EXTRA_DAY_ID")) {
-            // Nhánh này dùng khi KHÔNG có danh sách lọc sẵn → fetch trực tiếp từ API
+            // KHÔNG có danh sách lọc sẵn → fetch trực tiếp từ API
             String dayId = getIntent().getStringExtra("EXTRA_DAY_ID");
             String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
 

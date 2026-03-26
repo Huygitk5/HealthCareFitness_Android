@@ -33,7 +33,6 @@ public class RestDayCompleteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rest_day_complete);
 
-        // Sync status bar với nền trắng
         getWindow().setStatusBarColor(android.graphics.Color.parseColor("#F4F7F6"));
         new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
                 .setAppearanceLightStatusBars(true);
