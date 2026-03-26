@@ -181,6 +181,38 @@ public class MusicService extends Service {
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════════
+    // Song List Management
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Thêm một bài hát upload từ Supabase vào cuối danh sách.
+     * Gọi từ MusicBottomSheetFragment sau khi upload thành công.
+     */
+    public void addSong(Song song) {
+        if (songList == null) songList = new ArrayList<>();
+        songList.add(song);
+        Log.d(TAG, "addSong: đã thêm '" + song.getTitle() + "', tổng=" + songList.size());
+    }
+
+    /**
+     * Thay thế toàn bộ danh sách nhạc (ví dụ sau khi load từ Supabase).
+     * Giữ nguyên bài đang phát nếu vẫn còn trong list mới.
+     */
+    public void setSongList(List<Song> newList) {
+        if (newList == null || newList.isEmpty()) return;
+        songList = newList;
+        // Reset index về 0 nếu index hiện tại vượt quá kích thước list mới
+        if (currentIndex >= songList.size()) {
+            currentIndex = 0;
+        }
+        Log.d(TAG, "setSongList: tổng=" + songList.size() + " bài");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Getters
+    // ══════════════════════════════════════════════════════════════════════════
+
     public boolean isPlaying() {
         return mediaPlayer != null && isPrepared && mediaPlayer.isPlaying();
     }
