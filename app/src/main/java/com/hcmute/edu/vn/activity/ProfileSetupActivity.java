@@ -102,20 +102,17 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(android.text.Editable s) {
-                if (isFormatting)
-                    return;
+                if (isFormatting) return;
                 isFormatting = true;
                 String digits = s.toString().replaceAll("[^\\d]", "");
                 StringBuilder formatted = new StringBuilder();
                 for (int i = 0; i < digits.length(); i++) {
                     formatted.append(digits.charAt(i));
-                    if ((i == 1 || i == 3) && i < digits.length() - 1)
-                        formatted.append("/");
+                    if ((i == 1 || i == 3) && i < digits.length() - 1) formatted.append("/");
                 }
                 if (!isDeleting && (digits.length() == 2 || digits.length() == 4))
                     formatted.append("/");
-                if (formatted.length() > 10)
-                    formatted.delete(10, formatted.length());
+                if (formatted.length() > 10) formatted.delete(10, formatted.length());
                 edtDOB.setText(formatted.toString());
                 edtDOB.setSelection(formatted.length());
                 isFormatting = false;
@@ -158,8 +155,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
                     }
 
                     layoutTargetWeight.setVisibility(isMaintain ? View.GONE : View.VISIBLE);
-                    if (isMaintain)
-                        edtTargetWeight.setText("");
+                    if (isMaintain) edtTargetWeight.setText("");
                 }
             }
 
@@ -185,8 +181,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     fitnessGoalList = response.body();
                     List<String> goalNames = new ArrayList<>();
-                    for (FitnessGoal goal : fitnessGoalList)
-                        goalNames.add(goal.getName());
+                    for (FitnessGoal goal : fitnessGoalList) goalNames.add(goal.getName());
 
                     ArrayAdapter<String> adapter = new ArrayAdapter<>(
                             ProfileSetupActivity.this, android.R.layout.simple_spinner_item, goalNames);
@@ -485,13 +480,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void onFailure(Call<List<User>> call, Throwable t) {
-                    showError("Lỗi mạng!");
-                }
+                public void onFailure(Call<List<User>> call, Throwable t) { showError("Lỗi mạng!"); }
             });
-        } catch (NumberFormatException e) {
-            showError("Chiều cao, cân nặng phải là số!");
-        }
+        } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
     }
 
     // =========================================================
@@ -508,8 +499,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
     }
 
     private double calculateBMI(double weightKg, double heightCm) {
-        if (heightCm <= 0)
-            return 0;
+        if (heightCm <= 0) return 0;
         return weightKg / Math.pow(heightCm / 100.0, 2);
     }
 

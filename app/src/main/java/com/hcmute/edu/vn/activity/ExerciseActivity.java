@@ -1,9 +1,13 @@
 package com.hcmute.edu.vn.activity;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -18,6 +22,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.service.MusicService;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -33,9 +38,34 @@ public class ExerciseActivity extends AppCompatActivity {
     private long[] exerciseDurations;
     private ImageView ivExercise;
     private TextView tvExerciseName, tvTimer, tvExerciseProgress;
-    private ImageButton btnNext, btnPrevious, btnClose;
+    private ImageButton btnNext, btnPrevious, btnClose, icWorkoutMusic;
     private Button btnPause;
     private ActivityResultLauncher<Intent> restActivityLauncher;
+
+    private MusicService.MusicBinder musicBinder;  // null cho đến khi bind thành công
+    private boolean isMusicServiceBound = false;
+    private boolean pendingOpenMusicSheet = false;
+
+    private final ServiceConnection musicServiceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            musicBinder = (MusicService.MusicBinder) service;
+            isMusicServiceBound = true;
+            if (pendingOpenMusicSheet) {
+                pendingOpenMusicSheet = false;
+                scheduleOpenMusicSheet();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBinder = null;
+            isMusicServiceBound = false;
+        }
+    };
+
+    // ======================= Lifecycle =======================
 
     @Override
     @SuppressWarnings("unchecked")
@@ -102,7 +132,45 @@ public class ExerciseActivity extends AppCompatActivity {
         }
 
         setupListeners();
+
+        // Khởi động MusicService (START — chạy liên tục dù Activity bị destroy)
+        Intent musicIntent = new Intent(this, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(musicIntent);
+        } else {
+            startService(musicIntent);
+        }
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        ensureMusicServiceBound();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        MusicService musicService = musicBinder != null ? musicBinder.getService() : null;
+        boolean shouldStopMusicService = (musicService == null)
+                || !musicService.isPlaying()
+                || !musicService.isBackgroundPlaybackEnabled();
+        // UNBIND — giải phóng kết nối, nhưng Service vẫn sống (đã startService)
+        if (isMusicServiceBound) {
+            unbindService(musicServiceConnection);
+            isMusicServiceBound = false;
+            musicBinder = null;
+        }
+        if (shouldStopMusicService) {
+            stopService(new Intent(this, MusicService.class));
+        }
+    }
+
+    /**
+     * Dừng hẳn Service khi Activity bị finish() hoàn toàn (bấm nút Close).
+     * Phân biệt với onStop để tránh dừng nhạc khi chỉ xoay màn hình.
+     */
+    // ======================= View Initialization =======================
 
     private void initViews() {
         ivExercise = findViewById(R.id.ivExercise);
@@ -113,9 +181,11 @@ public class ExerciseActivity extends AppCompatActivity {
         btnPrevious = findViewById(R.id.btnPrevious);
         btnClose = findViewById(R.id.btnClose);
         btnPause = findViewById(R.id.btnPause);
+        icWorkoutMusic   = findViewById(R.id.icWorkoutMusic);
     }
 
     private void setupListeners() {
+        // Đóng Activity → dừng hẳn Service
         btnClose.setOnClickListener(v -> finish());
 
         btnNext.setOnClickListener(v -> {
@@ -175,9 +245,72 @@ public class ExerciseActivity extends AppCompatActivity {
             }
         });
 
-        btnPause.setOnClickListener(v -> {
-            Toast.makeText(ExerciseActivity.this, "Đã bấm Pause", Toast.LENGTH_SHORT).show();
+        btnPause.setOnClickListener(v ->
+                Toast.makeText(ExerciseActivity.this, "Đã bấm Pause", Toast.LENGTH_SHORT).show()
+        );
+
+        /**
+         * Nút âm nhạc → mở MusicBottomSheetFragment.
+         * Truyền MusicBinder vào Fragment để điều khiển trực tiếp Service.
+         */
+        icWorkoutMusic.setOnClickListener(v -> {
+            if (isMusicServiceBound && musicBinder != null) {
+                scheduleOpenMusicSheet();
+            } else {
+                pendingOpenMusicSheet = true;
+                ensureMusicServiceBound();
+                Toast.makeText(this, "Đang kết nối dịch vụ nhạc...", Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void ensureMusicServiceBound() {
+        if (isMusicServiceBound) {
+            return;
+        }
+
+        Intent musicIntent = new Intent(this, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(musicIntent);
+        } else {
+            startService(musicIntent);
+        }
+        bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void scheduleOpenMusicSheet() {
+        View decorView = getWindow().getDecorView();
+        decorView.post(this::openMusicSheetSafely);
+    }
+
+    private void openMusicSheetSafely() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        if (getSupportFragmentManager().isStateSaved()) {
+            pendingOpenMusicSheet = true;
+            return;
+        }
+
+        try {
+            openMusicSheet();
+        } catch (IllegalStateException e) {
+            Toast.makeText(this, "Chưa thể mở phần nhạc lúc này.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openMusicSheet() {
+        if (musicBinder == null) {
+            return;
+        }
+
+        if (getSupportFragmentManager().findFragmentByTag("MusicBottomSheet") != null) {
+            return;
+        }
+
+        MusicBottomSheetFragment sheet = MusicBottomSheetFragment.newInstance(musicBinder);
+        sheet.show(getSupportFragmentManager(), "MusicBottomSheet");
     }
 
     private void updateExerciseUI() {
@@ -218,7 +351,7 @@ public class ExerciseActivity extends AppCompatActivity {
         String progressText = (currentIndex + 1) + " / " + exerciseList.size();
         tvExerciseProgress.setText(progressText);
 
-        // 5. Ẩn/Hiện nút Next, Previous ở đầu/cuối danh sách
+        // 5. Ẩn/Hiện nút Previous & Next ở đầu/cuối danh sách
         btnPrevious.setVisibility(currentIndex == 0 ? View.INVISIBLE : View.VISIBLE);
         currentExerciseStartTime = System.currentTimeMillis();
     }

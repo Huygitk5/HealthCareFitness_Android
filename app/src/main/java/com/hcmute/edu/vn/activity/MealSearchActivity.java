@@ -1,6 +1,5 @@
 package com.hcmute.edu.vn.activity;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -11,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -19,16 +19,11 @@ import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.FoodVerticalAdapter;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
-import com.hcmute.edu.vn.model.ConditionRestrictedIngredient;
 import com.hcmute.edu.vn.model.Food;
 import com.hcmute.edu.vn.model.FoodIngredient;
-import com.hcmute.edu.vn.model.MedicalCondition;
-import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserDailyMeal;
-import com.hcmute.edu.vn.model.UserMedicalCondition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,17 +38,12 @@ public class MealSearchActivity extends AppCompatActivity {
     private EditText edtSearchFood;
     private RecyclerView rvFoodSearch;
     private MaterialButton btnSaveMeal;
-
     private FoodVerticalAdapter adapter;
     private List<Food> foodList = new ArrayList<>();
-
     private String targetDate;
     private String targetMealType;
     private String userId;
     private String username;
-
-    // ĐÃ ĐỔI: Chứa danh sách các ID của Nguyên liệu cần tránh (Chính xác tuyệt đối)
-    private List<String> restrictedIngredientIds = new ArrayList<>();
     private List<String> userAllergiesList = new ArrayList<>();
 
     @Override
@@ -61,7 +51,7 @@ public class MealSearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_meal_search);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -113,71 +103,6 @@ public class MealSearchActivity extends AppCompatActivity {
         btnSaveMeal.setOnClickListener(v -> saveSelectedMealsToDatabase());
     }
 
-    // ==============================================================
-    // BƯỚC 1: LẤY DANH SÁCH ID NGUYÊN LIỆU BỊ CẤM TỪ DATABASE
-    // ==============================================================
-    // ==============================================================
-    // BƯỚC 1: TẢI DANH SÁCH DỊ ỨNG (CÓ GẮN LOG THEO DÕI)
-    // ==============================================================
-    private void loadRestrictedIngredientsThenFoods() {
-        if (username == null || username.isEmpty()) {
-            loadAllFoods();
-            return;
-        }
-
-        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*, condition_restricted_ingredients(*)))";
-
-        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-                restrictedIngredientIds.clear();
-                userAllergiesList.clear(); // Danh sách tên để dự phòng
-
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    User currentUser = response.body().get(0);
-
-                    if (currentUser.getUserMedicalConditions() != null) {
-                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
-                            MedicalCondition mc = umc.getMedicalCondition();
-                            if (mc != null) {
-                                // 1. Lưu TÊN dị ứng (Để lọc dự phòng)
-                                String type = mc.getType();
-                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
-                                    userAllergiesList.add(mc.getName().toLowerCase());
-                                }
-
-                                // 2. Lưu ID nguyên liệu cấm
-                                if (mc.getRestrictedIngredients() != null) {
-                                    for (com.hcmute.edu.vn.model.ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
-                                        if (cri.getIngredientId() != null) {
-                                            restrictedIngredientIds.add(cri.getIngredientId());
-                                        }
-                                    }
-                                } else {
-                                    android.util.Log.e("LOC_MON_AN", "CẢNH BÁO: Bệnh '" + mc.getName() + "' trả về restrictedIngredients = NULL (Xem lại Model MedicalCondition)");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ ID BỊ CẤM TÌM THẤY: " + restrictedIngredientIds.size());
-                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ TÊN BỊ CẤM TÌM THẤY: " + userAllergiesList.size());
-
-                loadAllFoods(); // Xong xuôi thì qua tải Đồ ăn
-            }
-
-            @Override
-            public void onFailure(Call<List<User>> call, Throwable t) {
-                loadAllFoods();
-            }
-        });
-    }
-
-    // ==============================================================
-    // BƯỚC 2: TẢI ĐỒ ĂN VÀ LỌC BẰNG CẢ ID LẪN TÊN (KHÔNG THỂ LỌT LƯỚI)
-    // ==============================================================
     private void loadAllFoods() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
@@ -214,7 +139,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                         // LỌC 2: KIỂM TRA THÀNH PHẦN NGUYÊN LIỆU (Nếu API có trả về)
                         if (isSafe && food.getFoodIngredients() != null) {
-                            for (com.hcmute.edu.vn.model.FoodIngredient fi : food.getFoodIngredients()) {
+                            for (FoodIngredient fi : food.getFoodIngredients()) {
                                 if (fi.getIngredient() != null && fi.getIngredient().getName() != null) {
                                     String ingName = fi.getIngredient().getName().toLowerCase();
                                     for (String allergyName : userAllergiesList) {
@@ -272,7 +197,7 @@ public class MealSearchActivity extends AppCompatActivity {
         if (adapter == null) return;
 
         // 1. Lấy dữ liệu dạng Map (Món ăn -> Số phần)
-        java.util.Map<Food, Double> selectedFoodsMap = adapter.getSelectedFoodsMap();
+        Map<Food, Double> selectedFoodsMap = adapter.getSelectedFoodsMap();
 
         if (selectedFoodsMap.isEmpty()) {
             Toast.makeText(this, "Vui lòng chọn ít nhất 1 món ăn!", Toast.LENGTH_SHORT).show();
@@ -290,7 +215,7 @@ public class MealSearchActivity extends AppCompatActivity {
         int[] completedCount = {0};
 
         // 2. Lặp qua Map để lấy Món ăn và Số lượng phần ăn
-        for (java.util.Map.Entry<Food, Double> entry : selectedFoodsMap.entrySet()) {
+        for (Map.Entry<Food, Double> entry : selectedFoodsMap.entrySet()) {
             Food selectedFood = entry.getKey();
             Double quantity = entry.getValue();
 
