@@ -150,12 +150,10 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                         }
                     }
 
-                    // Log để bạn kiểm tra trong Logcat xem có lấy được ID bệnh không
                     android.util.Log.d("DEBUG_FILTER", "Danh sách ID bệnh của User: " + currentUserConditionIds.toString());
 
                     currentPlanId = user.getCurrentWorkoutPlanId();
                     if (currentPlanId == null || currentPlanId.isEmpty()) {
-                        // Gán plan mặc định nếu user chưa có (Beginner Plan)
                         currentPlanId = "a1111111-1111-1111-1111-111111111111";
                     }
 
@@ -176,7 +174,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                 completedDayIds.clear();
                 if (response.isSuccessful() && response.body() != null) {
                     for (UserWorkoutSession s : response.body()) {
-                        // CHỈ lấy các buổi tập của gói tập hiện tại!
                         if (s.getPlanId() != null && s.getPlanId().equals(currentPlanId) && s.getDayId() != null) {
                             completedDayIds.add(s.getDayId());
                         }
@@ -197,63 +194,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     WorkoutPlan plan = response.body().get(0);
-//                    if (plan.getDays() != null && !plan.getDays().isEmpty()) {
-//                        allDays = plan.getDays();
-//                        java.util.Collections.sort(allDays, (a, b) -> Integer.compare(a.getDayOrder() != null ? a.getDayOrder() : 0, b.getDayOrder() != null ? b.getDayOrder() : 0));
-//
-//                        totalPlanDays = allDays.size();
-//
-//                        int targetIndex = 0;
-//                        for (int i = 0; i < allDays.size(); i++) {
-//                            if (!completedDayIds.contains(allDays.get(i).getId())) {
-//                                targetIndex = i;
-//                                break;
-//                            }
-//                        }
-//                        if (targetIndex == 0 && !allDays.isEmpty() && completedDayIds.contains(allDays.get(0).getId())) {
-//                            targetIndex = allDays.size() - 1;
-//                        }
-//
-//                        int currentDayIndex = targetIndex;
-//                        todayWorkoutDay = allDays.get(currentDayIndex);
-//                        boolean todayDone = completedDayIds.contains(todayWorkoutDay.getId());
-//
-//                        tvTodaySub.setText("NGÀY " + (todayWorkoutDay.getDayOrder() != null ? todayWorkoutDay.getDayOrder() : (currentDayIndex + 1)));
-//                        tvTodayName.setText(todayWorkoutDay.getName() != null ? todayWorkoutDay.getName() : "Ngày tập");
-//                        // =======================================================
-//                        // ĐÃ SỬA: CHỈ SET 100% NẾU ĐÃ TẬP XONG, CÒN LẠI THÌ LẤY TỪ BỘ NHỚ
-//                        // =======================================================
-//                        // Lấy tiến độ từ bộ nhớ máy ra trước
-//                        String todayDate = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
-//                        int currentProgress = getSharedPreferences("WorkoutProgress", MODE_PRIVATE)
-//                                .getInt("PROGRESS_" + userId + "_" + todayDate, 0);
-//
-//                        // Hôm nay CHỈ ĐƯỢC COI LÀ XONG khi tiến độ trong máy đạt 100%
-//                        // HOẶC hệ thống đã chốt sổ trên Server (completedDayIds có chứa ID) NHƯNG bạn đã qua ngày mới (progress bị reset về 0)
-//                        boolean isActuallyDone = (currentProgress == 100) ||
-//                                (completedDayIds.contains(todayWorkoutDay.getId()) && currentProgress == 0);
-//
-//                        if (isActuallyDone) {
-//                            tvTodayPercent.setText("100%");
-//                            animateProgress(pbTodayCircular, 100, 1000);
-//                        } else {
-//                            tvTodayPercent.setText(currentProgress + "%");
-//                            animateProgress(pbTodayCircular, currentProgress, 1000);
-//                        }
-//
-//                        // Cập nhật lại logic nút bấm cho đồng bộ
-//                        if (isActuallyDone) {
-//                            btnTodayAction.setText("BẮT ĐẦU LẠI");
-//                            btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
-//                        } else {
-//                            btnTodayAction.setText("BẮT ĐẦU");
-//                            btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#4DAA9A")));
-//                        }
-//
-//                        tvProgressFraction.setText(completedDayIds.size() + " / " + totalPlanDays + " ngày hoàn thành");
-//                        animateProgress(pbOverallProgress, totalPlanDays > 0 ? (int) ((completedDayIds.size() * 100.0) / totalPlanDays) : 0, 1200);
-//                        setupTimeline(currentDayIndex);
-//                    }
                     filterAndReplaceExercises(plan);
                 }
             }
@@ -261,11 +201,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================================================
-    // QUY TRÌNH LỌC 1: LẤY BỆNH LÝ -> TÌM NHÓM CƠ BỊ CẤM
-    // =========================================================================================
     private void filterAndReplaceExercises(WorkoutPlan plan) {
-        // TODO: LẤY ID BỆNH TỪ DATABASE HOẶC SHAREDPREFERENCES CỦA USER VÀO ĐÂY
         List<Integer> userConditionIds = currentUserConditionIds;
 
         if (userConditionIds.isEmpty()) {
@@ -307,9 +243,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================================================
-    // QUY TRÌNH LỌC 2: TÌM BÀI KHÓ BỊ CẤM -> GỌI API LẤY BÀI DỄ -> TRÁO ĐỔI
-    // =========================================================================================
     private void fetchReplacementsAndSwap(WorkoutPlan plan, List<Integer> bannedMuscleIds, SupabaseApiService api) {
         List<Integer> musclesNeedingReplacements = new ArrayList<>();
         if (plan.getDays() != null) {
@@ -362,7 +295,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                                         }
 
                                         if (easyExercise != null) {
-                                            wde.setExercise(easyExercise); // Đã tráo bài thành công!
+                                            wde.setExercise(easyExercise);
                                             finalSafeExercises.add(wde);
                                         }
                                     } else {
@@ -386,9 +319,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================================================
-    // HÀM HIỂN THỊ GIAO DIỆN (Đã gom code cũ của bạn vào đây)
-    // =========================================================================================
     private void setupPlanUI(WorkoutPlan plan) {
         if (plan.getDays() != null && !plan.getDays().isEmpty()) {
             allDays = plan.getDays();
@@ -446,9 +376,9 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
     private void openDayExercises(WorkoutDay day) {
         if (day == null) return;
 
-        // Kiểm tra ngày nghỉ
-        String dayName = day.getName() != null ? day.getName() : "";
-        boolean isRestDay = dayName.toLowerCase().contains("ngh")
+        String dayNameFromDb = day.getName() != null ? day.getName() : "Bài tập";
+
+        boolean isRestDay = dayNameFromDb.toLowerCase().contains("ngh")
                 || (day.getExercises() != null && day.getExercises().isEmpty());
         if (isRestDay) {
             Intent intent = new Intent(this, RestDayCompleteActivity.class);
@@ -461,27 +391,10 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         Intent intent = new Intent(this, ExerciseListActivity.class);
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         intent.putExtra("EXTRA_DAY_ID", day.getId());
-        String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
         
-//        if (day.getId() != null) {
-//            intent.putExtra("EXTRA_DAY_ID", day.getId());
-//            intent.putExtra("EXTRA_DAY_TITLE", title);
-//        } else {
-//            ArrayList<Exercise> exercisesToPass = new ArrayList<>();
-//            if (day.getExercises() != null) {
-//                for (WorkoutDayExercise wde : day.getExercises()) {
-//                    if (wde.getExercise() != null) {
-//                        Exercise ex = wde.getExercise();
-//                        if (wde.getReps() != null) ex.setBaseRecommendedReps(String.valueOf(wde.getReps()));
-//                        if (wde.getSets() != null) ex.setBaseRecommendedSets(wde.getSets());
-//                        exercisesToPass.add(ex);
-//                    }
-//                }
-//            }
-//            intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
-//            intent.putExtra("EXTRA_DAY_TITLE", title + ": " + (day.getName() != null ? day.getName() : "Bài tập"));
-//        }
-//        startActivity(intent);
+        // ĐÃ SỬA: DB có sẵn "Ngày X: ...", dùng trực tiếp thay vì tự cộng thêm chuỗi "Ngày"
+        intent.putExtra("EXTRA_DAY_TITLE", dayNameFromDb);
+
         ArrayList<Exercise> exercisesToPass = new ArrayList<>();
         if (day.getExercises() != null) {
             for (WorkoutDayExercise wde : day.getExercises()) {
@@ -494,7 +407,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             }
         }
         intent.putExtra("EXTRA_EXERCISE_LIST", exercisesToPass);
-        intent.putExtra("EXTRA_DAY_TITLE", title + ": " + (day.getName() != null ? day.getName() : "Bài tập"));
 
         startActivity(intent);
     }
