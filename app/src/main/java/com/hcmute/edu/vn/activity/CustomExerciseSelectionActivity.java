@@ -93,7 +93,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
 
         // Bước 3: HIGHLIGHT
         tvStep3Circle.setBackgroundResource(R.drawable.step_circle_selected);
-        tvStep3Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep3Circle.setTextColor(Color.WHITE);
         tvStep3Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
         tvStep3Title.setTypeface(null, android.graphics.Typeface.BOLD);
     }
