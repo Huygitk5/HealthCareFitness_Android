@@ -711,8 +711,8 @@ public class ProfileActivity extends AppCompatActivity {
 
                         if (currentConditionIds.contains(condition.getId())) {
                             checkBox.setChecked(true);
-                            cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
-                            cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
+                            cardView.setStrokeColor(Color.parseColor("#009688"));
+                            cardView.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
                         }
 
                         cardView.setOnClickListener(v -> {
