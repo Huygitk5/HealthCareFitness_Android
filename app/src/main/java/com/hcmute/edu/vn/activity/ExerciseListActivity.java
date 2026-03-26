@@ -53,7 +53,18 @@ public class ExerciseListActivity extends AppCompatActivity {
         rvExercises.setLayoutManager(new LinearLayoutManager(this));
 
         // Nhận ID ngày tập từ màn hình trước và tải dữ liệu mới nhất
-        if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+        if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
+            // Bài tập đã được lọc theo bệnh lý từ Journey HOẶC tập tự do
+            exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
+            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
+            String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
+            if(tvDayTitle != null) tvDayTitle.setText(dayTitle != null ? dayTitle : "Tập Tự Do");
+
+            adapter = new ExerciseAdapter(exercises);
+            rvExercises.setAdapter(adapter);
+
+        } else if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+            // KHÔNG có danh sách lọc sẵn → fetch trực tiếp từ API
             String dayId = getIntent().getStringExtra("EXTRA_DAY_ID");
             String dayTitle = getIntent().getStringExtra("EXTRA_DAY_TITLE");
 
@@ -63,15 +74,6 @@ public class ExerciseListActivity extends AppCompatActivity {
             }
 
             fetchExercisesForDay(dayId);
-
-        } else if (getIntent().hasExtra("EXTRA_EXERCISE_LIST")) {
-            // Nhánh này dùng riêng cho tính năng tập tự do (Free Workout) khi user tự chọn list bài tập
-            exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
-            TextView tvDayTitle = findViewById(R.id.tvDayTitle);
-            if(tvDayTitle != null) tvDayTitle.setText("Tập Tự Do");
-
-            adapter = new ExerciseAdapter(exercises);
-            rvExercises.setAdapter(adapter);
         }
 
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
@@ -85,6 +87,13 @@ public class ExerciseListActivity extends AppCompatActivity {
 
             Intent intent = new Intent(ExerciseListActivity.this, ExerciseActivity.class);
             intent.putExtra("EXTRA_EXERCISE_LIST", exercises);
+
+            if (getIntent().hasExtra("EXTRA_DAY_ID")) {
+                intent.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+            }
+            if (getIntent().hasExtra("EXTRA_PLAN_ID")) {
+                intent.putExtra("EXTRA_PLAN_ID", getIntent().getStringExtra("EXTRA_PLAN_ID"));
+            }
 
             if (getIntent().hasExtra("IS_FREE_WORKOUT")) {
                 intent.putExtra("IS_FREE_WORKOUT", getIntent().getBooleanExtra("IS_FREE_WORKOUT", false));
