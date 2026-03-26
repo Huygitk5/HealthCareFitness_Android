@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.Manifest;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -406,7 +407,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupWaterReminder(boolean isEnable) {
-        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WaterReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 100, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
@@ -439,7 +440,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         if (alarmManager != null) {
             alarmManager.setRepeating(
-                    android.app.AlarmManager.RTC_WAKEUP,
+                    AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
                     intervalMillis,
                     pendingIntent
@@ -448,7 +449,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupWorkoutReminder(boolean isEnable) {
-        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.DailyWorkoutReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 102, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
@@ -475,9 +476,9 @@ public class ProfileActivity extends AppCompatActivity {
         // Lặp lại mỗi ngày (INTERVAL_DAY)
         if (alarmManager != null) {
             alarmManager.setRepeating(
-                    android.app.AlarmManager.RTC_WAKEUP,
+                    AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
-                    android.app.AlarmManager.INTERVAL_DAY,
+                    AlarmManager.INTERVAL_DAY,
                     pendingIntent
             );
         }
@@ -616,7 +617,7 @@ public class ProfileActivity extends AppCompatActivity {
                 .create();
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
         for (String itemName : items) {
