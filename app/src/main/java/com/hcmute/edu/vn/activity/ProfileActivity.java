@@ -705,7 +705,7 @@ public class ProfileActivity extends AppCompatActivity {
                             llAllergiesContainer.addView(itemView);
                         } else {
                             tvType.setText("BỆNH LÝ");
-                            tvType.setTextColor(android.graphics.Color.parseColor("#26A69A"));
+                            tvType.setTextColor(Color.parseColor("#26A69A"));
                             llDiseasesContainer.addView(itemView);
                         }
 
