@@ -313,8 +313,18 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         requireView().findViewById(R.id.layoutSongInfo)
                 .setOnClickListener(toggleStateListener);
 
-        // Nút Playlist → toggle trạng thái
-        btnPlaylist.setOnClickListener(toggleStateListener);
+    /**
+     * Xử lý file .mp3 user vừa chọn:
+     * 1. Lấy tên file gốc
+     * 2. Upload lên Supabase Storage
+     * 3. Insert vào bảng songs
+     * 4. Insert vào bảng user_songs
+     * 5. Cập nhật danh sách nhạc trong Service và Adapter
+     */
+    private void handleSelectedAudioFile(Uri fileUri) {
+        // Lấy tên file gốc từ URI
+        String originalFileName = getFileNameFromUri(fileUri);
+        String displayTitle     = originalFileName.replace(".mp3", "").replace(".MP3", "");
 
         // Play / Pause (toggle)
         btnPlayPause.setOnClickListener(v -> {
