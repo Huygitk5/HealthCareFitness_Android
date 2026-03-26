@@ -98,7 +98,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(android.text.Editable s) {
+            public void afterTextChanged(Editable s) {
                 if (isFormatting) return;
                 isFormatting = true;
                 String digits = s.toString().replaceAll("[^\\d]", "");
