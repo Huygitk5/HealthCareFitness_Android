@@ -58,7 +58,6 @@ public class WorkoutActivity extends AppCompatActivity {
 
         setupWindowInsets();
 
-        // Chỉ lấy User ID và Username 1 lần ở onCreate
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
         userId = pref.getString("KEY_USER_ID", "");
@@ -69,8 +68,6 @@ public class WorkoutActivity extends AppCompatActivity {
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy", Locale.ENGLISH);
         tvCurrentTime.setText(sdf.format(new Date()));
-
-        // Không gọi API ở đây nữa để tránh lỗi không update khi chuyển tab
     }
 
     @Override
@@ -117,7 +114,6 @@ public class WorkoutActivity extends AppCompatActivity {
         cardTodayWorkout = findViewById(R.id.cardTodayWorkout);
         cardFreeWorkout = findViewById(R.id.cardFreeWorkout);
 
-        // Ẩn 3 cái Tab cũ đi
         TextView tvBeginner = findViewById(R.id.tvBeginner);
         TextView tvIntermediate = findViewById(R.id.tvIntermediate);
         TextView tvAdvanced = findViewById(R.id.tvAdvanced);
@@ -133,7 +129,6 @@ public class WorkoutActivity extends AppCompatActivity {
                 Toast.makeText(WorkoutActivity.this, "Đang tải lộ trình, vui lòng đợi...", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Truyền ĐÚNG ID gói tập sang màn hình Detail
             Intent intent = new Intent(WorkoutActivity.this, WorkoutDetailActivity.class);
             intent.putExtra("PLAN_ID", currentPlanId);
             startActivity(intent);
@@ -145,12 +140,10 @@ public class WorkoutActivity extends AppCompatActivity {
         });
     }
 
-    // TÌM PLAN DỰA TRÊN CẢ GOAL VÀ EXPERIENCE
     private void fetchWorkoutPlan() {
         tvWorkoutPlanTitle.setText("Đang tải lộ trình...");
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // GỌI API TÌM GÓI BẰNG CẢ 2 ID
         apiService.getWorkoutPlanByGoalAndExperience("eq." + userGoalId, "eq." + userExpId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
             @Override
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
@@ -168,7 +161,6 @@ public class WorkoutActivity extends AppCompatActivity {
                         ivWorkoutPlan.setImageResource(R.drawable.img_workout_lv3);
                     }
 
-                    // Luôn gọi Today Workout SAU KHI đã có currentPlanId mới
                     setupTodayWorkout(currentPlanId);
                 } else {
                     currentPlanId = "";
@@ -188,12 +180,10 @@ public class WorkoutActivity extends AppCompatActivity {
 
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // CHỈ LẤY LỊCH SỬ CỦA PLAN HIỆN TẠI
         apiService.getUserWorkoutHistoryByPlan("eq." + userId, "eq." + planId, "*, workout_days(*)").enqueue(new Callback<List<UserWorkoutSession>>() {
             @Override
             public void onResponse(Call<List<UserWorkoutSession>> call, Response<List<UserWorkoutSession>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    // Đã có lịch sử tập Plan này -> Lấy ngày tiếp theo
                     List<UserWorkoutSession> sessions = response.body();
                     UserWorkoutSession latest = sessions.get(sessions.size() - 1);
                     fetchCompletedDayOrder(planId, latest.getDayId());
@@ -214,9 +204,10 @@ public class WorkoutActivity extends AppCompatActivity {
             public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     WorkoutDay day1 = response.body().get(0);
-                    tvTodayWorkoutTitle.setText("Ngày 1: " + day1.getName());
+                    // DB có sẵn "Ngày 1: ..." nên chỉ lấy day1.getName()
+                    tvTodayWorkoutTitle.setText(day1.getName());
                     ivTodayWorkout.setImageResource(R.drawable.workout_1);
-                    setupClickForTodayWorkout(day1.getId(), 1, day1.getName());
+                    setupClickForTodayWorkout(day1.getId(), day1.getName());
                 } else {
                     tvTodayWorkoutTitle.setText("Bắt đầu lộ trình mới!");
                     cardTodayWorkout.setOnClickListener(v -> {
@@ -252,11 +243,10 @@ public class WorkoutActivity extends AppCompatActivity {
             public void onResponse(Call<List<WorkoutDay>> call, Response<List<WorkoutDay>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     WorkoutDay nextDay = response.body().get(0);
-                    Integer orderObj = nextDay.getDayOrder();
-                    int order = (orderObj != null) ? orderObj : 0;
-                    tvTodayWorkoutTitle.setText("Ngày " + order + ": " + nextDay.getName());
+                    // DB có sẵn "Ngày X: ..." nên chỉ lấy nextDay.getName()
+                    tvTodayWorkoutTitle.setText(nextDay.getName());
                     ivTodayWorkout.setImageResource(R.drawable.workout_2);
-                    setupClickForTodayWorkout(nextDay.getId(), order, nextDay.getName());
+                    setupClickForTodayWorkout(nextDay.getId(), nextDay.getName());
                 } else {
                     tvTodayWorkoutTitle.setText("Bạn đã hoàn thành lộ trình. Hãy đổi Mục tiêu!");
                     cardTodayWorkout.setOnClickListener(null);
@@ -266,7 +256,7 @@ public class WorkoutActivity extends AppCompatActivity {
         });
     }
 
-    private void setupClickForTodayWorkout(String nextDayId, int order, String dayName) {
+    private void setupClickForTodayWorkout(String nextDayId, String dayName) {
         cardTodayWorkout.setOnClickListener(v -> {
             boolean isRestDay = dayName != null && dayName.toLowerCase().contains("ngh");
             if (isRestDay) {
@@ -278,7 +268,8 @@ public class WorkoutActivity extends AppCompatActivity {
                 Intent intent = new Intent(WorkoutActivity.this, ExerciseListActivity.class);
                 intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
                 intent.putExtra("EXTRA_DAY_ID", nextDayId);
-                intent.putExtra("EXTRA_DAY_TITLE", "Ngày " + order + ": " + (dayName != null ? dayName : ""));
+                // Dùng trực tiếp dayName từ DB
+                intent.putExtra("EXTRA_DAY_TITLE", dayName);
                 startActivity(intent);
             }
         });
