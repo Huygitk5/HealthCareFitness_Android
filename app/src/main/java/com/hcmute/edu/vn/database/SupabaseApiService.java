@@ -364,15 +364,8 @@ public interface SupabaseApiService {
             @Query("select") String select
     );
 
-    @GET("condition_restricted_exercises")
-    Call<List<ConditionRestrictedMuscle>> getRestrictedMuscles(
-            @Query("condition_id") String conditionIdsFilter, // Dùng để truyền chuỗi "in.(1,2,3)"
-            @Query("select") String select
-    );
-
     // Lấy danh sách nhóm cơ bị cấm dựa trên bệnh lý
-    // Bảng của bạn tên gì thì thay vào chữ "condition_restricted_muscle" nhé
-    @GET("condition_restricted_muscle")
+    @GET("condition_restricted_exercises")
     Call<List<ConditionRestrictedMuscle>> getBannedMuscles(
             @Query("condition_id") String conditionIdsInQuery, // Truyền chuỗi "in.(34,42)"
             @Query("select") String select

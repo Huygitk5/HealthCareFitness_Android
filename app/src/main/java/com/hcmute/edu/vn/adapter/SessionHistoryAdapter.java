@@ -41,10 +41,9 @@ public class SessionHistoryAdapter extends RecyclerView.Adapter<SessionHistoryAd
         // 1. Tên buổi tập
         String name = "Buổi tập";
         if (session.getWorkoutDay() != null && session.getWorkoutDay().getName() != null) {
+            // ĐÃ SỬA: Lấy trực tiếp tên từ DB (Ví dụ: "Ngày 1: Thân trên")
+            // Không cộng thêm chữ "Ngày X: " nữa để tránh lặp
             name = session.getWorkoutDay().getName();
-            int dayOrder = session.getWorkoutDay().getDayOrder() != null
-                ? session.getWorkoutDay().getDayOrder() : 0;
-            if (dayOrder > 0) name = "Ngày " + dayOrder + ": " + name;
         }
         holder.tvSessionName.setText(name);
 

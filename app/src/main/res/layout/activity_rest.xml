@@ -1,89 +1,181 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_header_gradient"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:background="#F4F7F6">
 
+    <!-- Header Skip Button -->
     <TextView
+        android:id="@+id/tvTopSkip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        android:background="?attr/selectableItemBackground"
+        android:padding="8dp"
+        android:text="BỎ QUA"
+        android:textColor="#9E9E9E"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvRestTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
         android:text="NGHỈ NGƠI"
-        android:textColor="#2196F3"
-        android:textSize="28sp"
-        android:textStyle="bold" />
+        android:textColor="#4DAA9A"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tvNextExerciseName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Tiếp theo: Đang tải..."
-        android:textColor="#757575"
-        android:textSize="18sp" />
+    <!-- Timer Center Section -->
+    <FrameLayout
+        android:id="@+id/timerContainer"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.4">
 
-    <TextView
-        android:id="@+id/tvTimer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginVertical="50dp"
-        android:text="20"
-        android:textColor="#212121"
-        android:textSize="100sp"
-        android:textStyle="bold" />
+        <!-- Background Ring -->
+        <ProgressBar
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:indeterminate="false"
+            android:progress="100"
+            android:progressDrawable="@drawable/circular_progress_bg"
+            style="?android:attr/progressBarStyleHorizontal" />
 
+        <!-- Progress Ring -->
+        <ProgressBar
+            android:id="@+id/progressBarTimer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="100"
+            android:progressDrawable="@drawable/circular_progress_bar"
+            style="?android:attr/progressBarStyleHorizontal" />
+
+        <TextView
+            android:id="@+id/tvTimer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="20"
+            android:textColor="#1A1A1A"
+            android:textSize="90sp"
+            android:textStyle="bold" />
+    </FrameLayout>
+
+    <!-- Time Controls -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/layoutControls"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:layout_marginTop="24dp"
         android:orientation="horizontal"
-        android:weightSum="3">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/timerContainer">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnMinus10"
+            android:id="@+id/btnMinus20"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:text="- 10s"
-            android:textColor="#FF5722"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp"
-            app:strokeColor="#FF5722"
-            app:strokeWidth="2dp" />
+            android:layout_width="80dp"
+            android:layout_height="52dp"
+            android:layout_marginEnd="20dp"
+            android:text="-20s"
+            android:textColor="#4DAA9A"
+            app:cornerRadius="12dp"
+            app:strokeColor="#4DAA9A" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSkipRest"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginHorizontal="4dp"
-            android:layout_weight="1"
-            android:backgroundTint="#2196F3"
-            android:text="Tiếp tục"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPlus10"
+            android:id="@+id/btnPlus20"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="+ 10s"
-            android:textColor="#4CAF50"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:cornerRadius="16dp"
-            app:strokeColor="#4CAF50"
-            app:strokeWidth="2dp" />
+            android:layout_width="80dp"
+            android:layout_height="52dp"
+            android:text="+20s"
+            android:textColor="#4DAA9A"
+            app:cornerRadius="12dp"
+            app:strokeColor="#4DAA9A" />
     </LinearLayout>
 
-</LinearLayout>
+    <!-- Next Exercise Card -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardNextExercise"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="120dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BÀI TIẾP THEO"
+                android:textColor="#4DAA9A"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvNextExerciseName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Đang tải..."
+                    android:textColor="#1A1A1A"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_workout"
+                    app:tint="#4DAA9A" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Bottom Action Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSkipRest"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
+        android:text="BẮT ĐẦU NGAY"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="#4DAA9A"
+        app:cornerRadius="32dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
