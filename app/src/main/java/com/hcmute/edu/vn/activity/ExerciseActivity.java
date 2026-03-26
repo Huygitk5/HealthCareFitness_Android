@@ -23,16 +23,6 @@ import com.hcmute.edu.vn.service.MusicService;
 
 import java.util.ArrayList;
 
-/**
- * ExerciseActivity — màn hình thực hiện bài tập.
- *
- * Tích hợp MusicService theo mô hình Hybrid:
- *   - startService()  → nhạc chạy độc lập với vòng đời Activity
- *   - bindService()   → lấy MusicBinder để điều khiển từ BottomSheet
- *
- * Khi Activity bị destroy (xoay màn hình), nhạc vẫn phát vì Service đã được start.
- * bindService() được gọi lại trong onStart() để kết nối lại với Service đang chạy.
- */
 public class ExerciseActivity extends AppCompatActivity {
 
     private ArrayList<Exercise> exerciseList;
@@ -46,16 +36,8 @@ public class ExerciseActivity extends AppCompatActivity {
     private MusicService.MusicBinder musicBinder;  // null cho đến khi bind thành công
     private boolean isMusicServiceBound = false;
 
-    /**
-     * ServiceConnection — nhận callback khi bind/unbind thành công với MusicService.
-     * Được khai báo là field để dùng lại trong onStart/onStop.
-     */
     private final ServiceConnection musicServiceConnection = new ServiceConnection() {
 
-        /**
-         * Gọi khi bindService() thành công.
-         * Lưu lại MusicBinder để truyền vào BottomSheet.
-         */
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             musicBinder = (MusicService.MusicBinder) service;
@@ -63,10 +45,6 @@ public class ExerciseActivity extends AppCompatActivity {
             // Tự động phát bài đầu khi kết nối lần đầu (nếu chưa phát)
         }
 
-        /**
-         * Gọi khi Service bị kill đột ngột (hiếm gặp).
-         * Reset binder để tránh NPE.
-         */
         @Override
         public void onServiceDisconnected(ComponentName name) {
             musicBinder = null;
