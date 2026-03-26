@@ -1,6 +1,5 @@
 package com.hcmute.edu.vn.activity;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
@@ -20,16 +19,11 @@ import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.FoodVerticalAdapter;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
-import com.hcmute.edu.vn.model.ConditionRestrictedIngredient;
 import com.hcmute.edu.vn.model.Food;
 import com.hcmute.edu.vn.model.FoodIngredient;
-import com.hcmute.edu.vn.model.MedicalCondition;
-import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserDailyMeal;
-import com.hcmute.edu.vn.model.UserMedicalCondition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +44,6 @@ public class MealSearchActivity extends AppCompatActivity {
     private String targetMealType;
     private String userId;
     private String username;
-    private List<String> restrictedIngredientIds = new ArrayList<>();
     private List<String> userAllergiesList = new ArrayList<>();
 
     @Override
@@ -110,65 +103,6 @@ public class MealSearchActivity extends AppCompatActivity {
         btnSaveMeal.setOnClickListener(v -> saveSelectedMealsToDatabase());
     }
 
-    private void loadRestrictedIngredientsThenFoods() {
-        if (username == null || username.isEmpty()) {
-            loadAllFoods();
-            return;
-        }
-
-        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        String selectQuery = "*, user_medical_conditions(*, medical_conditions(*, condition_restricted_ingredients(*)))";
-
-        apiService.getUserByUsername("eq." + username, selectQuery).enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-                restrictedIngredientIds.clear();
-                userAllergiesList.clear(); // Danh sách tên để dự phòng
-
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    User currentUser = response.body().get(0);
-
-                    if (currentUser.getUserMedicalConditions() != null) {
-                        for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
-                            MedicalCondition mc = umc.getMedicalCondition();
-                            if (mc != null) {
-                                // 1. Lưu TÊN dị ứng (Để lọc dự phòng)
-                                String type = mc.getType();
-                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
-                                    userAllergiesList.add(mc.getName().toLowerCase());
-                                }
-
-                                // 2. Lưu ID nguyên liệu cấm
-                                if (mc.getRestrictedIngredients() != null) {
-                                    for (ConditionRestrictedIngredient cri : mc.getRestrictedIngredients()) {
-                                        if (cri.getIngredientId() != null) {
-                                            restrictedIngredientIds.add(cri.getIngredientId());
-                                        }
-                                    }
-                                } else {
-                                    android.util.Log.e("LOC_MON_AN", "CẢNH BÁO: Bệnh '" + mc.getName() + "' trả về restrictedIngredients = NULL (Xem lại Model MedicalCondition)");
-                                }
-                            }
-                        }
-                    }
-                }
-
-                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ ID BỊ CẤM TÌM THẤY: " + restrictedIngredientIds.size());
-                android.util.Log.d("LOC_MON_AN", "TỔNG SỐ TÊN BỊ CẤM TÌM THẤY: " + userAllergiesList.size());
-
-                loadAllFoods(); // Xong xuôi thì qua tải Đồ ăn
-            }
-
-            @Override
-            public void onFailure(Call<List<User>> call, Throwable t) {
-                loadAllFoods();
-            }
-        });
-    }
-
-    // ==============================================================
-    // BƯỚC 2: TẢI ĐỒ ĂN VÀ LỌC BẰNG CẢ ID LẪN TÊN (KHÔNG THỂ LỌT LƯỚI)
-    // ==============================================================
     private void loadAllFoods() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
