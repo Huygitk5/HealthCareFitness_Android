@@ -114,7 +114,6 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     return;
                 }
 
-                // SỬA Ở ĐÂY: Chuyển sang ExerciseListActivity thay vì ExerciseActivity
                 Intent intent = new Intent(CustomExerciseSelectionActivity.this, ExerciseListActivity.class);
                 intent.putExtra("EXTRA_EXERCISE_LIST", finalSelectedList);
                 intent.putExtra("IS_FREE_WORKOUT", true);
