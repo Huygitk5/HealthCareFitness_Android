@@ -701,7 +701,7 @@ public class ProfileActivity extends AppCompatActivity {
                         boolean isAllergy = "allergy".equals(condition.getType());
                         if (isAllergy) {
                             tvType.setText("DỊ ỨNG");
-                            tvType.setTextColor(android.graphics.Color.parseColor("#FF7043"));
+                            tvType.setTextColor(Color.parseColor("#FF7043"));
                             llAllergiesContainer.addView(itemView);
                         } else {
                             tvType.setText("BỆNH LÝ");
