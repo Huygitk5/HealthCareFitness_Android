@@ -723,8 +723,8 @@ public class ProfileActivity extends AppCompatActivity {
                                 cardView.setStrokeColor(Color.parseColor("#009688"));
                                 cardView.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
                             } else {
-                                cardView.setStrokeColor(android.graphics.Color.parseColor("#E0E0E0"));
-                                cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#F8FAFB"));
+                                cardView.setStrokeColor(Color.parseColor("#E0E0E0"));
+                                cardView.setCardBackgroundColor(Color.parseColor("#F8FAFB"));
                             }
                         });
 
