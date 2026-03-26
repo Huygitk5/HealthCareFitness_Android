@@ -6,7 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SupabaseClient {
-    // Lấy trong mục Project Settings -> API của Supabase
+    // Lay trong muc Project Settings -> API cua Supabase
     private static final String SUPABASE_URL = "https://npifogdquxhxylhrbmec.supabase.co/rest/v1/";
     private static final String SUPABASE_ANON_KEY = "sb_publishable_L0AauC1QjtEemHrDWF83-A_sbB76Ynd";
 
@@ -14,23 +14,32 @@ public class SupabaseClient {
 
     public static Retrofit getClient() {
         if (retrofit == null) {
-            // Tạo một Interceptor để tự động nhét Header vào mọi cuộc gọi API
-            OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
-                Request newRequest = chain.request().newBuilder()
-                        .addHeader("apikey", SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + SUPABASE_ANON_KEY)
-                        // Bắt buộc với Supabase khi dùng POST/PATCH
-                        .addHeader("Content-Type", "application/json")
-                        .build();
-                return chain.proceed(newRequest);
-            }).build();
-
-            retrofit = new Retrofit.Builder()
-                    .baseUrl(SUPABASE_URL)
-                    .client(client)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
+            retrofit = buildRetrofit(SUPABASE_ANON_KEY);
         }
         return retrofit;
+    }
+
+    public static Retrofit getClient(String accessToken) {
+        if (accessToken == null || accessToken.trim().isEmpty()) {
+            return getClient();
+        }
+        return buildRetrofit(accessToken.trim());
+    }
+
+    private static Retrofit buildRetrofit(String bearerToken) {
+        OkHttpClient client = new OkHttpClient.Builder().addInterceptor(chain -> {
+            Request newRequest = chain.request().newBuilder()
+                    .addHeader("apikey", SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + bearerToken)
+                    .addHeader("Content-Type", "application/json")
+                    .build();
+            return chain.proceed(newRequest);
+        }).build();
+
+        return new Retrofit.Builder()
+                .baseUrl(SUPABASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
     }
 }

@@ -67,6 +67,15 @@ public interface SupabaseMusicApiService {
             @Query("song_id") String eqSongId
     );
 
+    /**
+     * Xóa bài hát khỏi bảng songs.
+     * Dùng cho cleanup nếu upload thành công nhưng link với user thất bại.
+     */
+    @DELETE("songs")
+    Call<Void> deleteSong(
+            @Query("id") String eqSongId
+    );
+
     // ── Inner class: Response khi join user_songs với songs ───────────────────
 
     class UserSongResponse {

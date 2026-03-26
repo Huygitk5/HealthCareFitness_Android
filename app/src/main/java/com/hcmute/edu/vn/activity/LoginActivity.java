@@ -19,6 +19,7 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.SignInRequest;
 import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.util.SupabaseSessionManager;
 
 import java.util.List;
 
@@ -85,11 +86,17 @@ public class LoginActivity extends AppCompatActivity {
 
                                     if (loginResponse.isSuccessful() && loginResponse.body() != null) {
                                         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                                        String accessToken = loginResponse.body().getAccessToken();
 
                                         pref.edit()
                                                 .putString("KEY_USER", username)
                                                 .putString("KEY_USER_ID", currentUser.getId())
                                                 .apply();
+
+                                        SupabaseSessionManager.saveAccessToken(
+                                                LoginActivity.this,
+                                                accessToken != null ? accessToken : ""
+                                        );
 
                                         Intent intent;
                                         // 3. KIỂM TRA: Nếu tên trống HOẶC chưa có chiều cao/cân nặng thì đi setup

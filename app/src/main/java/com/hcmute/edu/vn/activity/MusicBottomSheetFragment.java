@@ -1,20 +1,18 @@
 package com.hcmute.edu.vn.activity;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.transition.TransitionManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,8 +44,10 @@ import com.hcmute.edu.vn.model.Song;
 import com.hcmute.edu.vn.model.SongInsertRequest;
 import com.hcmute.edu.vn.model.UserSongInsert;
 import com.hcmute.edu.vn.service.MusicService;
+import com.hcmute.edu.vn.util.SupabaseSessionManager;
 import com.hcmute.edu.vn.util.SupabaseStorageUploader;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +57,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
+
+    private static final String TAG = "MusicBottomSheet";
 
     // ── Binder từ ExerciseActivity ────────────────────────────────────────────
     private MusicService.MusicBinder musicBinder;
@@ -111,9 +113,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // ── File Picker Launcher ───────────────────────────────────────────────────
     private ActivityResultLauncher<String> pickAudioLauncher;
 
-    // ── Permission Launcher ────────────────────────────────────────────────────
-    private ActivityResultLauncher<String> requestPermissionLauncher;
-
     // ══════════════════════════════════════════════════════════════════════════
     // Factory
     // ══════════════════════════════════════════════════════════════════════════
@@ -136,19 +135,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         SharedPreferences pref = requireActivity()
                 .getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         userId = pref.getString("KEY_USER_ID", "");
-
-        // Đăng ký launcher xin quyền
-        requestPermissionLauncher = registerForActivityResult(
-                new ActivityResultContracts.RequestPermission(),
-                isGranted -> {
-                    if (isGranted) {
-                        openFilePicker();
-                    } else {
-                        Toast.makeText(requireContext(),
-                                "Cần cấp quyền truy cập file âm thanh để thêm nhạc.",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
 
         // Đăng ký launcher chọn file audio
         pickAudioLauncher = registerForActivityResult(
@@ -259,8 +245,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private void loadUserSongsFromSupabase() {
         if (userId == null || userId.isEmpty()) return;
 
-        SupabaseMusicApiService api = SupabaseClient.getClient()
-                .create(SupabaseMusicApiService.class);
+        SupabaseMusicApiService api = getMusicApi();
 
         api.getUserSongs("eq." + userId, "song_id,songs(*)").enqueue(
                 new Callback<List<SupabaseMusicApiService.UserSongResponse>>() {
@@ -286,7 +271,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
                         // Cập nhật Service và Adapter
                         service.setSongList(combinedList);
-                        if (songAdapter != null && isAdded()) {
+                        if (songAdapter != null && isUiAvailable() && rvSongList != null) {
                             // Tạo lại adapter với list mới
                             songAdapter = new SongAdapter(combinedList, position -> {
                                 service.playAt(position);
@@ -308,30 +293,14 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // File Picker & Permission
+    // File Picker
     // ══════════════════════════════════════════════════════════════════════════
 
-    /** Kiểm tra quyền rồi mở file picker */
-    private void checkPermissionAndPickFile() {
-        String permission;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ dùng READ_MEDIA_AUDIO thay vì READ_EXTERNAL_STORAGE
-            permission = Manifest.permission.READ_MEDIA_AUDIO;
-        } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
-        }
-
-        if (ContextCompat.checkSelfPermission(requireContext(), permission)
-                == PackageManager.PERMISSION_GRANTED) {
-            openFilePicker();
-        } else {
-            requestPermissionLauncher.launch(permission);
-        }
-    }
-
-    /** Mở file picker chỉ cho phép chọn file audio */
+    /** Mở file picker chỉ cho phép chọn file audio. Với GetContent, hệ thống cấp URI permission tạm thời. */
     private void openFilePicker() {
-        pickAudioLauncher.launch("audio/*");
+        if (pickAudioLauncher != null) {
+            pickAudioLauncher.launch("audio/*");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -339,7 +308,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // ══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Xử lý file .mp3 user vừa chọn:
+     * Xử lý file audio user vừa chọn:
      * 1. Lấy tên file gốc
      * 2. Upload lên Supabase Storage
      * 3. Insert vào bảng songs
@@ -349,36 +318,45 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private void handleSelectedAudioFile(Uri fileUri) {
         // Lấy tên file gốc từ URI
         String originalFileName = getFileNameFromUri(fileUri);
-        String displayTitle     = originalFileName.replace(".mp3", "").replace(".MP3", "");
 
-        // Tạo tên file duy nhất trên Storage (userId + timestamp + tên gốc)
-        String storageFileName = userId + "_" + System.currentTimeMillis() + "_" + originalFileName;
+        if (userId == null || userId.isEmpty()) {
+            showToast("Không xác định được tài khoản để lưu bài hát.");
+            return;
+        }
+
+        String displayTitle = stripFileExtension(originalFileName);
+        String mimeType = getAudioMimeType(fileUri);
+        String storageFileName = buildStorageFileName(originalFileName);
 
         // Hiện progress bar, ẩn nút thêm
         setUploadingState(true);
 
         SupabaseStorageUploader uploader = new SupabaseStorageUploader(requireContext());
-        uploader.uploadMp3(fileUri, storageFileName, new SupabaseStorageUploader.UploadCallback() {
+        uploader.uploadAudio(fileUri, storageFileName, mimeType, new SupabaseStorageUploader.UploadCallback() {
 
             @Override
             public void onSuccess(String publicUrl) {
                 // Upload Storage thành công → Insert vào bảng songs
-                insertSongToDatabase(displayTitle, "Unknown Artist", publicUrl);
+                insertSongToDatabase(displayTitle, "Unknown Artist", publicUrl, storageFileName, uploader);
             }
 
             @Override
             public void onFailure(String errorMessage) {
                 setUploadingState(false);
-                Toast.makeText(requireContext(),
-                        "Upload thất bại: " + errorMessage, Toast.LENGTH_LONG).show();
+                showToast("Upload thất bại: " + errorMessage);
             }
         });
     }
 
     /** Insert bài hát mới vào bảng `songs`, lấy id để insert vào `user_songs` */
-    private void insertSongToDatabase(String title, String artist, String url) {
-        SupabaseMusicApiService api = SupabaseClient.getClient()
-                .create(SupabaseMusicApiService.class);
+    private void insertSongToDatabase(
+            String title,
+            String artist,
+            String url,
+            String storageFileName,
+            SupabaseStorageUploader uploader
+    ) {
+        SupabaseMusicApiService api = getMusicApi();
 
         SongInsertRequest request = new SongInsertRequest(title, artist, url, false);
 
@@ -390,32 +368,36 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                         && !response.body().isEmpty()) {
                     Song insertedSong = response.body().get(0);
                     // Tiếp theo: liên kết bài hát này với user
-                    linkSongToUser(insertedSong);
+                    linkSongToUser(insertedSong, storageFileName, uploader);
                 } else {
                     setUploadingState(false);
-                    Toast.makeText(requireContext(),
-                            "Lỗi lưu thông tin bài hát vào database.", Toast.LENGTH_SHORT).show();
+                    cleanupFailedUpload(uploader, null, storageFileName);
+                    String errorDetail = getErrorDetailsFromResponse(response);
+                    Log.e(TAG, "Insert song that bai (" + response.code() + "): " + errorDetail);
+                    showToast("Luu bai hat that bai (" + response.code() + "). " + errorDetail);
                 }
             }
 
             @Override
             public void onFailure(Call<List<Song>> call, Throwable t) {
                 setUploadingState(false);
-                Toast.makeText(requireContext(),
-                        "Lỗi kết nối khi lưu bài hát.", Toast.LENGTH_SHORT).show();
+                cleanupFailedUpload(uploader, null, storageFileName);
+                Log.e(TAG, "Insert song loi ket noi: " + t.getMessage(), t);
+                showToast("Loi ket noi khi luu bai hat: " + safeThrowableMessage(t));
             }
         });
     }
 
     /** Insert vào bảng `user_songs` để liên kết user với bài hát */
-    private void linkSongToUser(Song song) {
+    private void linkSongToUser(Song song, String storageFileName, SupabaseStorageUploader uploader) {
         if (userId == null || userId.isEmpty()) {
             setUploadingState(false);
+            cleanupFailedUpload(uploader, song, storageFileName);
+            showToast("Không xác định được tài khoản để liên kết bài hát.");
             return;
         }
 
-        SupabaseMusicApiService api = SupabaseClient.getClient()
-                .create(SupabaseMusicApiService.class);
+        SupabaseMusicApiService api = getMusicApi();
 
         api.insertUserSong(new UserSongInsert(userId, song.getDbId()))
                 .enqueue(new Callback<Void>() {
@@ -423,22 +405,23 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         setUploadingState(false);
                         if (response.isSuccessful()) {
-                            Toast.makeText(requireContext(),
-                                    "✅ Đã thêm \"" + song.getTitle() + "\" vào danh sách!",
-                                    Toast.LENGTH_SHORT).show();
+                            showToast("Da them \"" + song.getTitle() + "\" vao danh sach.");
                             // Thêm bài hát vào Service và cập nhật Adapter
                             addSongToListAndRefresh(song);
                         } else {
-                            Toast.makeText(requireContext(),
-                                    "Lỗi liên kết bài hát với tài khoản.", Toast.LENGTH_SHORT).show();
+                            cleanupFailedUpload(uploader, song, storageFileName);
+                            String errorDetail = getErrorDetailsFromResponse(response);
+                            Log.e(TAG, "Link user_songs that bai (" + response.code() + "): " + errorDetail);
+                            showToast("Lien ket bai hat that bai (" + response.code() + "). " + errorDetail);
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Void> call, Throwable t) {
                         setUploadingState(false);
-                        Toast.makeText(requireContext(),
-                                "Lỗi mạng khi liên kết bài hát.", Toast.LENGTH_SHORT).show();
+                        cleanupFailedUpload(uploader, song, storageFileName);
+                        Log.e(TAG, "Link user_songs loi ket noi: " + t.getMessage(), t);
+                        showToast("Loi mang khi lien ket bai hat: " + safeThrowableMessage(t));
                     }
                 });
     }
@@ -446,14 +429,16 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     /** Thêm bài hát mới vào Service và cập nhật RecyclerView */
     private void addSongToListAndRefresh(Song newSong) {
         MusicService service = getService();
-        if (service == null || !isAdded()) return;
+        if (service == null) return;
 
         service.addSong(newSong);
+
+        if (!isUiAvailable()) return;
 
         List<Song> updatedList = service.getSongList();
         int newPosition = updatedList.size() - 1;
 
-        if (songAdapter != null) {
+        if (songAdapter != null && rvSongList != null) {
             songAdapter.notifyItemInserted(newPosition);
             // Cuộn xuống bài hát vừa thêm
             rvSongList.smoothScrollToPosition(newPosition);
@@ -467,7 +452,11 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     /** Lấy tên file gốc từ URI (ví dụ: "my_song.mp3") */
     private String getFileNameFromUri(Uri uri) {
         String fileName = "audio_" + System.currentTimeMillis() + ".mp3";
-        try (Cursor cursor = requireContext().getContentResolver()
+        Context context = getContext();
+        if (context == null) {
+            return fileName;
+        }
+        try (Cursor cursor = context.getContentResolver()
                 .query(uri, null, null, null, null)) {
             if (cursor != null && cursor.moveToFirst()) {
                 int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
@@ -481,7 +470,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
     /** Bật/tắt trạng thái "đang upload" trên UI */
     private void setUploadingState(boolean isUploading) {
-        if (!isAdded()) return;
+        if (!isUiAvailable()) return;
         if (progressUpload != null) {
             progressUpload.setVisibility(isUploading ? View.VISIBLE : View.GONE);
         }
@@ -489,6 +478,125 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
             btnAddMusic.setEnabled(!isUploading);
             btnAddMusic.setAlpha(isUploading ? 0.4f : 1.0f);
         }
+    }
+
+    private void cleanupFailedUpload(
+            SupabaseStorageUploader uploader,
+            @Nullable Song insertedSong,
+            String storageFileName
+    ) {
+        uploader.deleteFile(storageFileName);
+
+        if (insertedSong == null || insertedSong.getDbId() <= 0) {
+            return;
+        }
+
+        SupabaseMusicApiService api = getMusicApi();
+        api.deleteSong("eq." + insertedSong.getDbId()).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Cleanup song row thất bại với code " + response.code());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                Log.e(TAG, "Cleanup song row lỗi: " + t.getMessage());
+            }
+        });
+    }
+
+    private SupabaseMusicApiService getMusicApi() {
+        return SupabaseClient.getClient(getSupabaseAccessToken())
+                .create(SupabaseMusicApiService.class);
+    }
+
+    private String getSupabaseAccessToken() {
+        Context context = getContext();
+        if (context == null) {
+            return "";
+        }
+        return SupabaseSessionManager.getAccessToken(context);
+    }
+
+    private String getErrorDetailsFromResponse(Response<?> response) {
+        if (response == null) {
+            return "Khong ro loi";
+        }
+
+        try {
+            if (response.errorBody() != null) {
+                String detail = response.errorBody().string();
+                if (detail != null && !detail.trim().isEmpty()) {
+                    return detail.trim();
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "Khong doc duoc errorBody: " + e.getMessage(), e);
+        }
+
+        return "Khong ro loi";
+    }
+
+    private String safeThrowableMessage(Throwable throwable) {
+        if (throwable == null || throwable.getMessage() == null || throwable.getMessage().trim().isEmpty()) {
+            return "Khong ro nguyen nhan";
+        }
+        return throwable.getMessage();
+    }
+
+    private String getAudioMimeType(Uri uri) {
+        Context context = getContext();
+        if (context == null) {
+            return "audio/mpeg";
+        }
+
+        String mimeType = context.getContentResolver().getType(uri);
+        if (mimeType != null && mimeType.startsWith("audio/")) {
+            return mimeType;
+        }
+        return "audio/mpeg";
+    }
+
+    private String stripFileExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex <= 0) {
+            return fileName;
+        }
+        return fileName.substring(0, dotIndex);
+    }
+
+    private String buildStorageFileName(String originalFileName) {
+        String extension = getFileExtension(originalFileName);
+        String baseName = stripFileExtension(originalFileName)
+                .replaceAll("[^a-zA-Z0-9._-]", "_")
+                .replaceAll("_+", "_");
+
+        if (baseName.isEmpty()) {
+            baseName = "audio";
+        }
+
+        return userId + "_" + System.currentTimeMillis() + "_" + baseName + extension;
+    }
+
+    private String getFileExtension(String fileName) {
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex < 0 || dotIndex == fileName.length() - 1) {
+            return ".mp3";
+        }
+        return fileName.substring(dotIndex).toLowerCase(Locale.ROOT);
+    }
+
+    private void showToast(String message) {
+        Context context = getContext();
+        if (context != null) {
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean isUiAvailable() {
+        return isAdded() && getView() != null;
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -539,7 +647,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
         // Nút thêm nhạc
         if (btnAddMusic != null) {
-            btnAddMusic.setOnClickListener(v -> checkPermissionAndPickFile());
+            btnAddMusic.setOnClickListener(v -> openFilePicker());
         }
 
         seekBarMusic.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {

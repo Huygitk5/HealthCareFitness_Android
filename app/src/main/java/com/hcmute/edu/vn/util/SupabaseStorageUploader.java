@@ -2,9 +2,9 @@ package com.hcmute.edu.vn.util;
 
 import android.content.Context;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -17,7 +17,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
- * Utility class upload file .mp3 lên Supabase Storage.
+ * Utility class upload file audio lên Supabase Storage.
  *
  * Supabase Storage không dùng Retrofit mà dùng REST API riêng,
  * nên phải dùng OkHttpClient trực tiếp.
@@ -44,9 +44,14 @@ public class SupabaseStorageUploader {
 
     private final OkHttpClient httpClient;
     private final Context context;
+    private final String bearerToken;
 
     public SupabaseStorageUploader(Context context) {
         this.context    = context.getApplicationContext();
+        String accessToken = SupabaseSessionManager.getAccessToken(this.context);
+        this.bearerToken = (accessToken != null && !accessToken.trim().isEmpty())
+                ? accessToken.trim()
+                : SUPABASE_ANON_KEY;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
                 .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)  // file lớn cần timeout dài hơn
@@ -55,13 +60,18 @@ public class SupabaseStorageUploader {
     }
 
     /**
-     * Upload file .mp3 lên Supabase Storage.
+     * Upload file audio lên Supabase Storage.
      *
-     * @param fileUri   URI của file .mp3 do user chọn (từ Intent/File Picker)
+     * @param fileUri   URI của file audio do user chọn (từ Intent/File Picker)
      * @param fileName  Tên file lưu trên Storage (ví dụ: "userId_timestamp.mp3")
+     * @param mimeType  MIME type của file audio, ví dụ "audio/mpeg" hoặc "audio/mp4"
      * @param callback  Callback trả kết quả về Main Thread
      */
-    public void uploadMp3(Uri fileUri, String fileName, UploadCallback callback) {
+    public void uploadAudio(Uri fileUri, String fileName, String mimeType, UploadCallback callback) {
+        final String safeMimeType = (mimeType != null && mimeType.startsWith("audio/"))
+                ? mimeType
+                : "audio/mpeg";
+
         // Đọc bytes của file từ URI trên background thread
         new Thread(() -> {
             InputStream inputStream = null;
@@ -72,26 +82,28 @@ public class SupabaseStorageUploader {
                     return;
                 }
 
-                byte[] fileBytes = null;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    fileBytes = inputStream.readAllBytes();
-                }
+                byte[] fileBytes = readBytes(inputStream);
 
                 String uploadPath = SUPABASE_URL
                         + "/storage/v1/object/"
                         + BUCKET_NAME + "/"
                         + fileName;
 
+                MediaType mediaType = MediaType.parse(safeMimeType);
+                if (mediaType == null) {
+                    mediaType = MediaType.parse("audio/mpeg");
+                }
+
                 RequestBody requestBody = RequestBody.create(
                         fileBytes,
-                        MediaType.parse("audio/mpeg")
+                        mediaType
                 );
 
                 Request request = new Request.Builder()
                         .url(uploadPath)
                         .addHeader("apikey",        SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + SUPABASE_ANON_KEY)
-                        .addHeader("Content-Type",  "audio/mpeg")
+                        .addHeader("Authorization", "Bearer " + bearerToken)
+                        .addHeader("Content-Type",  safeMimeType)
                         // "x-upsert: true" cho phép ghi đè nếu file đã tồn tại
                         .addHeader("x-upsert",      "true")
                         .post(requestBody)
@@ -137,7 +149,54 @@ public class SupabaseStorageUploader {
         }).start();
     }
 
+    /**
+     * Best-effort cleanup file trên Storage nếu các bước sau upload thất bại.
+     */
+    public void deleteFile(String fileName) {
+        String deletePath = SUPABASE_URL
+                + "/storage/v1/object/"
+                + BUCKET_NAME + "/"
+                + fileName;
+
+        Request request = new Request.Builder()
+                .url(deletePath)
+                .addHeader("apikey", SUPABASE_ANON_KEY)
+                .addHeader("Authorization", "Bearer " + bearerToken)
+                .delete()
+                .build();
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Cleanup storage thất bại: " + e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Cleanup storage thành công cho file: " + fileName);
+                } else {
+                    String errorBody = response.body() != null
+                            ? response.body().string()
+                            : "Không rõ lỗi";
+                    Log.e(TAG, "Cleanup storage lỗi HTTP " + response.code() + ": " + errorBody);
+                }
+                response.close();
+            }
+        });
+    }
+
     // ── Helpers: callback về Main Thread ─────────────────────────────────────
+
+    private byte[] readBytes(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        byte[] chunk = new byte[8192];
+        int read;
+        while ((read = inputStream.read(chunk)) != -1) {
+            buffer.write(chunk, 0, read);
+        }
+        return buffer.toByteArray();
+    }
 
     private void notifySuccess(UploadCallback callback, String url) {
         new android.os.Handler(android.os.Looper.getMainLooper())

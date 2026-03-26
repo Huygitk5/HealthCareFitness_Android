@@ -7,6 +7,7 @@ import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -25,6 +26,8 @@ import java.util.ArrayList;
 
 public class ExerciseActivity extends AppCompatActivity {
 
+    private static final String TAG = "ExerciseActivity";
+
     private ArrayList<Exercise> exerciseList;
     private int currentIndex = 0;
 
@@ -35,6 +38,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
     private MusicService.MusicBinder musicBinder;  // null cho đến khi bind thành công
     private boolean isMusicServiceBound = false;
+    private boolean pendingOpenMusicSheet = false;
 
     private final ServiceConnection musicServiceConnection = new ServiceConnection() {
 
@@ -42,7 +46,10 @@ public class ExerciseActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             musicBinder = (MusicService.MusicBinder) service;
             isMusicServiceBound = true;
-            // Tự động phát bài đầu khi kết nối lần đầu (nếu chưa phát)
+            if (pendingOpenMusicSheet) {
+                pendingOpenMusicSheet = false;
+                scheduleOpenMusicSheet();
+            }
         }
 
         @Override
@@ -99,12 +106,7 @@ public class ExerciseActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // BIND — kết nối để nhận IBinder điều khiển nhạc
-        // Guard: tránh bind nhiều lần nếu Service vẫn còn bound (ví dụ sau onStop sớm)
-        if (!isMusicServiceBound) {
-            Intent musicIntent = new Intent(this, MusicService.class);
-            bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
-        }
+        ensureMusicServiceBound();
     }
 
     @Override
@@ -170,14 +172,64 @@ public class ExerciseActivity extends AppCompatActivity {
          * Truyền MusicBinder vào Fragment để điều khiển trực tiếp Service.
          */
         icWorkoutMusic.setOnClickListener(v -> {
-            if (!isMusicServiceBound || musicBinder == null) {
+            if (isMusicServiceBound && musicBinder != null) {
+                scheduleOpenMusicSheet();
+            } else {
+                pendingOpenMusicSheet = true;
+                ensureMusicServiceBound();
                 Toast.makeText(this, "Đang kết nối dịch vụ nhạc...", Toast.LENGTH_SHORT).show();
-                return;
             }
-            MusicBottomSheetFragment sheet =
-                    MusicBottomSheetFragment.newInstance(musicBinder);
-            sheet.show(getSupportFragmentManager(), "MusicBottomSheet");
         });
+    }
+
+    private void ensureMusicServiceBound() {
+        if (isMusicServiceBound) {
+            return;
+        }
+
+        Intent musicIntent = new Intent(this, MusicService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(musicIntent);
+        } else {
+            startService(musicIntent);
+        }
+        bindService(musicIntent, musicServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void scheduleOpenMusicSheet() {
+        View decorView = getWindow().getDecorView();
+        decorView.post(this::openMusicSheetSafely);
+    }
+
+    private void openMusicSheetSafely() {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        if (getSupportFragmentManager().isStateSaved()) {
+            pendingOpenMusicSheet = true;
+            return;
+        }
+
+        try {
+            openMusicSheet();
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "Không thể mở MusicBottomSheet", e);
+            Toast.makeText(this, "Chưa thể mở phần nhạc lúc này.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void openMusicSheet() {
+        if (musicBinder == null) {
+            return;
+        }
+
+        if (getSupportFragmentManager().findFragmentByTag("MusicBottomSheet") != null) {
+            return;
+        }
+
+        MusicBottomSheetFragment sheet = MusicBottomSheetFragment.newInstance(musicBinder);
+        sheet.show(getSupportFragmentManager(), "MusicBottomSheet");
     }
 
     private void updateExerciseUI() {
