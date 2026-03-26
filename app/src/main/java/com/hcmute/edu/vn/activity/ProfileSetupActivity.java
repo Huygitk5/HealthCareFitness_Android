@@ -84,7 +84,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         spinnerActivityLevel.setSelection(2); // mặc định "Vận động vừa"
 
         // --- Auto-format ngày sinh ---
-        edtDOB.addTextChangedListener(new android.text.TextWatcher() {
+        edtDOB.addTextChangedListener(new TextWatcher() {
             private boolean isFormatting = false;
             private boolean isDeleting = false;
 
