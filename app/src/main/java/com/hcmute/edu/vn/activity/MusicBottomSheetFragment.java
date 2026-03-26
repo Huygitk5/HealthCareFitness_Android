@@ -1,12 +1,19 @@
 package com.hcmute.edu.vn.activity;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
+import android.database.Cursor;
 import android.media.AudioManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.OpenableColumns;
 import android.transition.TransitionManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,10 +21,13 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
@@ -30,21 +40,34 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.adapter.SongAdapter;
+import com.hcmute.edu.vn.database.SupabaseClient;
+import com.hcmute.edu.vn.database.SupabaseMusicApiService;
 import com.hcmute.edu.vn.model.Song;
+import com.hcmute.edu.vn.model.SongInsertRequest;
+import com.hcmute.edu.vn.model.UserSongInsert;
 import com.hcmute.edu.vn.service.MusicService;
+import com.hcmute.edu.vn.util.SupabaseStorageUploader;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
-    // ── Binder từ ServiceConnection của ExerciseActivity ──────────────────────
+    // ── Binder từ ExerciseActivity ────────────────────────────────────────────
     private MusicService.MusicBinder musicBinder;
 
     // ── System service ─────────────────────────────────────────────────────────
     private AudioManager audioManager;
 
-    // ── Views — Mini Player (luôn hiển thị) ───────────────────────────────────
+    // ── User info (lấy từ SharedPreferences) ──────────────────────────────────
+    private String userId;
+
+    // ── Views — Mini Player ────────────────────────────────────────────────────
     private LinearLayout rootSheetLayout;
     private TextView     tvSheetTitle;
     private ImageView    ivAlbumArt, ivArrowState;
@@ -53,11 +76,11 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private ImageButton  btnPlaylist, btnRepeat;
     private SwitchCompat switchMusic;
 
-    // ── Views — State 1: Volume ────────────────────────────────────────────────
+    // ── Views — Volume ─────────────────────────────────────────────────────────
     private LinearLayout layoutVolume;
     private SeekBar      seekBarVolume;
 
-    // ── Views — State 2: Music SeekBar + Song List ────────────────────────────
+    // ── Views — Full Player ────────────────────────────────────────────────────
     private LinearLayout layoutSeekbar;
     private LinearLayout layoutSongList;
     private SeekBar      seekBarMusic;
@@ -65,31 +88,36 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private RecyclerView rvSongList;
     private SongAdapter  songAdapter;
 
-    // ── State flag ─────────────────────────────────────────────────────────────
-    private boolean isFullPlayer = false;
-    private int lastKnownSongIndex = Integer.MIN_VALUE;
-    private int lastKnownRepeatMode = Integer.MIN_VALUE;
-    private boolean lastKnownPlaying = false;
-    private boolean userIsSeeking = false; // true khi người dùng đang kéo seekBarMusic
+    // ── Views — Upload ─────────────────────────────────────────────────────────
+    private ImageButton  btnAddMusic;      // Nút "+" thêm nhạc
+    private ProgressBar progressUpload;   // Hiện khi đang upload
 
-    // ── Handler cập nhật SeekBar nhạc định kỳ (500ms) ─────────────────────────
+    // ── State ──────────────────────────────────────────────────────────────────
+    private boolean isFullPlayer       = false;
+    private boolean userIsSeeking      = false;
+    private int lastKnownSongIndex     = Integer.MIN_VALUE;
+    private int lastKnownRepeatMode    = Integer.MIN_VALUE;
+    private boolean lastKnownPlaying   = false;
+
+    // ── Handler cập nhật SeekBar ───────────────────────────────────────────────
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable seekBarRunnable = new Runnable() {
-        @Override
-        public void run() {
+        @Override public void run() {
             updateMusicSeekBar();
             handler.postDelayed(this, 500);
         }
     };
 
+    // ── File Picker Launcher ───────────────────────────────────────────────────
+    private ActivityResultLauncher<String> pickAudioLauncher;
+
+    // ── Permission Launcher ────────────────────────────────────────────────────
+    private ActivityResultLauncher<String> requestPermissionLauncher;
+
     // ══════════════════════════════════════════════════════════════════════════
     // Factory
     // ══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Factory method — truyền MusicBinder qua setter thay vì Bundle
-     * vì IBinder không implement Parcelable/Serializable.
-     */
     public static MusicBottomSheetFragment newInstance(MusicService.MusicBinder binder) {
         MusicBottomSheetFragment f = new MusicBottomSheetFragment();
         f.musicBinder = binder;
@@ -99,6 +127,38 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // ══════════════════════════════════════════════════════════════════════════
     // Lifecycle
     // ══════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Lấy userId từ SharedPreferences
+        SharedPreferences pref = requireActivity()
+                .getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
+        userId = pref.getString("KEY_USER_ID", "");
+
+        // Đăng ký launcher xin quyền
+        requestPermissionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                isGranted -> {
+                    if (isGranted) {
+                        openFilePicker();
+                    } else {
+                        Toast.makeText(requireContext(),
+                                "Cần cấp quyền truy cập file âm thanh để thêm nhạc.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                });
+
+        // Đăng ký launcher chọn file audio
+        pickAudioLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetContent(),
+                uri -> {
+                    if (uri != null) {
+                        handleSelectedAudioFile(uri);
+                    }
+                });
+    }
 
     @Nullable
     @Override
@@ -111,15 +171,17 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         audioManager = (AudioManager) requireContext().getSystemService(Context.AUDIO_SERVICE);
 
         bindViews(view);
         setupRecyclerView();
         setupListeners();
-        refreshUI();                         // Sync UI với trạng thái service ngay lần đầu
-        setupVolumeControl();                // Khởi tạo Volume SeekBar
-        handler.post(seekBarRunnable);       // Bắt đầu vòng lặp cập nhật SeekBar nhạc
+        setupVolumeControl();
+        refreshUI();
+        handler.post(seekBarRunnable);
+
+        // Load danh sách nhạc của user từ Supabase
+        loadUserSongsFromSupabase();
     }
 
     @Override
@@ -139,30 +201,32 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     // ══════════════════════════════════════════════════════════════════════════
 
     private void bindViews(View v) {
-        rootSheetLayout   = v.findViewById(R.id.rootSheetLayout);
-        tvSheetTitle      = v.findViewById(R.id.tvSheetTitle);
-        ivAlbumArt        = v.findViewById(R.id.ivAlbumArt);
-        ivArrowState      = v.findViewById(R.id.ivArrowState);
+        rootSheetLayout    = v.findViewById(R.id.rootSheetLayout);
+        tvSheetTitle       = v.findViewById(R.id.tvSheetTitle);
+        ivAlbumArt         = v.findViewById(R.id.ivAlbumArt);
+        ivArrowState       = v.findViewById(R.id.ivArrowState);
         tvCurrentSongTitle = v.findViewById(R.id.tvCurrentSongTitle);
-        tvSongTime        = v.findViewById(R.id.tvSongTime);
-        btnPlayPause      = v.findViewById(R.id.btnPlayPause);
-        btnMusicNext      = v.findViewById(R.id.btnMusicNext);
-        btnMusicPrevious  = v.findViewById(R.id.btnMusicPrevious);
-        btnPlaylist       = v.findViewById(R.id.btnPlaylist);
-        btnRepeat         = v.findViewById(R.id.btnRepeat);
-        switchMusic       = v.findViewById(R.id.switchMusic);
+        tvSongTime         = v.findViewById(R.id.tvSongTime);
+        btnPlayPause       = v.findViewById(R.id.btnPlayPause);
+        btnMusicNext       = v.findViewById(R.id.btnMusicNext);
+        btnMusicPrevious   = v.findViewById(R.id.btnMusicPrevious);
+        btnPlaylist        = v.findViewById(R.id.btnPlaylist);
+        btnRepeat          = v.findViewById(R.id.btnRepeat);
+        switchMusic        = v.findViewById(R.id.switchMusic);
 
-        // State 1
-        layoutVolume      = v.findViewById(R.id.layoutVolume);
-        seekBarVolume     = v.findViewById(R.id.seekBarVolume);
+        layoutVolume       = v.findViewById(R.id.layoutVolume);
+        seekBarVolume      = v.findViewById(R.id.seekBarVolume);
 
-        // State 2
-        layoutSeekbar     = v.findViewById(R.id.layoutSeekbar);
-        layoutSongList    = v.findViewById(R.id.layoutSongList);
-        seekBarMusic      = v.findViewById(R.id.seekBarMusic);
-        tvSeekStart       = v.findViewById(R.id.tvSeekStart);
-        tvSeekEnd         = v.findViewById(R.id.tvSeekEnd);
-        rvSongList        = v.findViewById(R.id.rvSongList);
+        layoutSeekbar      = v.findViewById(R.id.layoutSeekbar);
+        layoutSongList     = v.findViewById(R.id.layoutSongList);
+        seekBarMusic       = v.findViewById(R.id.seekBarMusic);
+        tvSeekStart        = v.findViewById(R.id.tvSeekStart);
+        tvSeekEnd          = v.findViewById(R.id.tvSeekEnd);
+        rvSongList         = v.findViewById(R.id.rvSongList);
+
+        // Nút thêm nhạc và ProgressBar upload
+        btnAddMusic        = v.findViewById(R.id.btnAddMusic);
+        progressUpload     = v.findViewById(R.id.progressUpload);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -180,138 +244,99 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
             refreshUI();
         });
         songAdapter.setCurrentPlayingIndex(service.getCurrentIndex());
-
         rvSongList.setLayoutManager(new LinearLayoutManager(getContext()));
         rvSongList.setAdapter(songAdapter);
-        rvSongList.setHasFixedSize(true);
+        rvSongList.setHasFixedSize(false); // false vì list có thể thay đổi khi thêm nhạc
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // Volume Control (State 1)
+    // Load User Songs từ Supabase
     // ══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Khởi tạo Volume SeekBar dùng AudioManager.STREAM_MUSIC.
-     *
-     * - max  = audioManager.getStreamMaxVolume(STREAM_MUSIC)
-     * - progress hiện tại = getStreamVolume(STREAM_MUSIC)
-     * - onStopTrackingTouch → setStreamVolume() để thay đổi âm lượng thực của thiết bị
+     * Gọi API lấy danh sách nhạc user đã upload, ghép vào cuối danh sách nhạc mặc định.
      */
-    private void setupVolumeControl() {
-        if (audioManager == null) return;
+    private void loadUserSongsFromSupabase() {
+        if (userId == null || userId.isEmpty()) return;
 
-        int maxVol     = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        SupabaseMusicApiService api = SupabaseClient.getClient()
+                .create(SupabaseMusicApiService.class);
 
-        seekBarVolume.setMax(maxVol);
-        seekBarVolume.setProgress(currentVol);
+        api.getUserSongs("eq." + userId, "song_id,songs(*)").enqueue(
+                new Callback<List<SupabaseMusicApiService.UserSongResponse>>() {
+                    @Override
+                    public void onResponse(
+                            Call<List<SupabaseMusicApiService.UserSongResponse>> call,
+                            Response<List<SupabaseMusicApiService.UserSongResponse>> response) {
 
-        seekBarVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    // Thay đổi âm lượng STREAM_MUSIC ngay khi kéo (real-time feedback)
-                    audioManager.setStreamVolume(
-                            AudioManager.STREAM_MUSIC,
-                            progress,
-                            0 // không hiển thị UI volume system
-                    );
-                }
-            }
+                        if (!response.isSuccessful() || response.body() == null) return;
 
-            @Override public void onStartTrackingTouch(SeekBar seekBar) { }
-            @Override public void onStopTrackingTouch(SeekBar seekBar)  { }
-        });
+                        MusicService service = getService();
+                        if (service == null) return;
+
+                        // Lấy list nhạc mặc định (mock songs)
+                        List<Song> combinedList = new ArrayList<>(MusicService.getMockSongs());
+
+                        // Ghép nhạc user upload vào sau
+                        for (SupabaseMusicApiService.UserSongResponse r : response.body()) {
+                            if (r.song != null) {
+                                combinedList.add(r.song);
+                            }
+                        }
+
+                        // Cập nhật Service và Adapter
+                        service.setSongList(combinedList);
+                        if (songAdapter != null && isAdded()) {
+                            // Tạo lại adapter với list mới
+                            songAdapter = new SongAdapter(combinedList, position -> {
+                                service.playAt(position);
+                                songAdapter.setCurrentPlayingIndex(position);
+                                refreshUI();
+                            });
+                            songAdapter.setCurrentPlayingIndex(service.getCurrentIndex());
+                            rvSongList.setAdapter(songAdapter);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<List<SupabaseMusicApiService.UserSongResponse>> call,
+                            Throwable t) {
+                        // Không cần báo lỗi — vẫn có nhạc mặc định
+                    }
+                });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // State Switching
+    // File Picker & Permission
     // ══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * Chuyển sang State 2 (Full Player).
-     * - Ẩn volume slider, hiện music seekbar + danh sách.
-     * - Đổi tiêu đề header.
-     * - Mở rộng BottomSheet lên toàn màn hình.
-     * - Dùng TransitionManager để animate thay đổi visibility.
-     */
-    private void switchToFullPlayer() {
-        if (isFullPlayer) return;
-        isFullPlayer = true;
+    /** Kiểm tra quyền rồi mở file picker */
+    private void checkPermissionAndPickFile() {
+        String permission;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13+ dùng READ_MEDIA_AUDIO thay vì READ_EXTERNAL_STORAGE
+            permission = Manifest.permission.READ_MEDIA_AUDIO;
+        } else {
+            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+        }
 
-        // Animate transition
-        TransitionManager.beginDelayedTransition(rootSheetLayout);
-
-        layoutVolume.setVisibility(View.GONE);
-        layoutSeekbar.setVisibility(View.VISIBLE);
-        layoutSongList.setVisibility(View.VISIBLE);
-
-        tvSheetTitle.setText("Danh sách phát");
-        ivArrowState.setImageResource(android.R.drawable.arrow_up_float);
-
-        // Mở rộng BottomSheet
-        BottomSheetDialog dialog = (BottomSheetDialog) requireDialog();
-        BottomSheetBehavior<?> behavior = dialog.getBehavior();
-        behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-
-        // Cập nhật nhãn thời gian seekbar ngay lập tức
-        updateMusicSeekBar();
-        if (songAdapter != null) {
-            songAdapter.setCurrentPlayingIndex(getService() != null
-                    ? getService().getCurrentIndex() : -1);
+        if (ContextCompat.checkSelfPermission(requireContext(), permission)
+                == PackageManager.PERMISSION_GRANTED) {
+            openFilePicker();
+        } else {
+            requestPermissionLauncher.launch(permission);
         }
     }
 
-    /**
-     * Quay về State 1 (Mini Player).
-     * - Ẩn music seekbar + danh sách, hiện volume slider.
-     * - Khôi phục tiêu đề header.
-     * - Thu nhỏ BottomSheet.
-     */
-    private void switchToMiniPlayer() {
-        if (!isFullPlayer) return;
-        isFullPlayer = false;
-
-        TransitionManager.beginDelayedTransition(rootSheetLayout);
-
-        layoutVolume.setVisibility(View.VISIBLE);
-        layoutSeekbar.setVisibility(View.GONE);
-        layoutSongList.setVisibility(View.GONE);
-
-        tvSheetTitle.setText("Âm nhạc ");
-        ivArrowState.setImageResource(android.R.drawable.arrow_down_float);
-
-        BottomSheetDialog dialog = (BottomSheetDialog) requireDialog();
-        BottomSheetBehavior<?> behavior = dialog.getBehavior();
-        behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    /** Mở file picker chỉ cho phép chọn file audio */
+    private void openFilePicker() {
+        pickAudioLauncher.launch("audio/*");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // Listeners
+    // Upload Logic
     // ══════════════════════════════════════════════════════════════════════════
-
-    private void setupListeners() {
-        // Đóng BottomSheet
-        requireView().findViewById(R.id.btnCloseSheet).setOnClickListener(v -> {
-            if (isFullPlayer) {
-                switchToMiniPlayer();   // Nhấn X ở State 2 → về State 1 trước
-            } else {
-                dismiss();             // Nhấn X ở State 1 → đóng hẳn
-            }
-        });
-
-        // Toggle giữa State 1 và State 2
-        View.OnClickListener toggleStateListener = v -> {
-            if (isFullPlayer) {
-                switchToMiniPlayer();
-            } else {
-                switchToFullPlayer();
-            }
-        };
-
-        // Song info row: nhấn → toggle trạng thái
-        requireView().findViewById(R.id.layoutSongInfo)
-                .setOnClickListener(toggleStateListener);
 
     /**
      * Xử lý file .mp3 user vừa chọn:
@@ -326,186 +351,162 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         String originalFileName = getFileNameFromUri(fileUri);
         String displayTitle     = originalFileName.replace(".mp3", "").replace(".MP3", "");
 
-        // Play / Pause (toggle)
-        btnPlayPause.setOnClickListener(v -> {
-            MusicService svc = getService();
-            if (svc == null) return;
-            if (svc.isPlaying()) {
-                svc.pause();
-            } else {
-                // Nếu chưa có file nhạc hợp lệ → play(); nếu đang pause → resume()
-                if (svc.getDuration() == 0) {
-                    svc.play();
+        // Tạo tên file duy nhất trên Storage (userId + timestamp + tên gốc)
+        String storageFileName = userId + "_" + System.currentTimeMillis() + "_" + originalFileName;
+
+        // Hiện progress bar, ẩn nút thêm
+        setUploadingState(true);
+
+        SupabaseStorageUploader uploader = new SupabaseStorageUploader(requireContext());
+        uploader.uploadMp3(fileUri, storageFileName, new SupabaseStorageUploader.UploadCallback() {
+
+            @Override
+            public void onSuccess(String publicUrl) {
+                // Upload Storage thành công → Insert vào bảng songs
+                insertSongToDatabase(displayTitle, "Unknown Artist", publicUrl);
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                setUploadingState(false);
+                Toast.makeText(requireContext(),
+                        "Upload thất bại: " + errorMessage, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    /** Insert bài hát mới vào bảng `songs`, lấy id để insert vào `user_songs` */
+    private void insertSongToDatabase(String title, String artist, String url) {
+        SupabaseMusicApiService api = SupabaseClient.getClient()
+                .create(SupabaseMusicApiService.class);
+
+        SongInsertRequest request = new SongInsertRequest(title, artist, url, false);
+
+        // "return=representation" để Supabase trả về bản ghi vừa insert (có id)
+        api.insertSong("return=representation", request).enqueue(new Callback<List<Song>>() {
+            @Override
+            public void onResponse(Call<List<Song>> call, Response<List<Song>> response) {
+                if (response.isSuccessful() && response.body() != null
+                        && !response.body().isEmpty()) {
+                    Song insertedSong = response.body().get(0);
+                    // Tiếp theo: liên kết bài hát này với user
+                    linkSongToUser(insertedSong);
                 } else {
-                    svc.resume();
+                    setUploadingState(false);
+                    Toast.makeText(requireContext(),
+                            "Lỗi lưu thông tin bài hát vào database.", Toast.LENGTH_SHORT).show();
                 }
             }
-            refreshUI();
-        });
-
-        // Next
-        btnMusicNext.setOnClickListener(v -> {
-            MusicService svc = getService();
-            if (svc == null) return;
-            svc.next();
-            refreshUI();
-        });
-
-        // Previous
-        btnMusicPrevious.setOnClickListener(v -> {
-            MusicService svc = getService();
-            if (svc == null) return;
-            svc.previous();
-            refreshUI();
-        });
-
-        // Repeat toggle (UI only — lưu state isRepeat để dùng sau)
-        btnRepeat.setOnClickListener(v -> {
-            // Tag dùng làm flag: null = off, non-null = on
-            MusicService svc = getService();
-            if (svc == null) return;
-            int repeatMode = svc.cycleRepeatMode();
-            showRepeatModeToast(repeatMode);
-            refreshUI();
-        });
-        btnRepeat.setAlpha(0.4f); // Mặc định: repeat off
-
-        // Music SeekBar (State 2): người dùng kéo → seekTo()
-        seekBarMusic.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
-                // Callback từ code → bỏ qua
-            }
 
             @Override
-            public void onStartTrackingTouch(SeekBar sb) {
-                userIsSeeking = true; // Tạm dừng update tự động khi đang kéo
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar sb) {
-                userIsSeeking = false;
-                MusicService svc = getService();
-                if (svc != null && svc.getDuration() > 0) {
-                    int seekMs = (int) ((sb.getProgress() / 100.0f) * svc.getDuration());
-                    svc.seekTo(seekMs);
-                }
+            public void onFailure(Call<List<Song>> call, Throwable t) {
+                setUploadingState(false);
+                Toast.makeText(requireContext(),
+                        "Lỗi kết nối khi lưu bài hát.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // UI Update
-    // ══════════════════════════════════════════════════════════════════════════
-
-    /**
-     * Làm mới toàn bộ Mini Player UI theo trạng thái service hiện tại.
-     * Gọi sau mỗi thao tác play/pause/next/previous.
-     */
-    private void refreshUI() {
-        MusicService svc = getService();
-        if (svc == null) return;
-
-        // Album art + tên bài
-        Song song = svc.getCurrentSong();
-        if (song != null) {
-            tvCurrentSongTitle.setText(song.getTitle());
-            ivAlbumArt.setImageResource(
-                    song.getCoverResId() != 0 ? song.getCoverResId() : R.drawable.workout_1
-            );
+    /** Insert vào bảng `user_songs` để liên kết user với bài hát */
+    private void linkSongToUser(Song song) {
+        if (userId == null || userId.isEmpty()) {
+            setUploadingState(false);
+            return;
         }
 
-        // Thời gian hiển thị ở song info row
-        int pos = svc.getCurrentPosition();
-        int dur = svc.getDuration();
-        tvSongTime.setText(formatTime(pos) + "/" + formatTime(dur));
+        SupabaseMusicApiService api = SupabaseClient.getClient()
+                .create(SupabaseMusicApiService.class);
 
-        // Icon Play/Pause
-        boolean playing = svc.isPlaying();
-        btnPlayPause.setImageResource(
-                playing ? android.R.drawable.ic_media_pause
-                        : android.R.drawable.ic_media_play
-        );
-        updateRepeatModeUi(svc.getRepeatMode());
-        updatePreviousButtonUi(svc);
+        api.insertUserSong(new UserSongInsert(userId, song.getDbId()))
+                .enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        setUploadingState(false);
+                        if (response.isSuccessful()) {
+                            Toast.makeText(requireContext(),
+                                    "✅ Đã thêm \"" + song.getTitle() + "\" vào danh sách!",
+                                    Toast.LENGTH_SHORT).show();
+                            // Thêm bài hát vào Service và cập nhật Adapter
+                            addSongToListAndRefresh(song);
+                        } else {
+                            Toast.makeText(requireContext(),
+                                    "Lỗi liên kết bài hát với tài khoản.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
 
-        // Switch: đồng bộ với trạng thái service, tắt listener trước để tránh vòng lặp
-        switchMusic.setOnCheckedChangeListener(null);
-        switchMusic.setChecked(svc.isBackgroundPlaybackEnabled());
-        switchMusic.setOnCheckedChangeListener((btn, isChecked) -> {
-            MusicService s = getService();
-            if (s == null) return;
-            s.setBackgroundPlaybackEnabled(isChecked);
-            showBackgroundPlaybackToast(isChecked);
-            refreshUI();
-        });
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        setUploadingState(false);
+                        Toast.makeText(requireContext(),
+                                "Lỗi mạng khi liên kết bài hát.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 
-        // Highlight bài đang phát trong danh sách (nếu adapter đã khởi tạo)
+    /** Thêm bài hát mới vào Service và cập nhật RecyclerView */
+    private void addSongToListAndRefresh(Song newSong) {
+        MusicService service = getService();
+        if (service == null || !isAdded()) return;
+
+        service.addSong(newSong);
+
+        List<Song> updatedList = service.getSongList();
+        int newPosition = updatedList.size() - 1;
+
         if (songAdapter != null) {
-            songAdapter.setCurrentPlayingIndex(svc.getCurrentIndex());
+            songAdapter.notifyItemInserted(newPosition);
+            // Cuộn xuống bài hát vừa thêm
+            rvSongList.smoothScrollToPosition(newPosition);
         }
-        capturePlaybackSnapshot(svc);
-    }
-
-    /**
-     * Cập nhật Music SeekBar (State 2) và nhãn thời gian.
-     * Chạy mỗi 500ms qua Handler, bỏ qua khi người dùng đang kéo.
-     */
-    private void updateMusicSeekBar() {
-        if (userIsSeeking || !isAdded()) return;
-        MusicService svc = getService();
-        if (svc == null) return;
-
-        if (hasPlaybackSnapshotChanged(svc)) {
-            refreshUI();
-            svc = getService();
-            if (svc == null) return;
-        }
-
-        int position = svc.getCurrentPosition();
-        int duration = svc.getDuration();
-
-        if (duration > 0) {
-            int progress = (int) ((position / (float) duration) * 100);
-            seekBarMusic.setProgress(progress);
-        }
-
-        tvSeekStart.setText(formatTime(position));
-        tvSeekEnd.setText(formatTime(duration));
-
-        // Cập nhật luôn tvSongTime ở song info row (dù đang ở state nào)
-        tvSongTime.setText(formatTime(position) + "/" + formatTime(duration));
-        capturePlaybackSnapshot(svc);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // Helpers
     // ══════════════════════════════════════════════════════════════════════════
 
-    /** Chuyển milliseconds → chuỗi "mm:ss". */
-    private void updateRepeatModeUi(int repeatMode) {
-        if (!isAdded()) return;
-
-        int tintResId;
-        int iconResId = android.R.drawable.ic_menu_rotate;
-        String contentDescription;
-
-        switch (repeatMode) {
-            case MusicService.REPEAT_MODE_ONE:
-                tintResId = R.color.orange_warning;
-                iconResId = android.R.drawable.ic_menu_revert;
-                contentDescription = "Lặp lại bài hiện tại";
-                break;
-            case MusicService.REPEAT_MODE_ALL:
-                tintResId = R.color.primary_green;
-                contentDescription = "Lặp lại toàn bộ danh sách";
-                break;
-            case MusicService.REPEAT_MODE_OFF:
-            default:
-                tintResId = R.color.grey_locked;
-                contentDescription = "Tắt lặp lại";
-                break;
+    /** Lấy tên file gốc từ URI (ví dụ: "my_song.mp3") */
+    private String getFileNameFromUri(Uri uri) {
+        String fileName = "audio_" + System.currentTimeMillis() + ".mp3";
+        try (Cursor cursor = requireContext().getContentResolver()
+                .query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (idx >= 0) fileName = cursor.getString(idx);
+            }
+        } catch (Exception e) {
+            // Giữ tên mặc định
         }
+        return fileName;
+    }
+
+    /** Bật/tắt trạng thái "đang upload" trên UI */
+    private void setUploadingState(boolean isUploading) {
+        if (!isAdded()) return;
+        if (progressUpload != null) {
+            progressUpload.setVisibility(isUploading ? View.VISIBLE : View.GONE);
+        }
+        if (btnAddMusic != null) {
+            btnAddMusic.setEnabled(!isUploading);
+            btnAddMusic.setAlpha(isUploading ? 0.4f : 1.0f);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Listeners
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private void setupListeners() {
+        requireView().findViewById(R.id.btnCloseSheet).setOnClickListener(v -> {
+            if (isFullPlayer) switchToMiniPlayer();
+            else dismiss();
+        });
+
+        View.OnClickListener toggleStateListener = v -> {
+            if (isFullPlayer) switchToMiniPlayer();
+            else switchToFullPlayer();
+        };
+        requireView().findViewById(R.id.layoutSongInfo).setOnClickListener(toggleStateListener);
+        btnPlaylist.setOnClickListener(toggleStateListener);
 
         btnPlayPause.setOnClickListener(v -> {
             MusicService svc = getService();
@@ -685,24 +686,16 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         btnRepeat.setImageResource(iconResId);
         btnRepeat.setImageTintList(ColorStateList.valueOf(tintColor));
         btnRepeat.setAlpha(repeatMode == MusicService.REPEAT_MODE_OFF ? 0.45f : 1.0f);
-        btnRepeat.setContentDescription(contentDescription);
     }
 
     private void updatePreviousButtonUi(MusicService svc) {
         if (!isAdded()) return;
-
-        boolean canGoPrevious = false;
         List<Song> songs = svc.getSongList();
-        if (songs != null && !songs.isEmpty()) {
-            canGoPrevious = svc.getCurrentIndex() > 0
-                    || svc.getRepeatMode() == MusicService.REPEAT_MODE_ALL;
-        }
-
-        int tintColor = ContextCompat.getColor(
-                requireContext(),
-                canGoPrevious ? android.R.color.black : R.color.grey_locked
-        );
-
+        boolean canGoPrevious = songs != null && !songs.isEmpty()
+                && (svc.getCurrentIndex() > 0
+                || svc.getRepeatMode() == MusicService.REPEAT_MODE_ALL);
+        int tintColor = ContextCompat.getColor(requireContext(),
+                canGoPrevious ? android.R.color.black : R.color.grey_locked);
         btnMusicPrevious.setEnabled(canGoPrevious);
         btnMusicPrevious.setAlpha(canGoPrevious ? 1.0f : 0.35f);
         btnMusicPrevious.setImageTintList(ColorStateList.valueOf(tintColor));
@@ -710,52 +703,40 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
     private void showRepeatModeToast(int repeatMode) {
         if (!isAdded()) return;
-
-        String message;
+        String msg;
         switch (repeatMode) {
-            case MusicService.REPEAT_MODE_ONE:
-                message = "Đang lặp lại bài hiện tại";
-                break;
-            case MusicService.REPEAT_MODE_ALL:
-                message = "Đang lặp lại toàn bộ danh sách";
-                break;
-            case MusicService.REPEAT_MODE_OFF:
-            default:
-                message = "Đã tắt lặp lại";
-                break;
+            case MusicService.REPEAT_MODE_ONE: msg = "Đang lặp lại bài hiện tại"; break;
+            case MusicService.REPEAT_MODE_ALL: msg = "Đang lặp lại toàn bộ danh sách"; break;
+            default: msg = "Đã tắt lặp lại"; break;
         }
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show();
     }
 
     private void showBackgroundPlaybackToast(boolean enabled) {
         if (!isAdded()) return;
-
-        String message = enabled
-                ? "Đã bật chạy nhạc nền"
-                : "Đã tắt chạy nhạc nền";
-        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(),
+                enabled ? "Đã bật chạy nhạc nền" : "Đã tắt chạy nhạc nền",
+                Toast.LENGTH_SHORT).show();
     }
 
     private boolean hasPlaybackSnapshotChanged(MusicService svc) {
-        return lastKnownSongIndex != svc.getCurrentIndex()
-                || lastKnownPlaying != svc.isPlaying()
+        return lastKnownSongIndex  != svc.getCurrentIndex()
+                || lastKnownPlaying    != svc.isPlaying()
                 || lastKnownRepeatMode != svc.getRepeatMode();
     }
 
     private void capturePlaybackSnapshot(MusicService svc) {
-        lastKnownSongIndex = svc.getCurrentIndex();
-        lastKnownPlaying = svc.isPlaying();
+        lastKnownSongIndex  = svc.getCurrentIndex();
+        lastKnownPlaying    = svc.isPlaying();
         lastKnownRepeatMode = svc.getRepeatMode();
     }
 
     private String formatTime(int ms) {
         if (ms <= 0) return "00:00";
         int totalSec = ms / 1000;
-        return String.format(Locale.getDefault(), "%02d:%02d",
-                totalSec / 60, totalSec % 60);
+        return String.format(Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60);
     }
 
-    /** Lấy MusicService an toàn từ Binder (null-safe). */
     @Nullable
     private MusicService getService() {
         if (musicBinder == null) return null;
