@@ -26,7 +26,7 @@ import com.hcmute.edu.vn.model.ConditionRestrictedMuscle;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
-import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
+
 import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
 import com.hcmute.edu.vn.model.WorkoutDayExercise;
@@ -317,7 +317,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                 if (day.getExercises() != null) {
                     for (WorkoutDayExercise wde : day.getExercises()) {
                         Exercise ex = wde.getExercise();
-                        if (ex != null && bannedMuscleIds.contains(ex.getMuscleGroupId()) && ex.getDifficultyLevelId() > 1) {
+                        if (ex != null && bannedMuscleIds.contains(ex.getMuscleGroupId()) && ex.getDifficultyLevelId() != null && ex.getDifficultyLevelId() > 1) {
                             if (!musclesNeedingReplacements.contains(ex.getMuscleGroupId())) {
                                 musclesNeedingReplacements.add(ex.getMuscleGroupId());
                             }
@@ -352,7 +352,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
                             for (WorkoutDayExercise wde : day.getExercises()) {
                                 Exercise ex = wde.getExercise();
                                 if (ex != null && bannedMuscleIds.contains(ex.getMuscleGroupId())) {
-                                    if (ex.getDifficultyLevelId() > 1) {
+                                    if (ex.getDifficultyLevelId() != null && ex.getDifficultyLevelId() > 1) {
                                         Exercise easyExercise = null;
                                         for (Exercise repEx : replacementPool) {
                                             if (repEx.getMuscleGroupId().equals(ex.getMuscleGroupId())) {
@@ -460,6 +460,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, ExerciseListActivity.class);
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
+        intent.putExtra("EXTRA_DAY_ID", day.getId());
         String title = "Ngày " + (day.getDayOrder() != null ? day.getDayOrder() : "?");
         
 //        if (day.getId() != null) {
