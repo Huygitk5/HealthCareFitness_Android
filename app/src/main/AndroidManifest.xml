@@ -90,6 +90,7 @@
         <receiver android:name="com.hcmute.edu.vn.receiver.WorkoutReminderReceiver" android:exported="false" />
         <receiver android:name=".receiver.WeightReminderReceiver" android:exported="false" />
         <receiver android:name=".receiver.DailyWorkoutReceiver" />
+        <receiver android:name=".receiver.MealNotificationReceiver" />
 
         <!--
             MusicService: foregroundServiceType="mediaPlayback" bắt buộc từ Android 10+
