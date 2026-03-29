@@ -427,7 +427,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onFailure(Call<Void> call2, Throwable t) {
-                                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
                                     btnSave.setText("LƯU");
                                     btnSave.setEnabled(true);
                                 }
