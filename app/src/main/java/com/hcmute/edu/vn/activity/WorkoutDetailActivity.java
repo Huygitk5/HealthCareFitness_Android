@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,7 +38,7 @@ public class WorkoutDetailActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_detail_workout);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         rvWorkoutDays = findViewById(R.id.rvWorkoutDays);
@@ -73,7 +74,7 @@ public class WorkoutDetailActivity extends AppCompatActivity {
                                 data.clear();
                                 data.addAll(plan.getDays());
 
-                                adapter = new WorkoutAdapter(data);
+                                adapter = new WorkoutAdapter(data, planId);
                                 rvWorkoutDays.setAdapter(adapter);
                             } else {
                                 Toast.makeText(WorkoutDetailActivity.this, "Gói tập chưa có ngày nào!", Toast.LENGTH_SHORT).show();

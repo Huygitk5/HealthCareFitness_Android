@@ -23,6 +23,7 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.FitnessGoal;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserExperience;
 import com.hcmute.edu.vn.util.FitnessCalculator;
 import com.hcmute.edu.vn.model.WorkoutPlan;
 
@@ -53,13 +54,15 @@ public class ProfileSetupActivity extends AppCompatActivity {
     RadioGroup rgExperience;
 
     private List<FitnessGoal> fitnessGoalList = new ArrayList<>();
+    private List<UserExperience> experienceList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile_setup);
         EdgeToEdge.enable(this);
-        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(),
+                getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         edtFullName = findViewById(R.id.edtFullName);
@@ -118,8 +121,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         receivedUsername = getIntent().getStringExtra("KEY_REGISTER_USER");
 
-//        loadFitnessGoals();
-
         // --- Spinner Fitness Goal ---
         spinnerFitnessGoal.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -136,13 +137,15 @@ public class ProfileSetupActivity extends AppCompatActivity {
                             double currentBmi = calculateBMI(Double.parseDouble(wStr), Double.parseDouble(hStr));
                             if (currentBmi > 24.9 && (isMaintain || selectedName.contains("tăng"))) {
                                 Toast.makeText(ProfileSetupActivity.this,
-                                        "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
+                                        "BMI của bạn đang ở mức Thừa cân. Bạn chỉ nên chọn Giảm mỡ lúc này!",
+                                        Toast.LENGTH_LONG).show();
                                 selectFirstGoalContaining("giảm");
                                 return;
                             }
                             if (currentBmi < 18.5 && (isMaintain || selectedName.contains("giảm"))) {
                                 Toast.makeText(ProfileSetupActivity.this,
-                                        "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
+                                        "BMI của bạn đang ở mức Thiếu cân. Bạn chỉ nên chọn Tăng cơ lúc này!",
+                                        Toast.LENGTH_LONG).show();
                                 selectFirstGoalContaining("tăng");
                                 return;
                             }
@@ -160,8 +163,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             public void onNothingSelected(android.widget.AdapterView<?> parent) {
             }
         });
+
         btnComplete.setOnClickListener(v -> saveProfileData());
-        loadFitnessGoals(); // thắc mắc sao gọi ngay đây
+        loadFitnessGoals();
+        loadExperiences();
     }
 
     // =========================================================
@@ -191,6 +196,54 @@ public class ProfileSetupActivity extends AppCompatActivity {
         });
     }
 
+    private void loadExperiences() {
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.getAllUserExperiences("*").enqueue(new Callback<List<UserExperience>>() {
+            @Override
+            public void onResponse(Call<List<UserExperience>> call, Response<List<UserExperience>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    experienceList = response.body();
+                    rgExperience.removeAllViews();
+
+                    for (int i = 0; i < experienceList.size(); i++) {
+                        android.widget.RadioButton rb = new android.widget.RadioButton(ProfileSetupActivity.this);
+
+                        String expName = experienceList.get(i).getUserType();
+                        if (expName != null) {
+                            if (expName.equalsIgnoreCase("Beginner"))
+                                expName = "Người mới";
+                            else if (expName.equalsIgnoreCase("Intermediate"))
+                                expName = "Đã có kinh nghiệm";
+                        }
+                        rb.setText(expName);
+
+                        rb.setId(View.generateViewId()); // Tạo ID động
+                        rb.setTag(experienceList.get(i).getId()); // Lưu ID database vào Tag
+
+                        // Đảm bảo UI giống file XML
+                        android.widget.RadioGroup.LayoutParams params = new android.widget.RadioGroup.LayoutParams(
+                                0, android.view.ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f);
+                        rb.setLayoutParams(params);
+                        rb.setTextSize(15);
+                        try {
+                            rb.setButtonTintList(android.content.res.ColorStateList
+                                    .valueOf(android.graphics.Color.parseColor("#2196F3")));
+                        } catch (Exception e) {
+                        }
+
+                        rgExperience.addView(rb);
+                        if (i == 0)
+                            rgExperience.check(rb.getId()); // Check mặc định cái đầu
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<UserExperience>> call, Throwable t) {
+            }
+        });
+    }
+
     // =========================================================
     // SAVE DATA
     // =========================================================
@@ -200,12 +253,39 @@ public class ProfileSetupActivity extends AppCompatActivity {
         String dobInput = edtDOB.getText().toString().trim();
         String heightStr = edtHeight.getText().toString().trim();
         String weightStr = edtWeight.getText().toString().trim();
-        boolean isUserBeginner = (rgExperience.getCheckedRadioButtonId() == R.id.rbBeginner);
 
         if (fullName.isEmpty() || dobInput.isEmpty() || heightStr.isEmpty() || weightStr.isEmpty()) {
             Toast.makeText(ProfileSetupActivity.this, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // LẤY EXPERIENCE ID TỪ RADIOGROUP THEO CÁCH CHẮC CHẮN NHẤT
+        int extractedExperienceId = 1; // Mặc định
+
+        for (int i = 0; i < rgExperience.getChildCount(); i++) {
+            View child = rgExperience.getChildAt(i);
+            if (child instanceof android.widget.RadioButton) {
+                if (((android.widget.RadioButton) child).isChecked()) {
+                    if (child.getTag() != null) {
+                        try {
+                            extractedExperienceId = Integer.parseInt(child.getTag().toString());
+                        } catch (Exception e) {
+                        }
+                    } else {
+                        // Fallback an toàn nếu API lag chưa kịp load tag (tránh hardcode R.id)
+                        String btnText = ((android.widget.RadioButton) child).getText().toString().toLowerCase();
+                        if (btnText.contains("kin") || btnText.contains("intermediate")) {
+                            extractedExperienceId = 2;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        android.util.Log.d("ProfileSetup", "EXPERIENCE ID ĐÃ CHỌN: " + extractedExperienceId);
+        final int finalExperienceId = extractedExperienceId;
+        boolean isUserBeginner = (finalExperienceId == 1);
 
         // Convert DOB
         String dobFormatted = dobInput;
@@ -263,49 +343,36 @@ public class ProfileSetupActivity extends AppCompatActivity {
             // Activity level
             int activityIndex = spinnerActivityLevel.getSelectedItemPosition();
 
-            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                    .putBoolean("IS_BEGINNER", isUserBeginner)
-                    .putInt("ACTIVITY_INDEX", activityIndex)
-                    .apply();
-            // BMI
             double bmi = calculateBMI(weight, height);
-
-            // BMR & TDEE
-            double bmr  = FitnessCalculator.calcBMR(weight, height, age, gender);
+            double bmr = FitnessCalculator.calcBMR(weight, height, age, gender);
             double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
+            double targetW = (targetWeightValue != null && targetWeightValue > 0) ? targetWeightValue : weight;
 
-            // Target weight fallback
-            double targetW = (targetWeightValue != null && targetWeightValue > 0)
-                    ? targetWeightValue : weight;
-
-            // Validation
             boolean isLose = selectedGoalName.toLowerCase().contains("giảm");
             boolean isGain = selectedGoalName.toLowerCase().contains("tăng");
             boolean isMaintain = selectedGoalName.toLowerCase().contains("giữ");
-//            if (isLose && targetWeightValue != null && targetWeightValue >= weight) {
-//                showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
-//            }
-//            if (isGain && targetWeightValue != null && targetWeightValue <= weight) {
-//                showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
-//            }
+
             if (targetWeightValue != null && !isMaintain) {
                 double heightM = height / 100.0;
                 double targetBmi = targetWeightValue / (heightM * heightM);
 
-                if (isLose) { // ĐANG GIẢM MỠ
+                if (isLose) {
                     if (targetWeightValue >= weight) {
-                        showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!"); return;
+                        showError("Cân nặng mục tiêu phải nhỏ hơn hiện tại!");
+                        return;
                     }
                     if (targetBmi < 18.5) {
-                        showError("Cấm! Mức này quá thấp để giảm (BMI < 18.5). Hãy điều chỉnh lại!"); return;
+                        showError("Cấm! Mức này quá thấp để giảm. Hãy điều chỉnh lại!");
+                        return;
                     }
-                }
-                else if (isGain) { // ĐANG TĂNG CƠ
+                } else if (isGain) {
                     if (targetWeightValue <= weight) {
-                        showError("Cân nặng mục tiêu phải lớn hơn hiện tại!"); return;
+                        showError("Cân nặng mục tiêu phải lớn hơn hiện tại!");
+                        return;
                     }
                     if (targetBmi > 23.0) {
-                        showError("Cấm! Mức này quá cao để tăng (BMI > 23.0). Hãy điều chỉnh lại!"); return;
+                        showError("Cấm! Mức này quá cao để tăng. Hãy điều chỉnh lại!");
+                        return;
                     }
                 }
             }
@@ -315,15 +382,14 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 return;
             }
 
+            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                    .putBoolean("IS_BEGINNER", isUserBeginner)
+                    .putInt("ACTIVITY_INDEX", activityIndex)
+                    .apply();
+
             // === CALCULATE ===
             FitnessCalculator.FitnessResult result = FitnessCalculator.calculate(
-                    selectedGoalName,
-                    weight,
-                    targetWeightValue != null ? targetWeightValue : weight,
-                    tdee,
-                    gender,
-                    isUserBeginner
-            );
+                    selectedGoalName, weight, targetW, tdee, gender, isUserBeginner);
 
             // Build User object
             User updateData = new User();
@@ -333,69 +399,86 @@ public class ProfileSetupActivity extends AppCompatActivity {
             updateData.setHeight(height);
             updateData.setWeight(weight);
             updateData.setFitnessGoalId(selectedGoalId);
+            updateData.setUserExperienceId(finalExperienceId);
             updateData.setTarget(targetWeightValue);
             updateData.setCurrentDailyCalories(result.dailyCalories);
-            updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
-            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
-
-//            calculateFitnessMetrics(updateData, weight, height, age, gender, selectedGoalName, targetWeightValue != null ? targetWeightValue.doubleValue() : weight);
+            if (result.targetDate != null)
+                updateData.setTargetDate(result.targetDate);
 
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
 
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            final String finalDobFormatted = dobFormatted;
             final double finalWeight = weight;
             final double finalHeight = height;
 
-            apiService.getUserByUsername("eq." + receivedUsername, "*")
-                    .enqueue(new Callback<List<User>>() {
+            apiService.getUserByUsername("eq." + receivedUsername, "*").enqueue(new Callback<List<User>>() {
                 @Override
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
-                        // LẤY GÓI TẬP ĐÚNG THEO MỤC TIÊU VÀ LƯU VÀO USER NGAY LÚC SETUP PROFILE
-                        apiService.getWorkoutPlanByGoalId("eq." + selectedGoalId, "*").enqueue(new Callback<List<WorkoutPlan>>() {
-                            @Override
-                            public void onResponse(Call<List<WorkoutPlan>> planCall, Response<List<WorkoutPlan>> planResponse) {
-                                if (planResponse.isSuccessful() && planResponse.body() != null && !planResponse.body().isEmpty()) {
-                                    updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
-                                }
-                                apiService.updateUserProfile("eq." + receivedUsername, updateData)
-                                        .enqueue(new Callback<Void>() {
-                                    @Override
-                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
-                                        if (profileResponse.isSuccessful()) {
-                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
-                                                    .apply();
-                                            // Lưu BMI log
-                                            double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
-                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
-                                                    Locale.getDefault()).format(new Date());
-                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
-                                                    userId, finalWeight, finalHeight, bmiVal, now);
-                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
-                                                @Override
-                                                public void onResponse(Call<Void> call, Response<Void> logResponse) { goToHome(userId); }
 
-                                                @Override
-                                                public void onFailure(Call<Void> call, Throwable t) { goToHome(userId); }
-                                            });
-                                        } else { showError("Lỗi cập nhật!"); }
+                        // TÌM GÓI TẬP BẰNG CẢ 2 KHÓA NGOẠI: GOAL VÀ EXPERIENCE
+                        apiService.getWorkoutPlanByGoalAndExperience("eq." + selectedGoalId, "eq." + finalExperienceId,
+                                "*").enqueue(new Callback<List<WorkoutPlan>>() {
+                                    @Override
+                                    public void onResponse(Call<List<WorkoutPlan>> planCall,
+                                            Response<List<WorkoutPlan>> planResponse) {
+                                        if (planResponse.isSuccessful() && planResponse.body() != null
+                                                && !planResponse.body().isEmpty()) {
+                                            updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
+                                        }
+
+                                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                                .enqueue(new Callback<Void>() {
+                                                    @Override
+                                                    public void onResponse(Call<Void> call,
+                                                            Response<Void> profileResponse) {
+                                                        if (profileResponse.isSuccessful()) {
+
+                                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
+                                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
+                                                                    .apply();
+
+                                                            double bmiVal = finalWeight
+                                                                    / Math.pow(finalHeight / 100.0, 2);
+                                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
+                                                                    Locale.getDefault()).format(new Date());
+                                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                                                    userId, finalWeight, finalHeight, bmiVal, now);
+                                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                                                @Override
+                                                                public void onResponse(Call<Void> call,
+                                                                        Response<Void> logResponse) {
+                                                                    goToHome(userId);
+                                                                }
+
+                                                                @Override
+                                                                public void onFailure(Call<Void> call, Throwable t) {
+                                                                    goToHome(userId);
+                                                                }
+                                                            });
+                                                        } else {
+                                                            showError("Lỗi cập nhật!");
+                                                        }
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(Call<Void> call, Throwable t) {
+                                                        showError("Lỗi mạng!");
+                                                    }
+                                                });
                                     }
-                                    @Override
-                                    public void onFailure(Call<Void> call, Throwable t) { showError("Lỗi mạng!"); }
-                                });
 
-                            }
-                            @Override
-                            public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
-                                showError("Lỗi lấy kế hoạch tập!");
-                            }
-                        }); // Kết thúc block getWorkoutPlanByGoalId
+                                    @Override
+                                    public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
+                                        showError("Lỗi lấy kế hoạch tập!");
+                                    }
+                                });
                     }
                 }
+
                 @Override
                 public void onFailure(Call<List<User>> call, Throwable t) { showError("Lỗi mạng!"); }
             });

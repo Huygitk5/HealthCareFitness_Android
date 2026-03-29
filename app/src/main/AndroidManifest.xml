@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Permissions cho MusicService chạy foreground -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -59,8 +63,16 @@
             android:exported="false"  />
 
         <activity
+            android:name=".activity.RestDayCompleteActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activity.WorkoutJourneyActivity"
             android:exported="false"  />
+
+        <activity
+            android:name=".activity.WorkoutActivity"
+            android:exported="false" />
 
         <activity android:name="com.hcmute.edu.vn.activity.WorkoutDetailActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseActivity" android:exported="false" />
@@ -69,11 +81,24 @@
         <activity android:name=".activity.FoodDetailActivity" android:exported="false" />
         <activity android:name=".activity.MealSearchActivity" android:exported="false"/>
         <activity android:name=".activity.MealSwapActivity" android:exported="false" />
+        <activity android:name=".activity.RestActivity" android:exported="false"/>
+        <activity android:name=".activity.WorkoutCompleteActivity" android:exported="false"/>
+        <activity android:name=".activity.WorkoutHistoryActivity" android:exported="false" android:screenOrientation="portrait"/>
+
         <receiver android:name=".receiver.WaterReminderReceiver" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ChatbotActivity" android:windowSoftInputMode="adjustResize" android:exported="false" />
         <receiver android:name="com.hcmute.edu.vn.receiver.WorkoutReminderReceiver" android:exported="false" />
         <receiver android:name=".receiver.WeightReminderReceiver" android:exported="false" />
         <receiver android:name=".receiver.DailyWorkoutReceiver" />
+
+        <!--
+            MusicService: foregroundServiceType="mediaPlayback" bắt buộc từ Android 10+
+            khi Service phát media và cần startForeground().
+        -->
+        <service
+            android:name=".service.MusicService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
 
 
     </application>

@@ -13,9 +13,12 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.progressindicator.CircularProgressIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 import com.hcmute.edu.vn.R;
@@ -28,6 +31,7 @@ import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserDailyMeal;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
+import com.hcmute.edu.vn.util.ChatbotHelper;
 import com.hcmute.edu.vn.util.FitnessCalculator;
 
 import java.text.SimpleDateFormat;
@@ -52,7 +56,7 @@ public class NutritionActivity extends AppCompatActivity {
     private LinearProgressIndicator progressCarb, progressProtein, progressFat;
     private TextView tvTotalCalories, tvTargetCalories, tvTotalCarb, tvTotalProtein, tvTotalFat;
     private TextView tvAllergiesWarning;
-    private androidx.cardview.widget.CardView cardAllergiesWarning;
+    private CardView cardAllergiesWarning;
 
     private String username, userId;
     private Date selectedDate;
@@ -87,7 +91,7 @@ public class NutritionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.nutrition);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -108,8 +112,8 @@ public class NutritionActivity extends AppCompatActivity {
 
         setupBottomNavigation();
 
-        com.google.android.material.floatingactionbutton.FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
-        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
+        FloatingActionButton fabChatbot = findViewById(R.id.fabChatbot);
+        ChatbotHelper.setupChatbotFAB(this, fabChatbot);
 
         addMealLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
