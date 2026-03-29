@@ -424,10 +424,14 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                     public void onResponse(Call<Void> call, Response<Void> profileResponse) {
                                         if (profileResponse.isSuccessful()) {
 
-                                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
-                                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
-                                                                    .apply();
+                                            // BẬT CỜ CHO WORKOUT JOURNEY VÀ NUTRITION
+                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
+                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
+                                                    .putBoolean("IS_BEGINNER", isUserBeginner)
+                                                    .putBoolean("TARGET_CHANGED", true)
+                                                    .putBoolean("WORKOUT_UPDATE_NEEDED", true)
+                                                    .apply();
 
                                                             double bmiVal = finalWeight
                                                                     / Math.pow(finalHeight / 100.0, 2);
