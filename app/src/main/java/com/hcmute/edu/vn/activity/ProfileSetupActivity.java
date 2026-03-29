@@ -417,24 +417,12 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
-
-                        // TÌM GÓI TẬP BẰNG CẢ 2 KHÓA NGOẠI: GOAL VÀ EXPERIENCE
-                        apiService.getWorkoutPlanByGoalAndExperience("eq." + selectedGoalId, "eq." + finalExperienceId,
-                                "*").enqueue(new Callback<List<WorkoutPlan>>() {
+                        
+                            apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                .enqueue(new Callback<Void>() {
                                     @Override
-                                    public void onResponse(Call<List<WorkoutPlan>> planCall,
-                                            Response<List<WorkoutPlan>> planResponse) {
-                                        if (planResponse.isSuccessful() && planResponse.body() != null
-                                                && !planResponse.body().isEmpty()) {
-                                            updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
-                                        }
-
-                                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
-                                                .enqueue(new Callback<Void>() {
-                                                    @Override
-                                                    public void onResponse(Call<Void> call,
-                                                            Response<Void> profileResponse) {
-                                                        if (profileResponse.isSuccessful()) {
+                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
+                                        if (profileResponse.isSuccessful()) {
 
                                                             getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
                                                                     .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
