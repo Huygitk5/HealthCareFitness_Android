@@ -16,6 +16,7 @@ import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.SignUpRequest;
 import com.hcmute.edu.vn.model.SignUpResponse;
 import com.hcmute.edu.vn.model.UserDailyMeal;
+import com.hcmute.edu.vn.model.UserDailyWorkout;
 import com.hcmute.edu.vn.model.UserExperience;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
