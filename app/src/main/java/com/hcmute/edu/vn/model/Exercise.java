@@ -44,6 +44,24 @@ public class Exercise implements Serializable {
         this.equipments = equipments;
     }
 
+    public Exercise(String id, String name, String description, Integer muscleGroupId,
+                    Integer difficultyLevelId, Integer baseRecommendedSets, String baseRecommendedReps,
+                    String videoUrl, String imageUrl, Integer exerciseTypeId, Integer timePerRep,
+                    List<Equipment> equipments) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.muscleGroupId = muscleGroupId;
+        this.difficultyLevelId = difficultyLevelId;
+        this.baseRecommendedSets = baseRecommendedSets;
+        this.baseRecommendedReps = baseRecommendedReps;
+        this.videoUrl = videoUrl;
+        this.imageUrl = imageUrl;
+        this.exerciseTypeId = exerciseTypeId;
+        this.timePerRep = timePerRep;
+        this.equipments = equipments;
+    }
+
     public String getId() {
         return id;
     }
