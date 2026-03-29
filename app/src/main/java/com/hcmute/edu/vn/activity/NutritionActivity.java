@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.animation.ObjectAnimator;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -9,6 +10,10 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -79,6 +84,14 @@ public class NutritionActivity extends AppCompatActivity {
 
     private TextView tvWeekLabel, btnPrevWeek, btnNextWeek;
     private Calendar currentWeekBase;
+
+    // Survey variables
+    private CardView cardSurvey, tvSurveyDone;
+    private RadioGroup rgSurvey;
+    private RadioButton rbLess, rbExact, rbMore;
+    private EditText edtCustomFood;
+    private Button btnSubmitSurvey;
+    private TextView btnClearSurvey;
 
     private ActivityResultLauncher<Intent> addMealLauncher;
 
@@ -202,6 +215,16 @@ public class NutritionActivity extends AppCompatActivity {
         tvWeekLabel = findViewById(R.id.tvWeekLabel);
         btnPrevWeek = findViewById(R.id.btnPrevWeek);
         btnNextWeek = findViewById(R.id.btnNextWeek);
+
+        cardSurvey = findViewById(R.id.cardSurvey);
+//        tvSurveyDone = findViewById(R.id.tvSurveyDone);
+        rgSurvey = findViewById(R.id.rgSurvey);
+        rbLess = findViewById(R.id.rbLess);
+        rbExact = findViewById(R.id.rbExact);
+        rbMore = findViewById(R.id.rbMore);
+        edtCustomFood = findViewById(R.id.edtCustomFood);
+        btnSubmitSurvey = findViewById(R.id.btnSubmitSurvey);
+        btnClearSurvey = findViewById(R.id.btnClearSurvey);
     }
 
     private void setupCalendar() {
@@ -353,6 +376,7 @@ public class NutritionActivity extends AppCompatActivity {
         if (userId == null || userId.isEmpty()) return;
         String formattedDate = apiDateFormat.format(selectedDate);
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        checkSurveyStatus();
 
         apiService.getDailyMeals("eq." + userId, "eq." + formattedDate, "*, foods(*)").enqueue(new Callback<List<UserDailyMeal>>() {
             @Override
