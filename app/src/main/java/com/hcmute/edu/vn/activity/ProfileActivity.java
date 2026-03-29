@@ -379,7 +379,8 @@ public class ProfileActivity extends AppCompatActivity {
             final int finalNewExpId = newExpId; // BIẾN MỚI LƯU KINH NGHIỆM
 
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            // TÌM GÓI TẬP BẰNG CẢ MỤC TIÊU VÀ KINH NGHIỆM
+
+            // TÌM GÓI TẬP THẬT TRÊN DATABASE ĐỂ LẤY KHÓA NGOẠI CHUẨN
             apiService.getWorkoutPlanByGoalAndExperience("eq." + finalNewGoalId, "eq." + finalNewExpId, "*")
                     .enqueue(new Callback<List<WorkoutPlan>>() {
                         @Override
