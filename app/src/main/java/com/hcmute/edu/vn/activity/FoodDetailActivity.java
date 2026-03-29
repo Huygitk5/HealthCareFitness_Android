@@ -38,6 +38,7 @@ public class FoodDetailActivity extends AppCompatActivity {
     private TextView tvDetailFat;
     private TextView tvDetailInstructions;
     private RecyclerView rvIngredients;
+    private double displayQuantity = 1.0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,11 +48,11 @@ public class FoodDetailActivity extends AppCompatActivity {
         WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
-        initViews();
+        displayQuantity = getIntent().getDoubleExtra("EXTRA_QUANTITY", 1.0);
 
+        initViews();
         btnBackDetail.setOnClickListener(v -> finish());
 
-        // Nhận ID món ăn từ Adapter truyền sang
         String foodId = getIntent().getStringExtra("FOOD_ID");
         if (foodId != null && !foodId.isEmpty()) {
             loadFoodDetailFromApi(foodId);
@@ -65,6 +66,7 @@ public class FoodDetailActivity extends AppCompatActivity {
         imgFoodDetail = findViewById(R.id.imgFoodDetail);
         btnBackDetail = findViewById(R.id.btnBackDetail);
         tvDetailName = findViewById(R.id.tvDetailName);
+        tvDetailServing = findViewById(R.id.tvDetailServing);
         tvDetailCalo = findViewById(R.id.tvDetailCalo);
         tvDetailPro = findViewById(R.id.tvDetailPro);
         tvDetailCarb = findViewById(R.id.tvDetailCarb);
@@ -78,7 +80,6 @@ public class FoodDetailActivity extends AppCompatActivity {
     private void loadFoodDetailFromApi(String foodId) {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // Chuẩn bị Filter: Tìm theo ID và bắt buộc Select "Món ăn" kèm theo "Bảng công thức"
         Map<String, String> queryMap = new HashMap<>();
         queryMap.put("id", "eq." + foodId);
         queryMap.put("select", "*, food_ingredients(*, ingredients(*))");
@@ -87,8 +88,7 @@ public class FoodDetailActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    Food food = response.body().get(0);
-                    displayFoodDetail(food);
+                    displayFoodDetail(response.body().get(0));
                 } else {
                     Toast.makeText(FoodDetailActivity.this, "Không tải được thông tin chi tiết!", Toast.LENGTH_SHORT).show();
                 }
@@ -108,22 +108,29 @@ public class FoodDetailActivity extends AppCompatActivity {
                 .into(imgFoodDetail);
 
         tvDetailName.setText(food.getName());
-        tvDetailCalo.setText(String.valueOf(Math.round(food.getCalories() != null ? food.getCalories() : 0)));
-        tvDetailPro.setText(Math.round(food.getProteinG() != null ? food.getProteinG() : 0) + "g");
-        tvDetailCarb.setText(Math.round(food.getCarbG() != null ? food.getCarbG() : 0) + "g");
-        tvDetailFat.setText(Math.round(food.getFatG() != null ? food.getFatG() : 0) + "g");
+        tvDetailServing.setText(getQuantityText(displayQuantity) + " phần");
+        tvDetailCalo.setText(String.valueOf(Math.round(getValue(food.getCalories()) * displayQuantity)));
+        tvDetailPro.setText(Math.round(getValue(food.getProteinG()) * displayQuantity) + "g");
+        tvDetailCarb.setText(Math.round(getValue(food.getCarbG()) * displayQuantity) + "g");
+        tvDetailFat.setText(Math.round(getValue(food.getFatG()) * displayQuantity) + "g");
 
-        // 2. Hiển thị Cách nấu
         if (food.getInstructions() != null && !food.getInstructions().isEmpty()) {
             tvDetailInstructions.setText(food.getInstructions());
         } else {
             tvDetailInstructions.setText("Chưa có hướng dẫn chế biến cho món ăn này.");
         }
 
-        // 3. Hiển thị Danh sách Nguyên liệu vào RecyclerView
         if (food.getFoodIngredients() != null && !food.getFoodIngredients().isEmpty()) {
             IngredientAdapter adapter = new IngredientAdapter(food.getFoodIngredients());
             rvIngredients.setAdapter(adapter);
         }
+    }
+
+    private double getValue(Double value) {
+        return value != null ? value : 0.0;
+    }
+
+    private String getQuantityText(double quantity) {
+        return quantity == Math.floor(quantity) ? String.valueOf((int) quantity) : String.valueOf(quantity);
     }
 }

@@ -11,22 +11,22 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.activity.FoodDetailActivity;
 import com.hcmute.edu.vn.model.Food;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapter.ViewHolder> {
 
-    private List<Food> foodList;
-    private List<Food> selectedFoods = new ArrayList<>();
-    private OnFoodSelectionListener listener;
+    private final List<Food> foodList;
+    private final OnFoodSelectionListener listener;
+    private final Map<Food, Double> selectedFoodsMap = new HashMap<>();
 
     public interface OnFoodSelectionListener {
         void onSelectionChanged(int selectedCount);
@@ -36,8 +36,6 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         this.foodList = foodList;
         this.listener = listener;
     }
-
-    private Map<Food, Double> selectedFoodsMap = new HashMap<>();
 
     public Map<Food, Double> getSelectedFoodsMap() {
         return selectedFoodsMap;
@@ -56,66 +54,60 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         holder.itemView.setScaleY(1f);
 
         Food food = foodList.get(position);
+        boolean isSelected = selectedFoodsMap.containsKey(food);
+        double quantity = isSelected ? selectedFoodsMap.get(food) : 1.0;
 
         holder.tvFoodNameList.setText(food.getName());
-        holder.tvServingSize.setText(food.getServingSize() != null ? food.getServingSize() : "1 phần");
-        holder.tvFoodCaloList.setText(String.valueOf(Math.round(food.getCalories())));
+        holder.tvServingSize.setText(getServingText(food.getServingSize(), quantity));
+        holder.tvFoodCaloList.setText(String.valueOf(Math.round(getValue(food.getCalories()) * quantity)));
+        holder.tvMacroP.setText("P: " + Math.round(getValue(food.getProteinG()) * quantity) + "g");
+        holder.tvMacroC.setText("C: " + Math.round(getValue(food.getCarbG()) * quantity) + "g");
+        holder.tvMacroF.setText("F: " + Math.round(getValue(food.getFatG()) * quantity) + "g");
 
-        holder.tvMacroP.setText("P: " + Math.round(food.getProteinG()) + "g");
-        holder.tvMacroC.setText("C: " + Math.round(food.getCarbG()) + "g");
-        holder.tvMacroF.setText("F: " + Math.round(food.getFatG()) + "g");
-
-        com.bumptech.glide.Glide.with(holder.itemView.getContext())
+        Glide.with(holder.itemView.getContext())
                 .load(food.getImageUrl())
                 .placeholder(R.mipmap.ic_launcher_round)
                 .error(R.mipmap.ic_launcher_round)
                 .into(holder.imgFoodList);
 
-        boolean isSelected = selectedFoodsMap.containsKey(food);
-
-        // LOGIC HIỂN THỊ HIGHLIGHT
         if (isSelected) {
-            double qty = selectedFoodsMap.get(food);
-            holder.tvFoodNameList.setText(food.getName() + " (x" + qty + ")"); // Thêm chữ x1.5 cho rõ
+            holder.tvFoodNameList.setText(food.getName() + " (" + getQuantityText(quantity) + " phần)");
             holder.cardFoodVertical.setStrokeWidth(4);
             holder.cardFoodVertical.setStrokeColor(Color.parseColor("#589A8D"));
             holder.cardFoodVertical.setCardBackgroundColor(Color.parseColor("#F1F8F7"));
             holder.tvFoodNameList.setTextColor(Color.parseColor("#589A8D"));
         } else {
-            holder.tvFoodNameList.setText(food.getName());
             holder.cardFoodVertical.setStrokeWidth(2);
             holder.cardFoodVertical.setStrokeColor(Color.parseColor("#E0E0E0"));
             holder.cardFoodVertical.setCardBackgroundColor(Color.WHITE);
             holder.tvFoodNameList.setTextColor(Color.parseColor("#212121"));
         }
 
-        // =======================================================
-        // 1. SỰ KIỆN: BẤM VÀO NÚT [+] VỚI HIỆU ỨNG NHÚN NẢY
-        // =======================================================
         holder.btnAddFoodList.setOnClickListener(v -> {
             String[] options = {"0.5 phần", "1.0 phần", "1.5 phần", "2.0 phần", "Bỏ chọn món này"};
 
             new android.app.AlertDialog.Builder(v.getContext())
                     .setTitle("Chọn số lượng cho " + food.getName())
                     .setItems(options, (dialog, which) -> {
-                        if (which == 4) {
-                            selectedFoodsMap.remove(food); // Chọn dòng cuối -> Bỏ chọn
+                        if (which == options.length - 1) {
+                            selectedFoodsMap.remove(food);
                         } else {
-                            double qty = 0.5 * (which + 1); // which 0->0.5, 1->1.0...
-                            selectedFoodsMap.put(food, qty);
+                            selectedFoodsMap.put(food, 0.5 * (which + 1));
                         }
-                        notifyItemChanged(position); // Update giao diện thẻ này
-                        if (listener != null) listener.onSelectionChanged(selectedFoodsMap.size());
-                    }).show();
+
+                        notifyItemChanged(position);
+                        if (listener != null) {
+                            listener.onSelectionChanged(selectedFoodsMap.size());
+                        }
+                    })
+                    .show();
         });
 
-        // =======================================================
-        // 2. SỰ KIỆN: BẤM VÀO THẺ ĐỂ XEM CHI TIẾT
-        // =======================================================
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
             Intent intent = new Intent(context, FoodDetailActivity.class);
-            intent.putExtra("FOOD_ID", food.getId()); // Gửi ID món ăn
+            intent.putExtra("FOOD_ID", food.getId());
+            intent.putExtra("EXTRA_QUANTITY", quantity);
             context.startActivity(intent);
         });
     }
@@ -125,10 +117,31 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
         return foodList != null ? foodList.size() : 0;
     }
 
+    private double getValue(Double value) {
+        return value != null ? value : 0.0;
+    }
+
+    private String getServingText(String servingSize, double quantity) {
+        if (quantity == 1.0 && servingSize != null && !servingSize.trim().isEmpty()) {
+            return servingSize;
+        }
+        return getQuantityText(quantity) + " phần";
+    }
+
+    private String getQuantityText(double quantity) {
+        return quantity == Math.floor(quantity) ? String.valueOf((int) quantity) : String.valueOf(quantity);
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView cardFoodVertical, btnAddFoodList; // Khai báo thêm nút [+]
+        MaterialCardView cardFoodVertical;
+        MaterialCardView btnAddFoodList;
         ShapeableImageView imgFoodList;
-        TextView tvFoodNameList, tvServingSize, tvMacroP, tvMacroC, tvMacroF, tvFoodCaloList;
+        TextView tvFoodNameList;
+        TextView tvServingSize;
+        TextView tvMacroP;
+        TextView tvMacroC;
+        TextView tvMacroF;
+        TextView tvFoodCaloList;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -140,7 +153,7 @@ public class FoodVerticalAdapter extends RecyclerView.Adapter<FoodVerticalAdapte
             tvMacroC = itemView.findViewById(R.id.tvMacroC);
             tvMacroF = itemView.findViewById(R.id.tvMacroF);
             tvFoodCaloList = itemView.findViewById(R.id.tvFoodCaloList);
-            btnAddFoodList = itemView.findViewById(R.id.btnAddFoodList); // Ánh xạ nút [+]
+            btnAddFoodList = itemView.findViewById(R.id.btnAddFoodList);
         }
     }
 }
