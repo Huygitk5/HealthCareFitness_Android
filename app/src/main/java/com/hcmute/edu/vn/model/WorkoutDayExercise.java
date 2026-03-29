@@ -7,6 +7,8 @@ import java.io.Serializable;
 public class WorkoutDayExercise implements Serializable {
     @SerializedName("exercise")
     private Exercise exercise;
+    @SerializedName("exercise_id")
+    private String exerciseId;
     @SerializedName("sets")
     private Integer sets;
     @SerializedName("reps")
