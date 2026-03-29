@@ -419,8 +419,7 @@ public class ProfileActivity extends AppCompatActivity {
                                         loadUserProfile();
                                         dialog.dismiss();
                                     } else {
-                                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT)
-                                                .show();
+                                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
                                         btnSave.setText("LƯU");
                                         btnSave.setEnabled(true);
                                     }
