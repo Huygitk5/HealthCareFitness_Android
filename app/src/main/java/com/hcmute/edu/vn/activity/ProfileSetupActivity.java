@@ -444,15 +444,15 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                                     goToHome(userId);
                                                 }
 
-                                                                @Override
-                                                                public void onFailure(Call<Void> call, Throwable t) {
-                                                                    goToHome(userId);
-                                                                }
-                                                            });
-                                                        } else {
-                                                            showError("Lỗi cập nhật!");
-                                                        }
-                                                    }
+                                                @Override
+                                                public void onFailure(Call<Void> call, Throwable t) {
+                                                    goToHome(userId);
+                                                }
+                                            });
+                                        } else {
+                                            showError("Lỗi cập nhật!");
+                                        }
+                                    }
 
                                                     @Override
                                                     public void onFailure(Call<Void> call, Throwable t) {
