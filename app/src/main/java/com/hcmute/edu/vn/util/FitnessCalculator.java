@@ -114,4 +114,88 @@ public class FitnessCalculator {
 
         return r;
     }
+
+    // Điều chỉnh kcal sau mỗi tuần
+    public static double adjustCaloriesWeekly(double currentDailyCalories, double tdee, int goalId,
+                                              double oldWeight, double newWeight, String gender) {
+
+        double actualDiff = newWeight - oldWeight; // Âm là giảm cân, Dương là tăng cân
+        double newCalories = currentDailyCalories;
+        double minCalories = "Male".equalsIgnoreCase(gender) ? 1500 : 1200;
+
+        if (goalId == 1) {
+            // ----------------------------------------------------
+            // GIẢM MỠ: giảm 0.75% cân nặng, tối đa 1%
+            // ----------------------------------------------------
+            double expectedLoss = -(oldWeight * 0.0075);
+            double maxSafeLoss = -(oldWeight * 0.01);
+
+            // Nếu giảm chậm hơn kỳ vọng (Ví dụ: thực tế chỉ giảm -0.2kg, thiếu 0.4kg)
+            if (actualDiff > expectedLoss) {
+                double missedKg = actualDiff - expectedLoss; // Số kg chưa đốt được
+
+                // Tính toán chính xác số Calo cần cắt thêm mỗi ngày
+                double kcalAdjustment = (missedKg * 7700.0) / 7.0;
+
+                // Chốt chặn an toàn: Không cắt cái rụp quá 300 kcal/ngày để tránh stress
+                kcalAdjustment = Math.min(kcalAdjustment, 300);
+
+                newCalories = currentDailyCalories - kcalAdjustment;
+            } else if (actualDiff < maxSafeLoss) {
+                // GIẢM QUÁ NHANH (Nguy hiểm) -> CỘNG THÊM CALO VÀO ĐỂ HÃM PHANH
+                double overLossKg = maxSafeLoss - actualDiff; // Số kg giảm lố
+
+                // Tính số Calo cần trả lại cho cơ thể
+                double kcalToReadd = (overLossKg * 7700.0) / 7.0;
+
+                // Không nhồi lại quá nhiều một lúc gây sốc hệ tiêu hóa (tối đa trả lại 500 kcal)
+                kcalToReadd = Math.min(kcalToReadd, 500);
+
+                // Tạm tính mức Calo mới sau khi bơm thêm
+                double tempCalories = currentDailyCalories + kcalToReadd;
+
+                // CHỐT CHẶN AN TOÀN TỐI ĐA (CEILING):
+                // Không được vượt quá TDEE. Ta giữ lại khoản thâm hụt 250 kcal để vẫn tiếp tục giảm mỡ.
+                double maxAllowedCalories = tdee - 250;
+
+                newCalories = Math.min(tempCalories, maxAllowedCalories);
+            }
+
+        } else if (goalId == 2) {
+            // ----------------------------------------------------
+            // TĂNG CƠ: tăng 0.4% cân nặng
+            // ----------------------------------------------------
+            double expectedGain = oldWeight * 0.004;
+
+            // Nếu tăng chậm hơn kỳ vọng (Ví dụ: thực tế chỉ tăng +0.1kg, thiếu 0.14kg)
+            if (actualDiff < expectedGain) {
+                double missedKg = expectedGain - actualDiff; // Số kg chưa đắp được
+
+                // Tính toán chính xác số Calo cần nhồi thêm mỗi ngày
+                double kcalAdjustment = (missedKg * 7700.0) / 7.0;
+
+                // Chốt chặn an toàn: Không nhồi quá 300 kcal/ngày để tránh tích mỡ thừa
+                kcalAdjustment = Math.min(kcalAdjustment, 300);
+
+                newCalories = currentDailyCalories + kcalAdjustment;
+            }
+
+        } else {
+            // ----------------------------------------------------
+            // GIỮ DÁNG: trong khoảng 0.5kg
+            // ----------------------------------------------------
+            if (actualDiff > 0.5) { // Đang béo lên
+                double overKg = actualDiff - 0.5;
+                double kcalAdjustment = Math.min((overKg * 7700.0) / 7.0, 300);
+                newCalories = currentDailyCalories - kcalAdjustment;
+
+            } else if (actualDiff < -0.5) { // Đang gầy đi
+                double underKg = Math.abs(actualDiff) - 0.5;
+                double kcalAdjustment = Math.min((underKg * 7700.0) / 7.0, 300);
+                newCalories = currentDailyCalories + kcalAdjustment;
+            }
+        }
+
+        return Math.max(newCalories, minCalories);
+    }
 }
