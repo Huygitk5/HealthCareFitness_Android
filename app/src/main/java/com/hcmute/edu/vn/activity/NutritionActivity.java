@@ -256,6 +256,80 @@ public class NutritionActivity extends AppCompatActivity {
         btnAddDinner.setOnClickListener(v -> openMealSearch("DINNER"));
         if (btnPrevWeek != null) btnPrevWeek.setOnClickListener(v -> shiftWeek(-7));
         if (btnNextWeek != null) btnNextWeek.setOnClickListener(v -> shiftWeek(7));
+        setupSurveyListeners();
+    }
+
+    private void setupSurveyListeners() {
+        if (rgSurvey == null) return;
+        rgSurvey.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId != -1) {
+                edtCustomFood.setEnabled(false);
+                btnClearSurvey.setVisibility(View.VISIBLE);
+            }
+        });
+
+        btnClearSurvey.setOnClickListener(v -> {
+            rgSurvey.clearCheck();
+            edtCustomFood.setEnabled(true);
+            btnClearSurvey.setVisibility(View.GONE);
+        });
+
+        btnSubmitSurvey.setOnClickListener(v -> {
+            int checkedId = rgSurvey.getCheckedRadioButtonId();
+            if (checkedId != -1) {
+                String message = "";
+                if (checkedId == R.id.rbLess) message = "Bạn nên bổ sung thêm protein nhé!";
+                else if (checkedId == R.id.rbExact) message = "Tuyệt vời, hãy giữ vững phong độ nhé!";
+                else if (checkedId == R.id.rbMore) message = "Hôm nay bạn đã ăn dư calo, ngày mai hãy tập luyện thêm nhé!";
+                
+                new AlertDialog.Builder(this)
+                        .setTitle("Nhận xét dinh dưỡng")
+                        .setMessage(message)
+                        .setPositiveButton("Đóng", (dialog, which) -> {
+                            saveSurveyDoneStatus();
+                        })
+                        .show();
+            } else {
+                String customFood = edtCustomFood.getText().toString().trim();
+                if (!customFood.isEmpty()) {
+                    String surveyText = "Hôm nay tôi ăn: " + customFood + ", target của tôi là " + Math.round(targetCalories) + " kcal, hãy so sánh thức ăn tôi ăn với target kcal của ngày hôm nay được đề ra và nhận xét.";
+                    Intent intent = new Intent(this, ChatbotActivity.class);
+                    intent.putExtra("EXTRA_SURVEY_TEXT", surveyText);
+                    startActivity(intent);
+                    saveSurveyDoneStatus();
+                } else {
+                    Toast.makeText(this, "Vui lòng chọn hoặc nhập kết quả khẩu phần ăn hôm nay của bạn", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    private void saveSurveyDoneStatus() {
+        if (userId != null && !userId.isEmpty()) {
+            String targetDate = apiDateFormat.format(selectedDate);
+            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            pref.edit().putBoolean("SURVEY_" + userId + "_" + targetDate, true).apply();
+            checkSurveyStatus();
+        }
+    }
+
+    private void checkSurveyStatus() {
+        if (userId != null && !userId.isEmpty() && cardSurvey != null) {
+            String targetDate = apiDateFormat.format(selectedDate);
+            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            boolean isDone = pref.getBoolean("SURVEY_" + userId + "_" + targetDate, false);
+            if (isDone) {
+//                cardSurvey.setVisibility(View.GONE);
+//                tvSurveyDone.setVisibility(View.VISIBLE);
+            } else {
+                cardSurvey.setVisibility(View.VISIBLE);
+//                tvSurveyDone.setVisibility(View.GONE);
+                rgSurvey.clearCheck();
+                edtCustomFood.setText("");
+                edtCustomFood.setEnabled(true);
+                btnClearSurvey.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void shiftWeek(int days) {
