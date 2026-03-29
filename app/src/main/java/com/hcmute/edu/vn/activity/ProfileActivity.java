@@ -411,8 +411,7 @@ public class ProfileActivity extends AppCompatActivity {
                                                 .putBoolean("WORKOUT_UPDATE_NEEDED", true) // KÍCH HOẠT AI GENERATE
                                                 .apply();
 
-                                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!",
-                                                Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu! Đang thiết lập lộ trình...", Toast.LENGTH_LONG).show();
 
                                         currentGoalId = finalNewGoalId;
                                         currentExperienceId = finalNewExpId;
