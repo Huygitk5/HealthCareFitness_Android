@@ -97,8 +97,16 @@ public class ChatbotActivity extends AppCompatActivity {
         setupRetrofit();
         setupClickListeners();
 
-        // Initial greeting
-        addBotMessage("Hi! I'm your AI Fitness Coach. How can I help you today? You can ask me questions or tap a shortcut below.");
+        // Check for survey text
+        if (getIntent().hasExtra("EXTRA_SURVEY_TEXT")) {
+            String surveyText = getIntent().getStringExtra("EXTRA_SURVEY_TEXT");
+            if (surveyText != null && !surveyText.trim().isEmpty()) {
+                sendMessageToGemini(PromptBuilder.SYSTEM_HEALTH_COACH, surveyText.trim(), false);
+            }
+        } else {
+            // Initial greeting
+            addBotMessage("Hi! I'm your AI Fitness Coach. How can I help you today? You can ask me questions or tap a shortcut below.");
+        }
     }
 
     private void initViews() {
