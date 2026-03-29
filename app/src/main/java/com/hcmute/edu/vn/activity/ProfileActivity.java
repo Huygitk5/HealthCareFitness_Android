@@ -387,7 +387,7 @@ public class ProfileActivity extends AppCompatActivity {
                         public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                             String realPlanId = null;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                                newPlanId = response.body().get(0).getId();
+                                realPlanId = response.body().get(0).getId();
                             }
 
                             User updateData = new User();
