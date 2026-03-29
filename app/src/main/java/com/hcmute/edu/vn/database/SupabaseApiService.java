@@ -365,6 +365,64 @@ public interface SupabaseApiService {
             @Query("select") String select
     );
 
+    // =================================================================================
+    // USER DAILY WORKOUTS (CÁ NHÂN HÓA LỊCH TẬP)
+    // =================================================================================
+
+    @GET("user_daily_workouts")
+    Call<List<UserDailyWorkout>> getUserDailyWorkouts(
+            @Query("user_id") String userId,
+            @Query("date") String date,
+            @Query("select") String select
+    );
+
+    @GET("user_daily_workouts")
+    Call<List<UserDailyWorkout>> getUserDailyWorkoutsByPlan(
+            @Query("user_id") String userId,
+            @Query("plan_id") String planId,
+            @Query("select") String select
+    );
+
+    @GET("user_daily_workouts")
+    Call<List<UserDailyWorkout>> getUserDailyWorkoutsByDay(
+            @Query("user_id") String userId,
+            @Query("day_id") String dayId,
+            @Query("select") String select
+    );
+
+    // 2. Thêm nhiều bài tập cùng lúc (Batch Insert) khi khởi tạo
+    @POST("user_daily_workouts")
+    Call<Void> addUserDailyWorkouts(
+            @Body List<UserDailyWorkout> workouts
+    );
+
+    // 3. Xóa bài tập của ngày (Dùng để reset hoặc xóa bài cụ thể)
+    @DELETE("user_daily_workouts")
+    Call<Void> deleteUserDailyWorkouts(
+            @Query("user_id") String userId,
+            @Query("date") String date
+    );
+
+    @DELETE("user_daily_workouts")
+    Call<Void> deleteUserDailyWorkoutsByPlan(
+            @Query("user_id") String userId,
+            @Query("plan_id") String planId
+    );
+
+    @DELETE("user_daily_workouts")
+    Call<Void> deleteUserDailyWorkoutsFlexible(
+            @Query("user_id") String userId,
+            @Query("plan_id") String planId,
+            @Query("day_id") String dayIdQuery // VD: NOT_IN_QUERY
+    );
+
+    // 4. Cập nhật bài tập (Dùng cho tính năng Swap/Thay đổi bài)
+    @PATCH("user_daily_workouts")
+    Call<Void> updateUserDailyWorkout(
+            @Query("id") String id,
+            @Body UserDailyWorkout workout
+    );
+
     // Lấy danh sách nhóm cơ bị cấm dựa trên bệnh lý
     @GET("condition_restricted_exercises")
     Call<List<ConditionRestrictedMuscle>> getBannedMuscles(
