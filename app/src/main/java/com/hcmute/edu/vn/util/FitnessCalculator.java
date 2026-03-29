@@ -21,8 +21,8 @@ public class FitnessCalculator {
 
     // WORKOUT PLAN IDs (hard-coded theo Supabase)
     // Giảm mỡ
-    public static final String PLAN_LOSE_BEGINNER     = "giam_mo_beginner";
-    public static final String PLAN_LOSE_INTERMEDIATE = "giam_mo_intermediate";
+    public static final String PLAN_LOSE_BEGINNER     = "a0000000-0000-0000-0000-000000000001";
+    public static final String PLAN_LOSE_INTERMEDIATE = "a0000000-0000-0000-0000-000000000002";
     // Tăng cơ
     public static final String PLAN_GAIN_BEGINNER     = "554fb805-1136-4976-b39b-e196bcf5a3af";
     public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480";
