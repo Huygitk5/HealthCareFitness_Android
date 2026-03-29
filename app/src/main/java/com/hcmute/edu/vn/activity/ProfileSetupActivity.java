@@ -405,6 +405,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             if (result.targetDate != null)
                 updateData.setTargetDate(result.targetDate);
 
+            if (result.workoutPlanId != null) {
+                updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
+            }
+
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
 
