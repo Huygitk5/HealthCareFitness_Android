@@ -249,6 +249,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvBreakfast"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -256,6 +257,16 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvBreakfast"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="6:30 – 9:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/btnAddBreakfast"
                                 android:layout_width="wrap_content"
@@ -308,6 +319,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvLunch"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -315,6 +327,16 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvLunch"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="11:30 – 13:30"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/btnAddLunch"
                                 android:layout_width="wrap_content"
@@ -367,6 +389,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvDinner"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -374,6 +397,16 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvDinner"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="18:00 – 20:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
                             <TextView
                                 android:id="@+id/btnAddDinner"
                                 android:layout_width="wrap_content"
