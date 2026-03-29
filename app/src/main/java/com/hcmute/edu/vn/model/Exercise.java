@@ -27,6 +27,8 @@ public class Exercise implements Serializable {
     private String imageUrl;
     @SerializedName("equipments")
     private List<Equipment> equipments;
+    @SerializedName("time_per_rep")
+    private Integer timePerRep;
 
     public Exercise(String id, String name, String description, Integer muscleGroupId, Integer difficultyLevelId, Integer baseRecommendedSets, String baseRecommendedReps, String videoUrl, String imageUrl, List<Equipment> equipments) {
         this.id = id;
@@ -119,5 +121,13 @@ public class Exercise implements Serializable {
 
     public void setEquipments(List<Equipment> equipments) {
         this.equipments = equipments;
+    }
+
+    public Integer getTimePerRep() {
+        return timePerRep;
+    }
+
+    public void setTimePerRep(Integer timePerRep) {
+        this.timePerRep = timePerRep;
     }
 }

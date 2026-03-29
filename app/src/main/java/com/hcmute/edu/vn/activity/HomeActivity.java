@@ -1,5 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
+import static com.hcmute.edu.vn.util.FitnessCalculator.adjustCaloriesWeekly;
+
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -42,6 +44,8 @@ import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 import com.hcmute.edu.vn.receiver.WeightReminderReceiver;
 import com.hcmute.edu.vn.util.ChatbotHelper;
+import com.hcmute.edu.vn.util.FitnessCalculator;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -591,19 +595,110 @@ public class HomeActivity extends AppCompatActivity {
                 updateData.setWeight(newWeight);
                 updateData.setHeight(newHeight);
 
-                SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+                // Kiểm tra điều chỉnh kcal vào cuối tuần
+                boolean isCalorieChanged = false;
+                Calendar todayCal = Calendar.getInstance();
+                boolean isSunday = (todayCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY);
 
+                // Nếu là Chủ nhật và có đủ dữ liệu lịch sử cân nặng
+                if (isSunday && currentBmiLogs != null && currentBmiLogs.size() >= 2) {
+                    try {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+                        Date now = new Date();
+
+                        // Tìm bản ghi cân nặng cách đây khoảng 7 ngày (Chủ nhật tuần trước)
+                        BmiLog weekAgoLog = null;
+                        for (int i = currentBmiLogs.size() - 1; i >= 0; i--) {
+                            if (currentBmiLogs.get(i).getRecordedAt() == null) continue;
+
+                            Date logDate = sdf.parse(currentBmiLogs.get(i).getRecordedAt());
+                            long diffInDays = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(now.getTime() - logDate.getTime());
+
+                            // Lấy mốc cách đây từ 6 đến 8 ngày
+                            if (diffInDays >= 6 && diffInDays <= 8) {
+                                weekAgoLog = currentBmiLogs.get(i);
+                                break;
+                            }
+                        }
+
+                        // Nếu tìm thấy cân nặng tuần trước và đã có mức Calo hiện tại
+                        if (weekAgoLog != null && currentUser.getCurrentDailyCalories() != null && currentUser.getCurrentDailyCalories() > 0) {
+                            double oldWeight = weekAgoLog.getWeight() != null ? weekAgoLog.getWeight() : newWeight;
+                            double oldCalo = currentUser.getCurrentDailyCalories();
+                            int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
+                            String gender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
+
+                            // Lấy các chỉ số cần thiết để tính TDEE
+                            int age = calculateAge(currentUser.getDateOfBirth());
+                            int activityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("ACTIVITY_INDEX", 2);
+
+                            // Tính BMR và TDEE dựa trên cân nặng cũ (hoặc mới tùy bạn, ở đây lấy cũ cho chuẩn 1 tuần trước)
+                            double bmr = FitnessCalculator.calcBMR(oldWeight, newHeight, age, gender);
+                            double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
+
+                            // GỌI THUẬT TOÁN ĐIỀU CHỈNH (trong FitnessCalculator)
+                            double adjustedCalo = adjustCaloriesWeekly(oldCalo, tdee, goalId, oldWeight, newWeight, gender);
+
+                            // Nếu Calo bị thay đổi do kết quả tăng/giảm cân không đạt KPI
+                            if (Math.abs(adjustedCalo - oldCalo) > 5) { // Chỉ đổi khi lệch > 5 kcal
+                                updateData.setCurrentDailyCalories(adjustedCalo);
+                                isCalorieChanged = true;
+
+                                // Nếu đang giảm mỡ mà bị đẩy Calo lên cao -> Báo hiệu đang giảm lố
+                                if (goalId == 1 && adjustedCalo > oldCalo) {
+                                    Toast.makeText(HomeActivity.this,
+                                            "⚠️ Bạn đang giảm cân quá nhanh! Hệ thống đã tăng nhẹ lượng thức ăn để bảo vệ sức khỏe và cơ bắp.",
+                                            Toast.LENGTH_LONG).show();
+                                }
+
+                                // Đánh cờ báo hiệu cho NutritionActivity sinh lại thực đơn
+                                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                        .putBoolean("CALORIES_CHANGED", true)
+                                        .apply();
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                // tài khoản mới chưa có data
+                if (!isCalorieChanged && (currentUser.getCurrentDailyCalories() == null || currentUser.getCurrentDailyCalories() == 0)) {
+                    int age = calculateAge(currentUser.getDateOfBirth());
+                    String gender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
+                    int activityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("ACTIVITY_INDEX", 2);
+                    int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
+                    String goalName = goalId == 1 ? "giảm mỡ" : (goalId == 2 ? "tăng cơ" : "giữ dáng");
+                    boolean isBeginner = (currentUser.getUserExperienceId() != null && currentUser.getUserExperienceId() == 1);
+
+                    double bmr = com.hcmute.edu.vn.util.FitnessCalculator.calcBMR(newWeight, newHeight, age, gender);
+                    double tdee = com.hcmute.edu.vn.util.FitnessCalculator.calcTDEE(bmr, activityIndex);
+
+                    com.hcmute.edu.vn.util.FitnessCalculator.FitnessResult result =
+                            com.hcmute.edu.vn.util.FitnessCalculator.calculate(goalName, newWeight, currentUser.getTarget(), tdee, gender, isBeginner);
+
+                    updateData.setCurrentDailyCalories(result.dailyCalories);
+
+                    // Bật cờ để tạo thực đơn lần đầu
+                    getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                            .putBoolean("CALORIES_CHANGED", true)
+                            .apply();
+                }
+
+                // Gọi api lưu vào supa
+                SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
                 btnSave.setText("Đang lưu...");
                 btnSave.setEnabled(false);
 
+                // Gọi API cập nhật Profile
                 apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
                     @Override
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
 
+                            // LƯU LỊCH SỬ BMI NHƯ BÌNH THƯỜNG
                             double heightM = newHeight / 100.0;
                             double newBmi = newWeight / (heightM * heightM);
-
                             String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
                             String todayDateOnly = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
@@ -617,7 +712,6 @@ public class HomeActivity extends AppCompatActivity {
 
                             if (todayLog != null) {
                                 BmiLog updatePayload = new BmiLog(null, null, newWeight, newHeight, newBmi, currentDateFull);
-
                                 apiService.updateBmiLog("eq." + todayLog.getId(), updatePayload).enqueue(new Callback<Void>() {
                                     @Override
                                     public void onResponse(Call<Void> call, Response<Void> response) {
@@ -630,7 +724,6 @@ public class HomeActivity extends AppCompatActivity {
                                 });
                             } else {
                                 BmiLog newLog = new BmiLog(UUID.randomUUID().toString(), currentUser.getId(), newWeight, newHeight, newBmi, currentDateFull);
-
                                 apiService.saveBmiLog(newLog).enqueue(new Callback<Void>() {
                                     @Override
                                     public void onResponse(Call<Void> call, Response<Void> response) {
