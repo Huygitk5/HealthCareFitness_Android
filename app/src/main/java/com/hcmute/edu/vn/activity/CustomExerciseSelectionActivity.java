@@ -1,7 +1,6 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -82,8 +81,8 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
     private void setupStepIndicator() {
         // --- BƯỚC 1 (Đã hoàn thành) ---
         tvStep1Circle.setBackgroundResource(R.drawable.step_circle_selected);
-        tvStep1Circle.setTextColor(Color.WHITE);
-        tvStep1Title.setTextColor(Color.parseColor("#589A8D"));
+        tvStep1Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep1Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
         tvStep1Title.setTypeface(null, android.graphics.Typeface.BOLD);
 
         // --- BƯỚC 2 (Đã hoàn thành) ---
@@ -94,8 +93,8 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
 
         // Bước 3: HIGHLIGHT
         tvStep3Circle.setBackgroundResource(R.drawable.step_circle_selected);
-        tvStep3Circle.setTextColor(Color.WHITE);
-        tvStep3Title.setTextColor(Color.parseColor("#589A8D"));
+        tvStep3Circle.setTextColor(android.graphics.Color.WHITE);
+        tvStep3Title.setTextColor(android.graphics.Color.parseColor("#589A8D"));
         tvStep3Title.setTypeface(null, android.graphics.Typeface.BOLD);
     }
 
@@ -115,6 +114,7 @@ public class CustomExerciseSelectionActivity extends AppCompatActivity {
                     return;
                 }
 
+                // SỬA Ở ĐÂY: Chuyển sang ExerciseListActivity thay vì ExerciseActivity
                 Intent intent = new Intent(CustomExerciseSelectionActivity.this, ExerciseListActivity.class);
                 intent.putExtra("EXTRA_EXERCISE_LIST", finalSelectedList);
                 intent.putExtra("IS_FREE_WORKOUT", true);

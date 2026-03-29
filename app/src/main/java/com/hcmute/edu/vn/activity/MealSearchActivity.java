@@ -4,7 +4,6 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -131,7 +130,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                                     if (!keyword.isEmpty() && foodName.contains(keyword)) {
                                         isSafe = false;
-                                        Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì tên chứa: " + keyword);
+                                        android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì tên chứa: " + keyword);
                                         break;
                                     }
                                 }
@@ -149,7 +148,7 @@ public class MealSearchActivity extends AppCompatActivity {
 
                                             if (!keyword.isEmpty() && ingName.contains(keyword)) {
                                                 isSafe = false;
-                                                Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì có nguyên liệu: " + keyword);
+                                                android.util.Log.d("LOC_MON_AN", "❌ LOẠI: [" + food.getName() + "] vì có nguyên liệu: " + keyword);
                                                 break;
                                             }
                                         }
@@ -167,7 +166,7 @@ public class MealSearchActivity extends AppCompatActivity {
                         }
                     }
 
-                    Log.d("LOC_MON_AN", "✅ ĐÃ LỌC XONG! Tổng số món an toàn: " + foodList.size() + " | Bị giấu đi: " + soMonBiLoai);
+                    android.util.Log.d("LOC_MON_AN", "✅ ĐÃ LỌC XONG! Tổng số món an toàn: " + foodList.size() + " | Bị giấu đi: " + soMonBiLoai);
                     setupAdapter(foodList);
                 }
             }
