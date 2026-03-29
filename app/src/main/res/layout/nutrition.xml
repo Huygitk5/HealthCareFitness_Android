@@ -249,6 +249,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvBreakfast"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -256,6 +257,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvBreakfast"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="6:30 – 9:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickBreakfast"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddBreakfast"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddBreakfast"
                                 android:layout_width="wrap_content"
@@ -308,6 +331,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvLunch"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -315,6 +339,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvLunch"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="11:30 – 13:30"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickLunch"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddLunch"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddLunch"
                                 android:layout_width="wrap_content"
@@ -367,6 +413,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvDinner"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -374,6 +421,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvDinner"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="18:00 – 20:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickDinner"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddDinner"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddDinner"
                                 android:layout_width="wrap_content"
@@ -440,24 +509,24 @@
                             android:orientation="vertical">
 
                             <RadioButton
-                                android:id="@+id/rbLess"
+                                android:id="@+id/rbEnough"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Ăn ít hơn mục tiêu"
+                                android:text="Ăn đủ bữa"
                                 android:textColor="#424242" />
 
                             <RadioButton
-                                android:id="@+id/rbExact"
+                                android:id="@+id/rbMissed"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Ăn đúng mục tiêu"
+                                android:text="Ăn thiếu bữa"
                                 android:textColor="#424242" />
 
                             <RadioButton
-                                android:id="@+id/rbMore"
+                                android:id="@+id/rbNone"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Ăn nhiều hơn mục tiêu"
+                                android:text="Không ăn bữa nào"
                                 android:textColor="#424242" />
                         </RadioGroup>
 
