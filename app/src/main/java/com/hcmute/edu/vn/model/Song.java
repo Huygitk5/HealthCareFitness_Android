@@ -5,9 +5,9 @@ import com.google.gson.annotations.SerializedName;
 public class Song {
 
     // ── Dùng cho nhạc mặc định (local raw resource) ──────────────────────────
-    private int id;
-    private int rawResId;
-    private int coverResId;
+    private transient int localId;
+    private transient int rawResId;
+    private transient int coverResId;
 
     // ── Dùng cho nhạc từ Supabase (map từ JSON trả về) ───────────────────────
     @SerializedName("id")
@@ -27,7 +27,7 @@ public class Song {
 
     // ── Constructor cho nhạc mặc định (raw resource) ─────────────────────────
     public Song(int id, String title, String artist, int rawResId, int coverResId) {
-        this.id = id;
+        this.localId = id;
         this.title = title;
         this.artist = artist;
         this.rawResId = rawResId;
@@ -39,7 +39,7 @@ public class Song {
     // ── Constructor cho nhạc từ Supabase (URL) ───────────────────────────────
     public Song(long dbId, String title, String artist, String url) {
         this.dbId      = dbId;
-        this.id        = (int) dbId;
+        this.localId   = (int) dbId;
         this.title     = title;
         this.artist    = artist;
         this.url       = url;
@@ -65,7 +65,7 @@ public class Song {
 
     // ── Getters ───────────────────────────────────────────────────────────────
 
-    public int getId()          { return id; }
+    public int getId()          { return localId; }
     public long getDbId()       { return dbId; }
     public String getTitle()    { return title != null ? title : ""; }
     public String getArtist()   { return artist != null ? artist : ""; }
@@ -76,7 +76,7 @@ public class Song {
 
     // ── Setters ───────────────────────────────────────────────────────────────
 
-    public void setId(int id)               { this.id = id; }
+    public void setId(int id)               { this.localId = id; }
     public void setDbId(long dbId)          { this.dbId = dbId; }
     public void setTitle(String title)      { this.title = title; }
     public void setArtist(String artist)    { this.artist = artist; }

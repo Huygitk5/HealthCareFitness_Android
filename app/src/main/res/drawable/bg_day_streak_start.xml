@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Dải nền kéo sang phải -->
+    <item android:left="16dp" android:top="4dp" android:bottom="4dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#B5F0DF" />
+        </shape>
+    </item>
+    <!-- Circle đặt đè lên -->
+    <item android:top="2dp" android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#4DAA9A" />
+        </shape>
+    </item>
+</layer-list>
