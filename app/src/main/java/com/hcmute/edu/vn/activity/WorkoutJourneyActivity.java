@@ -32,6 +32,8 @@ import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
 import com.hcmute.edu.vn.model.WorkoutDayExercise;
 import com.hcmute.edu.vn.model.WorkoutPlan;
+import com.hcmute.edu.vn.util.FitnessCalculator;
+import com.hcmute.edu.vn.util.WorkoutGenerator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
