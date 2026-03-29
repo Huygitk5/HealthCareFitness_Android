@@ -522,4 +522,50 @@ public class ExerciseListActivity extends AppCompatActivity {
     private void showLoading(boolean show) {
         findViewById(R.id.progressBar).setVisibility(show ? View.VISIBLE : View.GONE);
     }
+
+    private void updateStatsUI() {
+        if (tvExerciseCount == null || tvTotalTime == null || tvTotalCalories == null || exercises == null) return;
+
+        int totalExercises = exercises.size();
+        int totalActiveSeconds = 0;
+        double totalCalories = 0.0;
+
+        double weightKg = getSharedPreferences("UserPrefs", MODE_PRIVATE).getFloat("USER_WEIGHT", 65.0f);
+
+        for (Exercise ex : exercises) {
+            int sets = ex.getBaseRecommendedSets() != null ? ex.getBaseRecommendedSets() : 3;
+
+            int reps = 12;
+            if (ex.getBaseRecommendedReps() != null) {
+                try {
+                    String numOnly = ex.getBaseRecommendedReps().replaceAll("[^0-9]", "");
+                    if (!numOnly.isEmpty()) reps = Integer.parseInt(numOnly);
+                } catch (Exception ignored) {}
+            }
+
+            int timePerRep = ex.getTimePerRep() != null ? ex.getTimePerRep() : 3;
+            int restTimePerSet = 60;
+
+            int activeSeconds = sets * reps * timePerRep;
+            int restSeconds = (sets > 0 ? sets - 1 : 0) * restTimePerSet;
+
+            int exerciseTotalSeconds = activeSeconds + restSeconds;
+            totalActiveSeconds += exerciseTotalSeconds;
+
+            double metValue = 5.0; // Gym
+            if (ex.getExerciseTypeId() != null) {
+                if (ex.getExerciseTypeId() == 2) metValue = 3.5; // Cardio
+                else if (ex.getExerciseTypeId() == 3) metValue = 8.0; // HIIT
+            }
+
+            double hours = exerciseTotalSeconds / 3600.0;
+            totalCalories += (metValue * weightKg * hours);
+        }
+
+        int totalMinutes = (int) Math.ceil(totalActiveSeconds / 60.0);
+
+        tvExerciseCount.setText(String.valueOf(totalExercises));
+        tvTotalTime.setText(totalMinutes + " Phút");
+        tvTotalCalories.setText(String.format(Locale.getDefault(), "%.1f kcal(≈)", totalCalories));
+    }
 }
