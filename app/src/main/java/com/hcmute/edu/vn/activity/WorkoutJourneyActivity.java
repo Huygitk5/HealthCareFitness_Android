@@ -324,7 +324,12 @@ protected void onResume() {
 
                     if (plan.getDays() != null) {
                         for (WorkoutDay day : plan.getDays()) {
-                            if (dayMap.containsKey(day.getId())) day.setExercises(dayMap.get(day.getId()));
+                            if (dayMap.containsKey(day.getId())) {
+                                day.setExercises(dayMap.get(day.getId()));
+                            } else {
+                                // Xóa sạch để biến nó thành Ngày nghỉ (Rest Day)
+                                day.setExercises(new ArrayList<>());
+                            }
                         }
                     }
                     setupPlanUI(plan);
