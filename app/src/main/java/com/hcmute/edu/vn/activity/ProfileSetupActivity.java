@@ -433,18 +433,16 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                                     .putBoolean("WORKOUT_UPDATE_NEEDED", true)
                                                     .apply();
 
-                                                            double bmiVal = finalWeight
-                                                                    / Math.pow(finalHeight / 100.0, 2);
-                                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
-                                                                    Locale.getDefault()).format(new Date());
-                                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
-                                                                    userId, finalWeight, finalHeight, bmiVal, now);
-                                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
-                                                                @Override
-                                                                public void onResponse(Call<Void> call,
-                                                                        Response<Void> logResponse) {
-                                                                    goToHome(userId);
-                                                                }
+                                            double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
+                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                                    userId, finalWeight, finalHeight, bmiVal, now);
+
+                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                                @Override
+                                                public void onResponse(Call<Void> call, Response<Void> logResponse) {
+                                                    goToHome(userId);
+                                                }
 
                                                                 @Override
                                                                 public void onFailure(Call<Void> call, Throwable t) {
