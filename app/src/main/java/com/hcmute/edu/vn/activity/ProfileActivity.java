@@ -408,6 +408,7 @@ public class ProfileActivity extends AppCompatActivity {
                                                 .putInt("USER_EXPERIENCE_ID", finalNewExpId)
                                                 .putBoolean("IS_BEGINNER", finalNewExpId == 1)
                                                 .putBoolean("TARGET_CHANGED", true)
+                                                .putBoolean("WORKOUT_UPDATE_NEEDED", true) // KÍCH HOẠT AI GENERATE
                                                 .apply();
 
                                         Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!",
