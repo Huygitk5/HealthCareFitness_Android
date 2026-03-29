@@ -5,8 +5,10 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -304,14 +306,8 @@ public class NutritionActivity extends AppCompatActivity {
                 if (checkedId == R.id.rbLess) message = "Bạn nên bổ sung thêm protein nhé!";
                 else if (checkedId == R.id.rbExact) message = "Tuyệt vời, hãy giữ vững phong độ nhé!";
                 else if (checkedId == R.id.rbMore) message = "Hôm nay bạn đã ăn dư calo, ngày mai hãy tập luyện thêm nhé!";
-                
-                new AlertDialog.Builder(this)
-                        .setTitle("Nhận xét dinh dưỡng")
-                        .setMessage(message)
-                        .setPositiveButton("Đóng", (dialog, which) -> {
-                            saveSurveyDoneStatus();
-                        })
-                        .show();
+
+                showCustomDialog(message);
             } else {
                 String customFood = edtCustomFood.getText().toString().trim();
                 if (!customFood.isEmpty()) {
@@ -325,6 +321,37 @@ public class NutritionActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void showCustomDialog(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.layout_custom_dialog, null);
+        builder.setView(dialogView);
+
+        TextView tvMessage = dialogView.findViewById(R.id.tvDialogMessage);
+        Button btnClose = dialogView.findViewById(R.id.btnDialogClose);
+        ImageView imgIcon = dialogView.findViewById(R.id.imgDialogIcon);
+
+        tvMessage.setText(message);
+
+        if (message.contains("Tuyệt vời")) {
+            imgIcon.setImageResource(R.drawable.ic_check);
+        }
+
+        AlertDialog alertDialog = builder.create();
+
+        if (alertDialog.getWindow() != null) {
+            alertDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
+        btnClose.setOnClickListener(v -> {
+            saveSurveyDoneStatus();
+            alertDialog.dismiss();
+        });
+
+        alertDialog.show();
     }
 
     private void saveSurveyDoneStatus() {
