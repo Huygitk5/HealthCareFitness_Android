@@ -1,17 +1,27 @@
 package com.hcmute.edu.vn.model;
 
-public class News {
+import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
+
+public class News implements Serializable {
+    @SerializedName("id")
+    private Integer id;
+
+    @SerializedName("title")
     private String title;
-    private String subtitle; // Thời gian đăng & Tác giả
-    private int imageRes;
 
-    public News(String title, String subtitle, int imageRes) {
-        this.title = title;
-        this.subtitle = subtitle;
-        this.imageRes = imageRes;
-    }
+    @SerializedName("image")
+    private String image;
 
+    @SerializedName("url")
+    private String url;
+
+    @SerializedName("condition_id")
+    private Integer conditionId;
+
+    public Integer getId() { return id; }
     public String getTitle() { return title; }
-    public String getSubtitle() { return subtitle; }
-    public int getImageRes() { return imageRes; }
+    public String getImage() { return image; }
+    public String getUrl() { return url; }
+    public Integer getConditionId() { return conditionId; }
 }

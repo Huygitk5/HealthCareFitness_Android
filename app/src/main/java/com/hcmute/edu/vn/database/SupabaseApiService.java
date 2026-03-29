@@ -1,6 +1,8 @@
 package com.hcmute.edu.vn.database;
 
+import com.hcmute.edu.vn.model.ConditionRestrictedMuscle;
 import com.hcmute.edu.vn.model.FitnessGoal;
+import com.hcmute.edu.vn.model.News;
 import com.hcmute.edu.vn.model.SignInRequest;
 import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
@@ -14,6 +16,7 @@ import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.SignUpRequest;
 import com.hcmute.edu.vn.model.SignUpResponse;
 import com.hcmute.edu.vn.model.UserDailyMeal;
+import com.hcmute.edu.vn.model.UserExperience;
 import com.hcmute.edu.vn.model.UserMedicalConditionInsert;
 import com.hcmute.edu.vn.model.UserPersonalRecord;
 import com.hcmute.edu.vn.model.UserWorkoutExerciseLog;
@@ -31,7 +34,7 @@ import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
-import retrofit2.http.DELETE; // Nhớ import thư viện này ở trên cùng nhé
+import retrofit2.http.DELETE;
 public interface SupabaseApiService {
 
     // =================================================================================
@@ -55,7 +58,7 @@ public interface SupabaseApiService {
     // USER PROFILE
     // =================================================================================
 
-    // Tìm user dựa theo username (Lấy thông tin hiển thị, lấy email đăng nhập, check trùng)
+    // Tìm user dựa theo username
     @GET("users")
     Call<List<User>> getUserByUsername(
             @Query("username") String eqUsername,
@@ -88,17 +91,18 @@ public interface SupabaseApiService {
             @Query("workout_days.order") String orderDays
     );
 
-    // Lấy Gói tập dựa trên Khóa ngoại Mục tiêu (Fitness Goals)
+    //  API lấy Gói tập (Bắt buộc khớp cả Target và Experience)
     @GET("workout_plans")
-    Call<List<WorkoutPlan>> getWorkoutPlanByGoalId(
+    Call<List<WorkoutPlan>> getWorkoutPlanByGoalAndExperience(
             @Query("fitness_goal_id") String eqGoalId,
+            @Query("user_experience_id") String eqExpId,
             @Query("select") String select
     );
 
     @GET("user_workout_sessions")
     Call<List<UserWorkoutSession>> getUserWorkoutHistoryByPlan(
             @Query("user_id") String eqUserId,
-            @Query("plan_id") String eqPlanId, // Lọc theo đúng Plan đang chọn
+            @Query("plan_id") String eqPlanId,
             @Query("select") String select
     );
 
@@ -145,6 +149,13 @@ public interface SupabaseApiService {
     Call<List<UserWorkoutSession>> getUserWorkoutHistory(
             @Query("user_id") String eqUserId,
             @Query("select") String select
+    );
+
+    @GET("user_workout_sessions")
+    Call<List<UserWorkoutSession>> getSessionsByUser(
+        @Query("user_id") String userId,
+        @Query("select")  String select,
+        @Query("order")   String order
     );
 
     // Tìm buổi tập cho "Today plan"
@@ -348,4 +359,38 @@ public interface SupabaseApiService {
     @DELETE("user_daily_meals")
     Call<Void> deleteMealsByUserId(@Query("user_id") String userId);
 
+    // API lấy kinh nghiệm
+    @GET("user_experience")
+    Call<List<UserExperience>> getAllUserExperiences(
+            @Query("select") String select
+    );
+
+    // Lấy danh sách nhóm cơ bị cấm dựa trên bệnh lý
+    @GET("condition_restricted_exercises")
+    Call<List<ConditionRestrictedMuscle>> getBannedMuscles(
+            @Query("condition_id") String conditionIdsInQuery, // Truyền chuỗi "in.(34,42)"
+            @Query("select") String select
+    );
+
+    // Gọi danh sách bài tập dựa trên danh sách nhóm cơ (in.(...)) và độ khó (eq.1)
+    @GET("exercises")
+    Call<List<Exercise>> getReplacementExercises(
+            @Query("muscle_group_id") String muscleGroupIdsQuery,
+            @Query("difficulty_level_id") String difficultyLevel, // Thường truyền "eq.1"
+            @Query("select") String select
+    );
+
+    // 1. Lấy News theo bệnh lý (Cá nhân hóa)
+    @GET("News")
+    Call<List<News>> getPersonalizedNews(
+            @Query("condition_id") String conditionIdsQuery, // Dạng "in.(42,43)"
+            @Query("select") String select
+    );
+
+    // 2. Lấy News ngẫu nhiên (Dùng khi User không có bệnh nào)
+    @GET("News")
+    Call<List<News>> getGeneralNews(
+            @Query("select") String select,
+            @Query("limit") int limit // Chỉ lấy 5-10 bài mới nhất
+    );
 }
