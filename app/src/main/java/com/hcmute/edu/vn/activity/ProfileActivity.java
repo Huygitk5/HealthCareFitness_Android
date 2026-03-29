@@ -385,7 +385,7 @@ public class ProfileActivity extends AppCompatActivity {
                     .enqueue(new Callback<List<WorkoutPlan>>() {
                         @Override
                         public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
-                            String newPlanId = null;
+                            String realPlanId = null;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                                 newPlanId = response.body().get(0).getId();
                             }
