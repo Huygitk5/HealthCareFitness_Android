@@ -161,6 +161,7 @@ public class ExerciseListActivity extends AppCompatActivity {
             exerciseAdapter.setEditMode(isEditMode);
             exerciseAdapter.notifyDataSetChanged();
         }
+        updateStatsUI();
     }
 
     private void checkAndLoadPersonalWorkouts() {
