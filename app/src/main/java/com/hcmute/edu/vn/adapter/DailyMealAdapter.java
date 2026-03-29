@@ -16,19 +16,20 @@ import com.google.android.material.imageview.ShapeableImageView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.UserDailyMeal;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.ViewHolder> {
 
     private Context context;
     private List<UserDailyMeal> mealList;
-    private OnMealItemListener listener; // Đổi tên biến
+    private OnMealItemListener listener;
+    private boolean isMealLogged;
 
-    // Interface để báo cho Activity biết user muốn xóa món nào
-    // ĐÃ SỬA: Gom chung sự kiện Xóa và Thay đổi vào 1 Interface
     public interface OnMealItemListener {
         void onDeleteClick(UserDailyMeal meal);
-        void onSwapClick(UserDailyMeal meal); // Thêm dòng này
+        void onSwapClick(UserDailyMeal meal);
     }
 
     public DailyMealAdapter(Context context, List<UserDailyMeal> mealList, OnMealItemListener listener) {
@@ -44,15 +45,18 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
         return new ViewHolder(view);
     }
 
+    public void setMealLogged(boolean logged) {
+        this.isMealLogged = logged;
+        notifyDataSetChanged();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UserDailyMeal meal = mealList.get(position);
 
-        // Đảm bảo dữ liệu Food không bị null (do Join từ bảng)
         if (meal.getFood() != null) {
             holder.tvMealFoodName.setText(meal.getFood().getName());
 
-            // ĐÃ SỬA: Dùng getQuantityMultiplier() thay cho getQuantity()
             double totalCalo = meal.getFood().getCalories() * meal.getQuantityMultiplier();
             holder.tvMealFoodCalo.setText(String.valueOf(Math.round(totalCalo)));
 
@@ -66,30 +70,23 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
             holder.tvMealFoodCalo.setText("0");
         }
 
-        // =======================================================
-        // 1. Ép kiểu sang số nguyên (int) để làm tròn số phần ăn
-        // =======================================================
         double qty = meal.getQuantityMultiplier();
         String quantityText = (qty == Math.floor(qty))
                 ? String.valueOf((int)qty)
                 : String.valueOf(qty);
         holder.tvMealFoodQuantity.setText(quantityText + " phần");
 
-        // Sự kiện xóa món ăn (Giữ nguyên)
+        holder.itemView.setAlpha(isMealLogged ? 0.55f : 1.0f);
+
+        // Sự kiện xóa món ăn
         holder.btnDeleteMealFood.setOnClickListener(v -> {
             if (listener != null) listener.onDeleteClick(meal);
         });
 
-        // =======================================================
-        // SỰ KIỆN MỚI: Bấm nút Thay đổi món
-        // =======================================================
         holder.btnSwapMealFood.setOnClickListener(v -> {
             if (listener != null) listener.onSwapClick(meal);
         });
 
-        // =======================================================
-        // 2. SỰ KIỆN MỚI: Bấm vào thẻ món ăn để xem chi tiết
-        // =======================================================
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, com.hcmute.edu.vn.activity.FoodDetailActivity.class);
             intent.putExtra("FOOD_ID", meal.getFoodId());

@@ -1,13 +1,18 @@
 package com.hcmute.edu.vn.activity;
 
 import android.animation.ObjectAnimator;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -38,6 +43,7 @@ import com.hcmute.edu.vn.model.MedicalCondition;
 import com.hcmute.edu.vn.model.User;
 import com.hcmute.edu.vn.model.UserDailyMeal;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
+import com.hcmute.edu.vn.receiver.MealNotificationReceiver;
 import com.hcmute.edu.vn.util.ChatbotHelper;
 import com.hcmute.edu.vn.util.FitnessCalculator;
 
@@ -45,8 +51,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -88,9 +96,9 @@ public class NutritionActivity extends AppCompatActivity {
     private Calendar currentWeekBase;
 
     // Survey variables
-    private CardView cardSurvey, tvSurveyDone;
+    private CardView cardSurvey;
     private RadioGroup rgSurvey;
-    private RadioButton rbLess, rbExact, rbMore;
+    private RadioButton rbEnough, rbMissed, rbNone;
     private EditText edtCustomFood;
     private Button btnSubmitSurvey;
     private TextView btnClearSurvey;
@@ -100,6 +108,8 @@ public class NutritionActivity extends AppCompatActivity {
     private List<String> restrictedIngredientIds = new ArrayList<>();
 
     List<String> userAllergies = new ArrayList<>();
+
+    private ImageButton btnTickBreakfast, btnTickLunch, btnTickDinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,6 +154,42 @@ public class NutritionActivity extends AppCompatActivity {
         }
         if (userAllergies == null) {
             userAllergies = new ArrayList<>();
+        }
+
+        setupDaily8PMAlarm();
+    }
+    private void setupDaily8PMAlarm() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, MealNotificationReceiver.class);
+
+        // FLAG_IMMUTABLE là bắt buộc trên Android 12+ vì lý do bảo mật
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                this, 100, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 20);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+
+        // Nếu đã qua 20h hôm nay, set cho 20h ngày mai
+        if (calendar.getTimeInMillis() < System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        // KIỂM TRA PHIÊN BẢN VÀ QUYỀN TRƯỚC KHI SET ALARM
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Từ Android 12 trở lên
+            if (alarmManager.canScheduleExactAlarms()) {
+                // Có quyền -> Kích hoạt đúng boong từng giây
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+            } else {
+                // KHÔNG có quyền -> Lùi về dùng báo thức linh hoạt (chấp nhận trễ 5-10 phút)
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
+                Toast.makeText(this, "Hệ thống có thể báo thức trễ vài phút để tiết kiệm pin", Toast.LENGTH_SHORT).show();
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // Android 6 đến 11
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
         }
     }
 
@@ -219,14 +265,16 @@ public class NutritionActivity extends AppCompatActivity {
         btnNextWeek = findViewById(R.id.btnNextWeek);
 
         cardSurvey = findViewById(R.id.cardSurvey);
-//        tvSurveyDone = findViewById(R.id.tvSurveyDone);
         rgSurvey = findViewById(R.id.rgSurvey);
-        rbLess = findViewById(R.id.rbLess);
-        rbExact = findViewById(R.id.rbExact);
-        rbMore = findViewById(R.id.rbMore);
+        rbEnough = findViewById(R.id.rbEnough);
+        rbMissed = findViewById(R.id.rbMissed);
+        rbNone = findViewById(R.id.rbNone);
         edtCustomFood = findViewById(R.id.edtCustomFood);
         btnSubmitSurvey = findViewById(R.id.btnSubmitSurvey);
         btnClearSurvey = findViewById(R.id.btnClearSurvey);
+        btnTickBreakfast = findViewById(R.id.btnTickBreakfast);
+        btnTickLunch = findViewById(R.id.btnTickLunch);
+        btnTickDinner = findViewById(R.id.btnTickDinner);
     }
 
     private void setupCalendar() {
@@ -267,9 +315,11 @@ public class NutritionActivity extends AppCompatActivity {
         breakfastAdapter = new DailyMealAdapter(this, breakfastList, mealListener);
         lunchAdapter = new DailyMealAdapter(this, lunchList, mealListener);
         dinnerAdapter = new DailyMealAdapter(this, dinnerList, mealListener);
+
         rvBreakfast.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
         rvLunch.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
         rvDinner.setLayoutManager(new LinearLayoutManager(this){ @Override public boolean canScrollVertically() { return false; }});
+
         rvBreakfast.setAdapter(breakfastAdapter);
         rvLunch.setAdapter(lunchAdapter);
         rvDinner.setAdapter(dinnerAdapter);
@@ -279,16 +329,97 @@ public class NutritionActivity extends AppCompatActivity {
         btnAddBreakfast.setOnClickListener(v -> openMealSearch("BREAKFAST"));
         btnAddLunch.setOnClickListener(v -> openMealSearch("LUNCH"));
         btnAddDinner.setOnClickListener(v -> openMealSearch("DINNER"));
+        btnTickBreakfast.setOnClickListener(v -> toggleMealStatus("BREAKFAST", btnTickBreakfast, breakfastAdapter));
+        btnTickLunch.setOnClickListener(v -> toggleMealStatus("LUNCH", btnTickLunch, lunchAdapter));
+        btnTickDinner.setOnClickListener(v -> toggleMealStatus("DINNER", btnTickDinner, dinnerAdapter));
         if (btnPrevWeek != null) btnPrevWeek.setOnClickListener(v -> shiftWeek(-7));
         if (btnNextWeek != null) btnNextWeek.setOnClickListener(v -> shiftWeek(7));
         setupSurveyListeners();
     }
 
+    private void toggleMealStatus(String mealType, ImageButton btn, DailyMealAdapter adapter) {
+        String dateStr = apiDateFormat.format(selectedDate);
+        String key = "MEAL_LOG_" + userId + "_" + dateStr + "_" + mealType;
+        SharedPreferences pref = getSharedPreferences("MealLogs", MODE_PRIVATE);
+
+        boolean isLogged = !pref.getBoolean(key, false); // Đảo trạng thái
+        pref.edit().putBoolean(key, isLogged).apply();
+
+        // Cập nhật giao diện
+        updateTickUI(btn, isLogged);
+        adapter.setMealLogged(isLogged);
+
+        // Kiểm tra để hiện khảo sát
+        checkSurveyVisibility();
+    }
+
+    private void updateTickUI(ImageButton btn, boolean isLogged) {
+        btn.setColorFilter(isLogged ? Color.parseColor("#4DAA9A") : Color.parseColor("#BDBDBD"));
+    }
+
+    private void checkSurveyVisibility() {
+        if (userId == null || userId.isEmpty() || cardSurvey == null) return;
+
+        String dateStr = apiDateFormat.format(selectedDate);
+        String todayStr = apiDateFormat.format(new Date());
+        boolean isToday = dateStr.equals(todayStr);
+
+        SharedPreferences prefLogs = getSharedPreferences("MealLogs", MODE_PRIVATE);
+        boolean bLog = prefLogs.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_BREAKFAST", false);
+        boolean lLog = prefLogs.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_LUNCH", false);
+        boolean dLog = prefLogs.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_DINNER", false);
+
+        // Đếm số bữa đã tick
+        int checkedCount = 0;
+        if (bLog) checkedCount++;
+        if (lLog) checkedCount++;
+        if (dLog) checkedCount++;
+
+        // Kiểm tra xem đã hoàn thành khảo sát hôm nay chưa
+        boolean surveyDone = getSharedPreferences("UserPrefs", MODE_PRIVATE)
+                .getBoolean("SURVEY_" + userId + "_" + dateStr, false);
+
+        Calendar rightNow = Calendar.getInstance();
+        boolean isPast8PM = rightNow.get(Calendar.HOUR_OF_DAY) >= 20;
+
+        // ĐIỀU KIỆN HIỂN THỊ: Hôm nay + Chưa làm khảo sát + (Đã tick ít nhất 1 bữa HOẶC Đã qua 20h)
+        if (isToday && !surveyDone && (checkedCount > 0 || isPast8PM)) {
+            cardSurvey.setVisibility(View.VISIBLE);
+            updateSurveyFormState(checkedCount); // Cập nhật trạng thái disable/enable
+        } else {
+            cardSurvey.setVisibility(View.GONE);
+        }
+    }
+
+    /**
+     * Hàm cập nhật trạng thái Disable/Enable của form dựa trên số bữa đã tick
+     */
+    private void updateSurveyFormState(int count) {
+        // Vô hiệu hóa tất cả trước
+        rbEnough.setEnabled(false);
+        rbMissed.setEnabled(false);
+        rbNone.setEnabled(false);
+
+        // Bật và tự động chọn theo số lượng tick
+        if (count == 3) {
+            rbEnough.setEnabled(true);
+            rbEnough.setChecked(true);
+        } else if (count > 0) { // 1 hoặc 2 bữa
+            rbMissed.setEnabled(true);
+            rbMissed.setChecked(true);
+        } else { // 0 bữa (chỉ rớt vào case này nếu đã qua 20h)
+            rbNone.setEnabled(true);
+            rbNone.setChecked(true);
+        }
+    }
+
     private void setupSurveyListeners() {
         if (rgSurvey == null) return;
+
         rgSurvey.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId != -1) {
-                edtCustomFood.setEnabled(false);
+                edtCustomFood.setEnabled(true);
+                edtCustomFood.setHint("Nhập món ăn ngoài kế hoạch (nếu có)...");
                 btnClearSurvey.setVisibility(View.VISIBLE);
             }
         });
@@ -296,29 +427,53 @@ public class NutritionActivity extends AppCompatActivity {
         btnClearSurvey.setOnClickListener(v -> {
             rgSurvey.clearCheck();
             edtCustomFood.setEnabled(true);
+            edtCustomFood.setHint("Hoặc nhập món ăn (VD: 2 bát phở bò)...");
             btnClearSurvey.setVisibility(View.GONE);
         });
 
         btnSubmitSurvey.setOnClickListener(v -> {
             int checkedId = rgSurvey.getCheckedRadioButtonId();
-            if (checkedId != -1) {
+            String customFood = edtCustomFood.getText().toString().trim();
+
+            // Xử lý trường hợp user không chọn gì cả
+            if (checkedId == -1 && customFood.isEmpty()) {
+                Toast.makeText(this, "Vui lòng chọn trạng thái hoặc nhập món ăn!",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Xây dựng Prompt thông minh gửi cho AI
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Mục tiêu Calo hôm nay của tôi là ")
+                    .append(Math.round(targetCalories)).append(" kcal. ");
+
+            // Gắn trạng thái số lượng bữa ăn
+            if (checkedId == R.id.rbEnough) {
+                promptBuilder.append("Tôi đã ăn ĐỦ số bữa yêu cầu. ");
+            } else if (checkedId == R.id.rbMissed) {
+                promptBuilder.append("Tôi đã ăn THIẾU bữa so với yêu cầu. ");
+            } else if (checkedId == R.id.rbNone) {
+                promptBuilder.append("Hôm nay tôi CHƯA ĂN bữa nào trong kế hoạch. ");
+            }
+
+            // Gắn thêm thông tin món ăn ngoài luồng (nếu có)
+            if (!customFood.isEmpty()) {
+                promptBuilder.append("Tuy nhiên, thực tế hôm nay tôi ăn: '").append(customFood).append("'. ");
+                promptBuilder.append("Hãy ước lượng tổng lượng calo của các món này, so sánh với mục tiêu calo của tôi và đưa ra lời khuyên (đóng vai trò là một chuyên gia dinh dưỡng).");
+
+                // Chuyển sang Chatbot để AI xử lý
+                Intent intent = new Intent(this, ChatbotActivity.class);
+                intent.putExtra("EXTRA_SURVEY_TEXT", promptBuilder.toString());
+                startActivity(intent);
+                saveSurveyDoneStatus();
+            } else {
+                // Nếu KHÔNG nhập món ăn ngoài, chỉ dùng logic khen/chê cục bộ như cũ
                 String message = "";
-                if (checkedId == R.id.rbLess) message = "Bạn nên bổ sung thêm protein nhé!";
-                else if (checkedId == R.id.rbExact) message = "Tuyệt vời, hãy giữ vững phong độ nhé!";
-                else if (checkedId == R.id.rbMore) message = "Hôm nay bạn đã ăn dư calo, ngày mai hãy tập luyện thêm nhé!";
+                if (checkedId == R.id.rbEnough) message = "Tuyệt vời, bạn đã bám sát kế hoạch! Hãy giữ vững phong độ nhé!";
+                else if (checkedId == R.id.rbMissed) message = "Hôm nay bạn ăn thiếu bữa rồi. Ngày mai nhớ chú ý ăn uống đầy đủ nhé!";
+                else if (checkedId == R.id.rbNone) message = "Báo động đỏ! Bạn chưa ăn bữa nào. Hãy nạp năng lượng ngay đi nào!";
 
                 showCustomDialog(message);
-            } else {
-                String customFood = edtCustomFood.getText().toString().trim();
-                if (!customFood.isEmpty()) {
-                    String surveyText = "Hôm nay tôi ăn: " + customFood + ", target của tôi là " + Math.round(targetCalories) + " kcal, hãy so sánh thức ăn tôi ăn với target kcal của ngày hôm nay được đề ra và nhận xét.";
-                    Intent intent = new Intent(this, ChatbotActivity.class);
-                    intent.putExtra("EXTRA_SURVEY_TEXT", surveyText);
-                    startActivity(intent);
-                    saveSurveyDoneStatus();
-                } else {
-                    Toast.makeText(this, "Vui lòng chọn hoặc nhập kết quả khẩu phần ăn hôm nay của bạn", Toast.LENGTH_SHORT).show();
-                }
             }
         });
     }
@@ -359,26 +514,7 @@ public class NutritionActivity extends AppCompatActivity {
             String targetDate = apiDateFormat.format(selectedDate);
             SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
             pref.edit().putBoolean("SURVEY_" + userId + "_" + targetDate, true).apply();
-            checkSurveyStatus();
-        }
-    }
-
-    private void checkSurveyStatus() {
-        if (userId != null && !userId.isEmpty() && cardSurvey != null) {
-            String targetDate = apiDateFormat.format(selectedDate);
-            SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-            boolean isDone = pref.getBoolean("SURVEY_" + userId + "_" + targetDate, false);
-            if (isDone) {
-//                cardSurvey.setVisibility(View.GONE);
-//                tvSurveyDone.setVisibility(View.VISIBLE);
-            } else {
-                cardSurvey.setVisibility(View.VISIBLE);
-//                tvSurveyDone.setVisibility(View.GONE);
-                rgSurvey.clearCheck();
-                edtCustomFood.setText("");
-                edtCustomFood.setEnabled(true);
-                btnClearSurvey.setVisibility(View.GONE);
-            }
+            checkSurveyVisibility();
         }
     }
 
@@ -403,7 +539,9 @@ public class NutritionActivity extends AppCompatActivity {
         if (userId == null || userId.isEmpty()) return;
         String formattedDate = apiDateFormat.format(selectedDate);
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        checkSurveyStatus();
+
+        syncMealTickStates();
+        checkSurveyVisibility();
 
         apiService.getDailyMeals("eq." + userId, "eq." + formattedDate, "*, foods(*)").enqueue(new Callback<List<UserDailyMeal>>() {
             @Override
@@ -427,6 +565,26 @@ public class NutritionActivity extends AppCompatActivity {
             }
             @Override public void onFailure(Call<List<UserDailyMeal>> call, Throwable t) {}
         });
+    }
+
+    private void syncMealTickStates() {
+        String dateStr = apiDateFormat.format(selectedDate);
+        SharedPreferences pref = getSharedPreferences("MealLogs", MODE_PRIVATE);
+
+        // Đọc trạng thái của ngày được chọn
+        boolean bLog = pref.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_BREAKFAST", false);
+        boolean lLog = pref.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_LUNCH", false);
+        boolean dLog = pref.getBoolean("MEAL_LOG_" + userId + "_" + dateStr + "_DINNER", false);
+
+        // Cập nhật UI nút tick
+        updateTickUI(btnTickBreakfast, bLog);
+        updateTickUI(btnTickLunch, lLog);
+        updateTickUI(btnTickDinner, dLog);
+
+        // Cập nhật độ mờ cho Adapter
+        breakfastAdapter.setMealLogged(bLog);
+        lunchAdapter.setMealLogged(lLog);
+        dinnerAdapter.setMealLogged(dLog);
     }
 
     private void triggerAIGeneration() {
@@ -581,7 +739,10 @@ public class NutritionActivity extends AppCompatActivity {
     }
 
     private void updateMealUI() {
-        breakfastAdapter.updateList(breakfastList); lunchAdapter.updateList(lunchList); dinnerAdapter.updateList(dinnerList);
+        breakfastAdapter.updateList(breakfastList);
+        lunchAdapter.updateList(lunchList);
+        dinnerAdapter.updateList(dinnerList);
+
         tvEmptyBreakfast.setVisibility(breakfastList.isEmpty() ? View.VISIBLE : View.GONE);
         tvEmptyLunch.setVisibility(lunchList.isEmpty() ? View.VISIBLE : View.GONE);
         tvEmptyDinner.setVisibility(dinnerList.isEmpty() ? View.VISIBLE : View.GONE);
@@ -600,6 +761,7 @@ public class NutritionActivity extends AppCompatActivity {
                 }
             }
         }
+
         tvTotalCalories.setText(String.valueOf(Math.round(totalCal)));
         tvTargetCalories.setText("/ " + Math.round(targetCalories) + " Kcal");
         tvTotalCarb.setText(Math.round(totalCarb) + "g/" + Math.round(targetCarb) + "g");
