@@ -3,6 +3,8 @@ package com.hcmute.edu.vn.activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -87,7 +89,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         spinnerActivityLevel.setSelection(2); // mặc định "Vận động vừa"
 
         // --- Auto-format ngày sinh ---
-        edtDOB.addTextChangedListener(new android.text.TextWatcher() {
+        edtDOB.addTextChangedListener(new TextWatcher() {
             private boolean isFormatting = false;
             private boolean isDeleting = false;
 
@@ -101,7 +103,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(android.text.Editable s) {
+            public void afterTextChanged(Editable s) {
                 if (isFormatting) return;
                 isFormatting = true;
                 String digits = s.toString().replaceAll("[^\\d]", "");
