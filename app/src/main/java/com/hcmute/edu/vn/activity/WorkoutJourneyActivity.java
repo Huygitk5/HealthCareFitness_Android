@@ -84,12 +84,33 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         loadUserJourney();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+@Override
+protected void onResume() {
+    super.onResume();
+    SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+    boolean workoutUpdateNeeded = pref.getBoolean("WORKOUT_UPDATE_NEEDED", false);
+
+    if (workoutUpdateNeeded) {
+        // Tắt cờ đi để không bị lặp lại
+        pref.edit().putBoolean("WORKOUT_UPDATE_NEEDED", false).apply();
+
+        Toast.makeText(this, "Đang thiết lập lại lộ trình tập luyện...", Toast.LENGTH_SHORT).show();
+        // Lấy User và kích hoạt bộ não AI sinh lịch tập mới
+        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+        api.getUserByUsername("eq." + username, "*,user_medical_conditions(*)").enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    generateAndSavePersonalizedWorkout(response.body().get(0));
+                }
+            }
+            @Override public void onFailure(Call<List<User>> call, Throwable t) {}
+        });
+    } else {
         currentUserConditionIds.clear();
         loadUserJourney();
     }
+}
 
     private void initViews() {
         tvStreak = findViewById(R.id.tvStreak);
