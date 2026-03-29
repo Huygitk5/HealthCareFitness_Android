@@ -70,10 +70,6 @@
             android:name=".activity.WorkoutJourneyActivity"
             android:exported="false"  />
 
-        <activity
-            android:name=".activity.WorkoutActivity"
-            android:exported="false" />
-
         <activity android:name="com.hcmute.edu.vn.activity.WorkoutDetailActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseActivity" android:exported="false" />
         <activity android:name="com.hcmute.edu.vn.activity.ExerciseListActivity" android:exported="false" />
