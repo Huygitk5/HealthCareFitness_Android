@@ -435,8 +435,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
-                            Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT)
-                                    .show();
                             btnSave.setText("LƯU");
                             btnSave.setEnabled(true);
                         }
