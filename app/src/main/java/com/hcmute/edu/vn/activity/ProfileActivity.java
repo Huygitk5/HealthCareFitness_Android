@@ -395,8 +395,8 @@ public class ProfileActivity extends AppCompatActivity {
                             updateData.setUserExperienceId(finalNewExpId);
                             updateData.setTarget(finalNewTarget);
                             updateData.setCurrentDailyCalories(finalNewDailyCalories);
-                            if (newPlanId != null) {
-                                updateData.setCurrentWorkoutPlanId(newPlanId);
+                            if (realPlanId != null) {
+                                updateData.setCurrentWorkoutPlanId(realPlanId);
                             }
 
                             apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
