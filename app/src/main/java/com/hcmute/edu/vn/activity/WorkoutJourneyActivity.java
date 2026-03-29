@@ -313,8 +313,6 @@ protected void onResume() {
                     for (UserDailyWorkout udw : personalRecords) {
                         if (udw.getDayId() != null && udw.getExercise() != null) {
                             if (!dayMap.containsKey(udw.getDayId())) dayMap.put(udw.getDayId(), new ArrayList<>());
-                            
-                            // Constructor 4 tham số
                             WorkoutDayExercise wde = new WorkoutDayExercise(
                                     udw.getExercise(), udw.getSets(),
                                     udw.getReps() != null ? udw.getReps() : "12",
