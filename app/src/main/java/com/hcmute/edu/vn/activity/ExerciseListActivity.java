@@ -81,6 +81,9 @@ public class ExerciseListActivity extends AppCompatActivity {
         });
 
         rvExercises.setLayoutManager(new LinearLayoutManager(this));
+        tvExerciseCount = findViewById(R.id.tvExerciseCount);
+        tvTotalTime = findViewById(R.id.tvTotalTime);
+        tvTotalCalories = findViewById(R.id.tvTotalCalories);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", "");
