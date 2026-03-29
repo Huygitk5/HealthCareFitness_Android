@@ -54,5 +54,13 @@ public class WorkoutDayExercise implements Serializable {
     public void setExercise(Exercise exercise) {
         this.exercise = exercise;
     }
+
+    public String getExerciseId() {
+        return exerciseId;
+    }
+
+    public void setExerciseId(String exerciseId) {
+        this.exerciseId = exerciseId;
+    }
 }
 

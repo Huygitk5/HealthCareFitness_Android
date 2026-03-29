@@ -14,6 +14,8 @@ public class WorkoutPlan {
     @SerializedName("workout_days")
     private List<WorkoutDay> days;
 
+    public WorkoutPlan() {}
+
     public WorkoutPlan(String id, String name, Integer difficultyLevelId, List<WorkoutDay> days) {
         this.id = id;
         this.name = name;
