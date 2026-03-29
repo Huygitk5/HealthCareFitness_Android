@@ -591,6 +591,10 @@ public class HomeActivity extends AppCompatActivity {
                 double newWeight = Double.parseDouble(wStr);
                 double newHeight = Double.parseDouble(hStr);
 
+                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                        .putFloat("USER_WEIGHT", (float) newWeight)
+                        .apply();
+
                 User updateData = new User();
                 updateData.setWeight(newWeight);
                 updateData.setHeight(newHeight);
