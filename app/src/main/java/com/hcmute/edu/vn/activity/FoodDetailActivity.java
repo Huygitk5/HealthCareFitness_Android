@@ -30,7 +30,13 @@ public class FoodDetailActivity extends AppCompatActivity {
 
     private ImageView imgFoodDetail;
     private ImageButton btnBackDetail;
-    private TextView tvDetailName, tvDetailCalo, tvDetailPro, tvDetailCarb, tvDetailFat, tvDetailInstructions;
+    private TextView tvDetailName;
+    private TextView tvDetailServing;
+    private TextView tvDetailCalo;
+    private TextView tvDetailPro;
+    private TextView tvDetailCarb;
+    private TextView tvDetailFat;
+    private TextView tvDetailInstructions;
     private RecyclerView rvIngredients;
 
     @Override
