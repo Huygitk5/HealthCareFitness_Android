@@ -61,6 +61,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(v.getContext(), com.hcmute.edu.vn.activity.RestDayCompleteActivity.class);
                 intent.putExtra("EXTRA_DAY_ID", item.getId());
+                intent.putExtra("EXTRA_DAY_ORDER", item.getDayOrder());
                 intent.putExtra("EXTRA_PLAN_ID", planId);
                 v.getContext().startActivity(intent);
             });
@@ -71,6 +72,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             View.OnClickListener clickListener = v -> {
                 Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
                 intent.putExtra("EXTRA_DAY_ID", item.getId());
+                intent.putExtra("EXTRA_DAY_ORDER", item.getDayOrder());
                 intent.putExtra("EXTRA_PLAN_ID", planId);
                 intent.putExtra("EXTRA_DAY_TITLE", displayTitle);
                 v.getContext().startActivity(intent);

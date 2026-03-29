@@ -249,6 +249,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvBreakfast"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -256,6 +257,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvBreakfast"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="6:30 – 9:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickBreakfast"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddBreakfast"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddBreakfast"
                                 android:layout_width="wrap_content"
@@ -308,6 +331,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvLunch"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -315,6 +339,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvLunch"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="11:30 – 13:30"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickLunch"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddLunch"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddLunch"
                                 android:layout_width="wrap_content"
@@ -367,6 +413,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="12dp">
                             <TextView
+                                android:id="@+id/tvDinner"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_centerVertical="true"
@@ -374,6 +421,28 @@
                                 android:textColor="#212121"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_toEndOf="@id/tvDinner"
+                                android:layout_marginStart="8dp"
+                                android:layout_centerVertical="true"
+                                android:text="18:00 – 20:00"
+                                android:textColor="#9E9E9E"
+                                android:textSize="12sp" />
+
+                            <ImageButton
+                                android:id="@+id/btnTickDinner"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_toStartOf="@id/btnAddDinner"
+                                android:layout_marginEnd="12dp"
+                                android:layout_centerVertical="true"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_check"
+                                app:tint="#BDBDBD" /> <!-- Mặc định màu xám -->
+
                             <TextView
                                 android:id="@+id/btnAddDinner"
                                 android:layout_width="wrap_content"
@@ -405,6 +474,123 @@
                             android:textStyle="italic" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
+
+                <!-- KHẢO SÁT DINH DƯỠNG -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardSurvey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    app:cardBackgroundColor="#FFFFFF"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:text="📊 Khảo sát dinh dưỡng hôm nay"
+                            android:textColor="#212121"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <RadioGroup
+                            android:id="@+id/rgSurvey"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:orientation="vertical">
+
+                            <RadioButton
+                                android:id="@+id/rbEnough"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Ăn đủ bữa"
+                                android:textColor="#424242" />
+
+                            <RadioButton
+                                android:id="@+id/rbMissed"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Ăn thiếu bữa"
+                                android:textColor="#424242" />
+
+                            <RadioButton
+                                android:id="@+id/rbNone"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Không ăn bữa nào"
+                                android:textColor="#424242" />
+                        </RadioGroup>
+
+                        <TextView
+                            android:id="@+id/btnClearSurvey"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:layout_gravity="end"
+                            android:text="Bỏ chọn"
+                            android:textColor="#757575"
+                            android:textSize="12sp"
+                            android:textStyle="italic"
+                            android:visibility="gone" />
+
+                        <EditText
+                            android:id="@+id/edtCustomFood"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
+                            android:background="@drawable/bg_badge_white"
+                            android:hint="Hoặc nhập món ăn (VD: 2 bát phở bò) nếu ăn ngoài plan..."
+                            android:inputType="textMultiLine"
+                            android:minHeight="48dp"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="10dp"
+                            android:textColor="#212121"
+                            android:textColorHint="#9E9E9E"
+                            android:textSize="14sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSubmitSurvey"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:text="Gửi Báo Cáo"
+                            android:textAllCaps="false"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold"
+                            app:backgroundTint="#4DAA9A"
+                            app:cornerRadius="8dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+<!--                <com.google.android.material.card.MaterialCardView-->
+<!--                    android:id="@+id/tvSurveyDone"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_marginBottom="16dp"-->
+<!--                    app:cardBackgroundColor="#E8F5E9"-->
+<!--                    app:cardCornerRadius="16dp"-->
+<!--                    app:cardElevation="0dp"-->
+<!--                    app:strokeWidth="1dp"-->
+<!--                    app:strokeColor="#A5D6A7"-->
+<!--                    android:visibility="gone">-->
+<!--                    <TextView-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:padding="16dp"-->
+<!--                        android:gravity="center"-->
+<!--                        android:text="🎉 Khảo sát đã hoàn thành. Hẹn gặp bạn ngày mai!"-->
+<!--                        android:textColor="#2E7D32"-->
+<!--                        android:textSize="14sp"-->
+<!--                        android:textStyle="bold" />-->
+<!--                </com.google.android.material.card.MaterialCardView>-->
 
             </LinearLayout>
         </LinearLayout>

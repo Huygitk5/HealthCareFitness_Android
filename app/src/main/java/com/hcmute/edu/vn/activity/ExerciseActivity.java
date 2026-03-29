@@ -3,8 +3,8 @@ package com.hcmute.edu.vn.activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.bumptech.glide.Glide;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.service.MusicService;
@@ -97,7 +98,7 @@ public class ExerciseActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         if (intent != null && intent.hasExtra("EXTRA_EXERCISE_LIST")) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 exerciseList = intent.getSerializableExtra("EXTRA_EXERCISE_LIST", ArrayList.class);
             } else {
                 exerciseList = (ArrayList<Exercise>) intent.getSerializableExtra("EXTRA_EXERCISE_LIST");
@@ -341,7 +342,7 @@ public class ExerciseActivity extends AppCompatActivity {
         }
 
         // 3. Load ảnh bằng Glide
-        com.bumptech.glide.Glide.with(this)
+        Glide.with(this)
                 .load(currentExercise.getImageUrl()) // Lấy link ảnh từ Supabase
                 .placeholder(R.drawable.workout_1)   // Ảnh chờ trong lúc load mạng
                 .error(R.drawable.workout_1)         // Ảnh mặc định nếu link hỏng/không có link
