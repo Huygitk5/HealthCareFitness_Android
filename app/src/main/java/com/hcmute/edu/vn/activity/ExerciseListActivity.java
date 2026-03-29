@@ -62,6 +62,7 @@ public class ExerciseListActivity extends AppCompatActivity {
     private List<Integer> userBannedMuscleIds = new ArrayList<>();
     private List<UserDailyWorkout> userDailyWorkoutIds = new ArrayList<>(); // To store DB record IDs for updates
     private List<String> completedDayIds = new ArrayList<>(); // Lịch sử buổi tập đã hoàn thành
+    private TextView tvExerciseCount, tvTotalTime, tvTotalCalories;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
