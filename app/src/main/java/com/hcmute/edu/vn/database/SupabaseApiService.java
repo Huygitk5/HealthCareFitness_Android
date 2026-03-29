@@ -2,6 +2,7 @@ package com.hcmute.edu.vn.database;
 
 import com.hcmute.edu.vn.model.ConditionRestrictedMuscle;
 import com.hcmute.edu.vn.model.FitnessGoal;
+import com.hcmute.edu.vn.model.News;
 import com.hcmute.edu.vn.model.SignInRequest;
 import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.BmiLog;
@@ -377,5 +378,19 @@ public interface SupabaseApiService {
             @Query("muscle_group_id") String muscleGroupIdsQuery,
             @Query("difficulty_level_id") String difficultyLevel, // Thường truyền "eq.1"
             @Query("select") String select
+    );
+
+    // 1. Lấy News theo bệnh lý (Cá nhân hóa)
+    @GET("News")
+    Call<List<News>> getPersonalizedNews(
+            @Query("condition_id") String conditionIdsQuery, // Dạng "in.(42,43)"
+            @Query("select") String select
+    );
+
+    // 2. Lấy News ngẫu nhiên (Dùng khi User không có bệnh nào)
+    @GET("News")
+    Call<List<News>> getGeneralNews(
+            @Query("select") String select,
+            @Query("limit") int limit // Chỉ lấy 5-10 bài mới nhất
     );
 }
