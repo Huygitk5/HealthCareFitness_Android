@@ -537,4 +537,174 @@ protected void onResume() {
             navHistory.setOnClickListener(v -> startActivity(new Intent(this, WorkoutHistoryActivity.class)));
         }
     }
+
+    // =====================================================================
+    // HÀM KÍCH HOẠT: TẠO LỊCH TẬP MỚI
+    // =====================================================================
+    private void generateAndSavePersonalizedWorkout(User currentUser) {
+        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        List<Integer> conditionIds = new ArrayList<>();
+        if (currentUser.getUserMedicalConditions() != null) {
+            for (UserMedicalCondition mc : currentUser.getUserMedicalConditions()) {
+                if (mc.getConditionId() != null) conditionIds.add(mc.getConditionId());
+            }
+        }
+
+        if (conditionIds.isEmpty()) {
+            handlePlanGeneration(api, currentUser, new ArrayList<>());
+        } else {
+            StringBuilder inQuery = new StringBuilder("in.(");
+            for (int i = 0; i < conditionIds.size(); i++) {
+                inQuery.append(conditionIds.get(i)).append(i == conditionIds.size() - 1 ? "" : ",");
+            }
+            inQuery.append(")");
+
+            api.getBannedMuscles(inQuery.toString(), "*").enqueue(new Callback<List<ConditionRestrictedMuscle>>() {
+                @Override
+                public void onResponse(Call<List<ConditionRestrictedMuscle>> call, Response<List<ConditionRestrictedMuscle>> response) {
+                    List<Integer> bannedIds = new ArrayList<>();
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (ConditionRestrictedMuscle rm : response.body()) bannedIds.add(rm.getMuscleGroupId());
+                    }
+                    handlePlanGeneration(api, currentUser, bannedIds);
+                }
+                @Override
+                public void onFailure(Call<List<ConditionRestrictedMuscle>> call, Throwable t) {
+                    handlePlanGeneration(api, currentUser, new ArrayList<>());
+                }
+            });
+        }
+    }
+
+    // =====================================================================
+    // HÀM XỬ LÝ CHÍNH: PHÂN NHÁNH GIỮA "GIẢM MỠ" VÀ "TĂNG CƠ/GIỮ DÁNG"
+    // =====================================================================
+    private void handlePlanGeneration(SupabaseApiService api, User currentUser, List<Integer> bannedMuscleIds) {
+        int age = calculateAge(currentUser.getDateOfBirth());
+        boolean isBeginner = (currentUser.getUserExperienceId() != null && currentUser.getUserExperienceId() == 1);
+        double weight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+        double height = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+        String gender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
+        int activityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("ACTIVITY_INDEX", 2);
+
+        double bmr = FitnessCalculator.calcBMR(weight, height, age, gender);
+        double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
+
+        int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
+        String goalName = goalId == 1 ? "giảm mỡ" : (goalId == 2 ? "tăng cơ" : "giữ dáng");
+
+        FitnessCalculator.FitnessResult result =
+                FitnessCalculator.calculate(goalName, weight, currentUser.getTarget() != null ? currentUser.getTarget() : weight, tdee, gender, isBeginner);
+
+        Date startDate = new Date();
+
+        String currentPlanId = currentUser.getCurrentWorkoutPlanId();
+        if (currentPlanId == null || currentPlanId.isEmpty()) {
+            currentPlanId = result.workoutPlanId;
+        }
+
+        final String finalPlanId = currentPlanId;
+
+        // Xóa lịch tập cũ của Plan này trước khi tạo mới
+        api.deleteUserDailyWorkoutsByPlan("eq." + currentUser.getId(), "eq." + finalPlanId)
+                .enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        generateAndInsert(api, currentUser, finalPlanId, goalId, startDate, bannedMuscleIds, isBeginner, result.dailyCaloriesToBurn, weight);
+                    }
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        generateAndInsert(api, currentUser, finalPlanId, goalId, startDate, bannedMuscleIds, isBeginner, result.dailyCaloriesToBurn, weight);
+                    }
+                });
+    }
+
+    // =====================================================================
+    // HÀM CHÈN DỮ LIỆU
+    // =====================================================================
+    private void generateAndInsert(SupabaseApiService api, User currentUser, String planId, int goalId, Date startDate, List<Integer> bannedMuscleIds, boolean isBeginner, double dailyCaloriesToBurn, double weight) {
+
+        // BƯỚC 1: LUÔN TẢI KHUNG GÓI TẬP VỀ TRƯỚC ĐỂ LẤY DAY_ID HỢP LỆ
+        String selectStr = "*,workout_days(*, workout_day_exercises(*, exercise:exercises(*)))";
+        api.getWorkoutPlanById("eq." + planId, selectStr).enqueue(new Callback<List<WorkoutPlan>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    WorkoutPlan basePlan = response.body().get(0);
+
+                    if (goalId == 1) {
+                        // GIẢM MỠ: DÙNG AI TỰ ĐỘNG SINH VÀ LẮP VÀO KHUNG CỦA BẢN GỐC
+                        api.getAllExercises("*").enqueue(new Callback<List<Exercise>>() {
+                            @Override
+                            public void onResponse(Call<List<Exercise>> call, Response<List<Exercise>> exResponse) {
+                                if (exResponse.isSuccessful() && exResponse.body() != null) {
+                                    List<UserDailyWorkout> generatedWorkouts =
+                                            WorkoutGenerator.generateWeeklyWeightLossWorkouts(
+                                                    currentUser.getId(), basePlan, startDate, exResponse.body(), bannedMuscleIds, isBeginner, dailyCaloriesToBurn, weight
+                                            );
+                                    if (!generatedWorkouts.isEmpty()) {
+                                        insertNewWorkouts(api, generatedWorkouts);
+                                    } else {
+                                        Toast.makeText(WorkoutJourneyActivity.this, "Lỗi: Không tạo được bài tập", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
+                            @Override public void onFailure(Call<List<Exercise>> call, Throwable t) {}
+                        });
+                    } else {
+                        // TĂNG CƠ / GIỮ DÁNG: COPY TỪ PLAN CỨNG
+                        List<UserDailyWorkout> copiedWorkouts = WorkoutGenerator.copyStaticPlanToDailyWorkouts(currentUser.getId(), startDate, basePlan);
+                        if (!copiedWorkouts.isEmpty()) insertNewWorkouts(api, copiedWorkouts);
+                    }
+                } else {
+                    Toast.makeText(WorkoutJourneyActivity.this, "Lỗi: Không tìm thấy gói tập mẫu trên DB", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {}
+        });
+    }
+    private void insertNewWorkouts(SupabaseApiService api, List<UserDailyWorkout> workouts) {
+        api.addUserDailyWorkouts(workouts).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getApplicationContext(), "🎉 Đã thiết lập xong lộ trình tập luyện!", Toast.LENGTH_SHORT).show();
+                    tvHeroTitle.setText("Đang tải lộ trình mới...");
+                    loadUserJourney();
+                } else {
+                    // IN LỖI CHI TIẾT TỪ SUPABASE ĐỂ DEBUG
+                    String errorMsg = "Lỗi không xác định";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorMsg = response.errorBody().string();
+                        }
+                    } catch (Exception e) {}
+
+                    Toast.makeText(getApplicationContext(), "Supabase Error: " + errorMsg, Toast.LENGTH_LONG).show();
+                    android.util.Log.e("SUPABASE_ERROR", "Lỗi Insert: " + errorMsg);
+                }
+            }
+            @Override public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private int calculateAge(String dobString) {
+        if (dobString == null || dobString.isEmpty()) return 0;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date birthDate = sdf.parse(dobString);
+            if (birthDate == null) return 0;
+            Calendar dob = Calendar.getInstance(); dob.setTime(birthDate);
+            Calendar today = Calendar.getInstance();
+            int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+            if (today.get(Calendar.MONTH) < dob.get(Calendar.MONTH) ||
+                    (today.get(Calendar.MONTH) == dob.get(Calendar.MONTH) && today.get(Calendar.DAY_OF_MONTH) < dob.get(Calendar.DAY_OF_MONTH))) {
+                age--;
+            }
+            return age;
+        } catch (Exception e) { return 0; }
+    }
 }
