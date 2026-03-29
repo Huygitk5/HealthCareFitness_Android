@@ -454,16 +454,9 @@ public class ProfileSetupActivity extends AppCompatActivity {
                                         }
                                     }
 
-                                                    @Override
-                                                    public void onFailure(Call<Void> call, Throwable t) {
-                                                        showError("Lỗi mạng!");
-                                                    }
-                                                });
-                                    }
-
                                     @Override
-                                    public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
-                                        showError("Lỗi lấy kế hoạch tập!");
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        showError("Lỗi mạng!");
                                     }
                                 });
                     }
