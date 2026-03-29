@@ -102,8 +102,11 @@ public class FoodDetailActivity extends AppCompatActivity {
     }
 
     private void displayFoodDetail(Food food) {
-        // 1. Tải ảnh và Thông tin cơ bản
-        Glide.with(this).load(food.getImageUrl()).placeholder(R.mipmap.ic_launcher).into(imgFoodDetail);
+        Glide.with(this)
+                .load(food.getImageUrl())
+                .placeholder(R.mipmap.ic_launcher)
+                .into(imgFoodDetail);
+
         tvDetailName.setText(food.getName());
         tvDetailCalo.setText(String.valueOf(Math.round(food.getCalories() != null ? food.getCalories() : 0)));
         tvDetailPro.setText(Math.round(food.getProteinG() != null ? food.getProteinG() : 0) + "g");
