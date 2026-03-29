@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -25,6 +27,9 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.checkbox.MaterialCheckBox;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.tabs.TabLayout;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
 import com.hcmute.edu.vn.database.SupabaseClient;
@@ -260,28 +265,24 @@ public class ProfileActivity extends AppCompatActivity {
                     double currentBmi = currentWeight / Math.pow(currentHeight / 100.0, 2);
                     if (currentBmi > 24.9 && (goalNames.contains("tăng") || isMaintain)) {
                         Toast.makeText(ProfileActivity.this,
-                                "Bạn đang thừa cân (BMI > 24.9), chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG)
-                                .show();
+                                "Bạn đang thừa cân (BMI > 24.9), chỉ nên chọn Giảm mỡ lúc này!", Toast.LENGTH_LONG).show();
                         dialogSpinnerGoal.setSelection(finalSelectedIndex);
                         return;
                     }
                     if (currentBmi < 18.5 && (goalNames.contains("giảm") || isMaintain)) {
                         Toast.makeText(ProfileActivity.this,
-                                "Bạn đang thiếu cân (BMI < 18.5), chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG)
-                                .show();
+                                "Bạn đang thiếu cân (BMI < 18.5), chỉ nên chọn Tăng cơ lúc này!", Toast.LENGTH_LONG).show();
                         dialogSpinnerGoal.setSelection(finalSelectedIndex);
                         return;
                     }
                 }
 
                 dialogLayoutTarget.setVisibility(isMaintain ? View.GONE : View.VISIBLE);
-                if (isMaintain)
-                    dialogEdtTarget.setText("");
+                if (isMaintain) dialogEdtTarget.setText("");
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            public void onNothingSelected(AdapterView<?> parent) {}
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
@@ -309,9 +310,8 @@ public class ProfileActivity extends AppCompatActivity {
                     dialogEdtTarget.requestFocus();
                     return;
                 }
-                try {
-                    newTarget = Float.parseFloat(targetStr);
-                } catch (NumberFormatException e) {
+                try { newTarget = Float.parseFloat(targetStr); }
+                catch (NumberFormatException e) {
                     Toast.makeText(this, "Cân nặng phải là số!", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -449,10 +449,9 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void loadFitnessGoalsList() {
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-        apiService.getAllFitnessGoals("*").enqueue(new Callback<List<com.hcmute.edu.vn.model.FitnessGoal>>() {
+        apiService.getAllFitnessGoals("*").enqueue(new Callback<List<FitnessGoal>>() {
             @Override
-            public void onResponse(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call,
-                    Response<List<com.hcmute.edu.vn.model.FitnessGoal>> response) {
+            public void onResponse(Call<List<FitnessGoal>> call, Response<List<FitnessGoal>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     fitnessGoalList = response.body();
                     if (username != null && !username.isEmpty()) {
@@ -462,7 +461,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<com.hcmute.edu.vn.model.FitnessGoal>> call, Throwable t) {
+            public void onFailure(Call<List<FitnessGoal>> call, Throwable t) {
             }
         });
     }
@@ -474,18 +473,14 @@ public class ProfileActivity extends AppCompatActivity {
             public void onResponse(Call<List<UserExperience>> call, Response<List<UserExperience>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     experienceList = response.body();
-                    android.util.Log.d("API_DEBUG", "Loaded " + experienceList.size() + " experiences");
                 } else {
                     int code = response.code();
                     String err = "";
                     try {
-                        if (response.errorBody() != null)
-                            err = response.errorBody().string();
-                    } catch (Exception e) {
-                    }
+                        if (response.errorBody() != null) err = response.errorBody().string();
+                    } catch (Exception e) {}
                     Toast.makeText(ProfileActivity.this, "Lỗi API Kinh nghiệm: Mã " + code + " - " + err,
                             Toast.LENGTH_LONG).show();
-                    android.util.Log.e("API_DEBUG", "Lỗi API Code: " + code + ", " + err);
                 }
             }
 
@@ -614,12 +609,9 @@ public class ProfileActivity extends AppCompatActivity {
                     currentWeight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
                     currentGender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
                     currentAge = calculateAge(currentUser.getDateOfBirth());
-                    if (currentAge <= 0)
-                        currentAge = 20;
+                    if (currentAge <= 0) currentAge = 20;
 
-                    txtName.setText(
-                            currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName()
-                                    : username);
+                    txtName.setText(currentUser.getName() != null && !currentUser.getName().isEmpty() ? currentUser.getName() : username);
                     txtEmail.setText(currentUser.getEmail() != null ? currentUser.getEmail() : "Chưa cập nhật Email");
 
                     double heightCm = currentHeight;
@@ -676,14 +668,12 @@ public class ProfileActivity extends AppCompatActivity {
                     try {
                         String err = response.errorBody() != null ? response.errorBody().string() : "Rỗng";
                         Toast.makeText(ProfileActivity.this, "LỖI SUPABASE (TẢI): " + err, Toast.LENGTH_LONG).show();
-                    } catch (Exception e) {
-                    }
+                    } catch (Exception e) {}
                 }
             }
 
             @Override
-            public void onFailure(Call<List<User>> call, Throwable t) {
-            }
+            public void onFailure(Call<List<User>> call, Throwable t) {}
         });
     }
 
@@ -711,48 +701,48 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showCustomChipDialog(String title, List<String> items, boolean isAllergy) {
-        android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_chips, null);
         TextView tvDialogTitle = dialogView.findViewById(R.id.tvDialogTitle);
-        com.google.android.material.chip.ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
+        ChipGroup chipGroupItems = dialogView.findViewById(R.id.chipGroupItems);
         MaterialButton btnDialogClose = dialogView.findViewById(R.id.btnDialogClose);
 
         tvDialogTitle.setText(title);
 
-        android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(
-                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+                    new ColorDrawable(Color.TRANSPARENT));
         }
 
         for (String itemName : items) {
             TextView chip = new TextView(this);
             chip.setText(itemName);
             chip.setTextSize(14f);
-            chip.setTypeface(null, android.graphics.Typeface.BOLD);
+            chip.setTypeface(null, Typeface.BOLD);
 
             int padX = (int) (16 * getResources().getDisplayMetrics().density);
             int padY = (int) (8 * getResources().getDisplayMetrics().density);
             chip.setPadding(padX, padY, padX, padY);
 
-            android.graphics.drawable.GradientDrawable chipGradient = new android.graphics.drawable.GradientDrawable();
-            chipGradient.setOrientation(android.graphics.drawable.GradientDrawable.Orientation.TL_BR);
+            GradientDrawable chipGradient = new GradientDrawable();
+            chipGradient.setOrientation(GradientDrawable.Orientation.TL_BR);
             chipGradient.setCornerRadius(100f);
 
             if (isAllergy) {
                 chipGradient.setColors(new int[] {
-                        android.graphics.Color.parseColor("#FFE0B2"),
-                        android.graphics.Color.parseColor("#FFCCBC")
+                        Color.parseColor("#FFE0B2"),
+                        Color.parseColor("#FFCCBC")
                 });
-                chip.setTextColor(android.graphics.Color.parseColor("#BF360C"));
+                chip.setTextColor(Color.parseColor("#BF360C"));
             } else {
                 chipGradient.setColors(new int[] {
-                        android.graphics.Color.parseColor("#E0F2F1"),
-                        android.graphics.Color.parseColor("#B2DFDB")
+                        Color.parseColor("#E0F2F1"),
+                        Color.parseColor("#B2DFDB")
                 });
-                chip.setTextColor(android.graphics.Color.parseColor("#004D40"));
+                chip.setTextColor(Color.parseColor("#004D40"));
             }
 
             chip.setBackground(chipGradient);
@@ -764,8 +754,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void showMedicalConditionDialog() {
-        if (currentUserId == null)
-            return;
+        if (currentUserId == null) return;
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
         apiService.getAllMedicalConditions("*").enqueue(new Callback<List<MedicalCondition>>() {
@@ -774,11 +763,9 @@ public class ProfileActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     List<MedicalCondition> allConditions = response.body();
 
-                    android.view.View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_update_medical,
-                            null);
+                    View dialogView = getLayoutInflater().inflate(R.layout.layout_dialog_update_medical, null);
 
-                    com.google.android.material.tabs.TabLayout tabLayoutMedical = dialogView
-                            .findViewById(R.id.tabLayoutMedical);
+                    TabLayout tabLayoutMedical = dialogView.findViewById(R.id.tabLayoutMedical);
                     LinearLayout llAllergiesContainer = dialogView.findViewById(R.id.llAllergiesContainer);
                     LinearLayout llDiseasesContainer = dialogView.findViewById(R.id.llDiseasesContainer);
                     MaterialButton btnCancelUpdate = dialogView.findViewById(R.id.btnCancelUpdate);
@@ -787,16 +774,16 @@ public class ProfileActivity extends AppCompatActivity {
                     tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Dị ứng"));
                     tabLayoutMedical.addTab(tabLayoutMedical.newTab().setText("Bệnh lý"));
 
-                    android.app.AlertDialog dialog = new android.app.AlertDialog.Builder(ProfileActivity.this)
+                    AlertDialog dialog = new AlertDialog.Builder(ProfileActivity.this)
                             .setView(dialogView)
                             .create();
 
                     if (dialog.getWindow() != null) {
                         dialog.getWindow().setBackgroundDrawable(
-                                new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+                                new ColorDrawable(android.graphics.Color.TRANSPARENT));
                     }
 
-                    List<com.google.android.material.checkbox.MaterialCheckBox> checkBoxesList = new ArrayList<>();
+                    List<MaterialCheckBox> checkBoxesList = new ArrayList<>();
 
                     for (MedicalCondition condition : allConditions) {
                         View itemView = getLayoutInflater().inflate(R.layout.item_medical_condition,
@@ -804,8 +791,7 @@ public class ProfileActivity extends AppCompatActivity {
 
                         TextView tvName = itemView.findViewById(R.id.tvConditionName);
                         TextView tvType = itemView.findViewById(R.id.tvConditionType);
-                        com.google.android.material.checkbox.MaterialCheckBox checkBox = itemView
-                                .findViewById(R.id.cbCondition);
+                        MaterialCheckBox checkBox = itemView.findViewById(R.id.cbCondition);
                         MaterialCardView cardView = (MaterialCardView) itemView;
 
                         tvName.setText(condition.getName());
@@ -844,33 +830,26 @@ public class ProfileActivity extends AppCompatActivity {
                         checkBoxesList.add(checkBox);
                     }
 
-                    tabLayoutMedical.addOnTabSelectedListener(
-                            new com.google.android.material.tabs.TabLayout.OnTabSelectedListener() {
-                                @Override
-                                public void onTabSelected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                                    if (tab.getPosition() == 0) {
-                                        llAllergiesContainer.setVisibility(View.VISIBLE);
-                                        llDiseasesContainer.setVisibility(View.GONE);
-                                    } else {
-                                        llAllergiesContainer.setVisibility(View.GONE);
-                                        llDiseasesContainer.setVisibility(View.VISIBLE);
-                                    }
-                                }
-
-                                @Override
-                                public void onTabUnselected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                                }
-
-                                @Override
-                                public void onTabReselected(com.google.android.material.tabs.TabLayout.Tab tab) {
-                                }
-                            });
+                    tabLayoutMedical.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+                        @Override
+                        public void onTabSelected(TabLayout.Tab tab) {
+                            if (tab.getPosition() == 0) {
+                                llAllergiesContainer.setVisibility(View.VISIBLE);
+                                llDiseasesContainer.setVisibility(View.GONE);
+                            } else {
+                                llAllergiesContainer.setVisibility(View.GONE);
+                                llDiseasesContainer.setVisibility(View.VISIBLE);
+                            }
+                        }
+                        @Override public void onTabUnselected(TabLayout.Tab tab) {}
+                        @Override public void onTabReselected(TabLayout.Tab tab) {}
+                    });
 
                     btnCancelUpdate.setOnClickListener(v -> dialog.dismiss());
 
                     btnSaveUpdate.setOnClickListener(v -> {
                         List<UserMedicalConditionInsert> insertList = new ArrayList<>();
-                        for (com.google.android.material.checkbox.MaterialCheckBox cb : checkBoxesList) {
+                        for (MaterialCheckBox cb : checkBoxesList) {
                             if (cb.isChecked()) {
                                 Integer conditionId = (Integer) cb.getTag();
                                 insertList.add(new UserMedicalConditionInsert(currentUserId, conditionId));
@@ -913,33 +892,27 @@ public class ProfileActivity extends AppCompatActivity {
                         } else {
                             try {
                                 String err = response.errorBody() != null ? response.errorBody().string() : "Rỗng";
-                                Toast.makeText(ProfileActivity.this, "LỖI SUPABASE (LƯU): " + err, Toast.LENGTH_LONG)
-                                        .show();
-                            } catch (Exception e) {
-                            }
+                                Toast.makeText(ProfileActivity.this, "LỖI SUPABASE (LƯU): " + err, Toast.LENGTH_LONG).show();
+                            } catch (Exception e) {}
                         }
                     }
 
                     @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
-                    }
+                    public void onFailure(Call<Void> call, Throwable t) {}
                 });
             }
 
             @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-            }
+            public void onFailure(Call<Void> call, Throwable t) {}
         });
     }
 
     private int calculateAge(String dobString) {
-        if (dobString == null || dobString.isEmpty())
-            return 0;
+        if (dobString == null || dobString.isEmpty()) return 0;
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
             Date birthDate = sdf.parse(dobString);
-            if (birthDate == null)
-                return 0;
+            if (birthDate == null) return 0;
 
             Calendar dob = Calendar.getInstance();
             dob.setTime(birthDate);
@@ -951,9 +924,7 @@ public class ProfileActivity extends AppCompatActivity {
                 age--;
             }
             return age;
-        } catch (Exception e) {
-            return 0;
-        }
+        } catch (Exception e) { return 0; }
     }
 
     private void setupBottomNavigation() {

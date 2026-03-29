@@ -1,9 +1,16 @@
 package com.hcmute.edu.vn.activity;
 
+import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -13,9 +20,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -34,17 +39,17 @@ import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.News;
 import com.hcmute.edu.vn.adapter.NewsAdapter;
 import com.hcmute.edu.vn.model.User;
-import com.hcmute.edu.vn.model.UserMedicalCondition; // Import thêm cái này
-import com.hcmute.edu.vn.activity.NutritionActivity;
-import com.hcmute.edu.vn.activity.ProfileActivity;
-import com.hcmute.edu.vn.activity.WorkoutJourneyActivity;
-
+import com.hcmute.edu.vn.model.UserMedicalCondition;
+import com.hcmute.edu.vn.receiver.WeightReminderReceiver;
+import com.hcmute.edu.vn.util.ChatbotHelper;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import retrofit2.Call;
@@ -64,7 +69,6 @@ public class HomeActivity extends AppCompatActivity {
     User currentUser;
     FloatingActionButton fabChatbot;
 
-    // ĐÃ THÊM: Biến cho News
     private NewsAdapter newsAdapter;
     private List<News> currentNewsList = new ArrayList<>();
 
@@ -74,9 +78,9 @@ public class HomeActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.home_view);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
         // 2. Ánh xạ các View từ XML
@@ -116,7 +120,7 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        com.hcmute.edu.vn.util.ChatbotHelper.setupChatbotFAB(this, fabChatbot);
+        ChatbotHelper.setupChatbotFAB(this, fabChatbot);
 
         // =========================================================
         // SETUP RECYCLER VIEW CHO ACTIVITIES (Bài tập)
@@ -181,7 +185,7 @@ public class HomeActivity extends AppCompatActivity {
         btnUpdateBMI.setOnClickListener(v -> showUpdateBMIDialog());
         setupDailyWeightReminder();
         if (getIntent() != null && getIntent().getBooleanExtra("OPEN_UPDATE_BMI", false)) {
-            new android.os.Handler().postDelayed(() -> {
+            new Handler().postDelayed(() -> {
                 showUpdateBMIDialog();
             }, 1000);
             getIntent().removeExtra("OPEN_UPDATE_BMI");
@@ -191,7 +195,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
         if (username != null && !username.isEmpty()) {
@@ -204,7 +208,6 @@ public class HomeActivity extends AppCompatActivity {
 
         SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
 
-        // ĐÃ SỬA: Lấy kèm user_medical_conditions để lọc bài báo
         apiService.getUserByUsername("eq." + username, "*,user_medical_conditions(*)").enqueue(new Callback<List<User>>() {
             @Override
             public void onResponse(Call<List<User>> call, Response<List<User>> response) {
@@ -227,27 +230,27 @@ public class HomeActivity extends AppCompatActivity {
 
                         if (bmi < 18.5) {
                             tvBMIStatus.setText("Thiếu cân");
-                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FFCA28")));
-                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FFCA28"));
+                            tvBMIStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FFCA28")));
+                            tvBMIValue.setTextColor(Color.parseColor("#FFCA28"));
                         } else if (bmi < 23) {
                             tvBMIStatus.setText("Bình thường");
-                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
-                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+                            tvBMIStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4CAF50")));
+                            tvBMIValue.setTextColor(Color.parseColor("#4CAF50"));
                         } else if (bmi < 25) {
                             tvBMIStatus.setText("Thừa cân");
-                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF9800")));
-                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#FF9800"));
+                            tvBMIStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#FF9800")));
+                            tvBMIValue.setTextColor(Color.parseColor("#FF9800"));
                         } else {
                             tvBMIStatus.setText("Béo phì");
-                            tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F44336")));
-                            tvBMIValue.setTextColor(android.graphics.Color.parseColor("#F44336"));
+                            tvBMIStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F44336")));
+                            tvBMIValue.setTextColor(Color.parseColor("#F44336"));
                         }
                     } else {
                         tvCurrentHeight.setText("-- cm");
                         tvCurrentWeight.setText("-- kg");
                         tvBMIValue.setText("--");
                         tvBMIStatus.setText("Chưa có");
-                        tvBMIStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#9E9E9E")));
+                        tvBMIStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
                     }
                     tvCurrentAge.setText(age > 0 ? String.valueOf(age) : "--");
 
@@ -384,7 +387,7 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<List<BmiLog>> call, Throwable t) {
-                android.util.Log.e("BMI_CHART", "Lỗi tải biểu đồ: " + t.getMessage());
+                Log.e("BMI_CHART", "Lỗi tải biểu đồ: " + t.getMessage());
             }
         });
     }
@@ -457,7 +460,7 @@ public class HomeActivity extends AppCompatActivity {
         SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
         SimpleDateFormat dayFormat = new SimpleDateFormat("dd/MM", Locale.getDefault());
 
-        java.util.LinkedHashMap<String, java.util.ArrayList<Float>> groupedData = new java.util.LinkedHashMap<>();
+        LinkedHashMap<String, ArrayList<Float>> groupedData = new LinkedHashMap<>();
 
         for (BmiLog log : currentBmiLogs) {
             float bmi = log.getBmiValue() != null ? log.getBmiValue().floatValue() : 0f;
@@ -481,7 +484,7 @@ public class HomeActivity extends AppCompatActivity {
             }
 
             if (!groupedData.containsKey(key)) {
-                groupedData.put(key, new java.util.ArrayList<>());
+                groupedData.put(key, new ArrayList<>());
             }
             groupedData.get(key).add(bmi);
         }
@@ -490,7 +493,7 @@ public class HomeActivity extends AppCompatActivity {
         final ArrayList<String> labels = new ArrayList<>();
         int index = 0;
 
-        for (java.util.Map.Entry<String, java.util.ArrayList<Float>> group : groupedData.entrySet()) {
+        for (Map.Entry<String, ArrayList<Float>> group : groupedData.entrySet()) {
             labels.add(group.getKey());
 
             float sum = 0;
@@ -548,13 +551,13 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Light_Dialog_Alert);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_update_bmi, null);
         builder.setView(dialogView);
-        android.app.AlertDialog dialog = builder.create();
+        AlertDialog dialog = builder.create();
 
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
         EditText edtWeight = dialogView.findViewById(R.id.edtUpdateWeight);
@@ -663,32 +666,32 @@ public class HomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void finishUpdate(android.app.AlertDialog dialog, String message) {
+    private void finishUpdate(AlertDialog dialog, String message) {
         Toast.makeText(HomeActivity.this, message, Toast.LENGTH_SHORT).show();
         dialog.dismiss();
         loadUserData();
     }
 
     private void setupDailyWeightReminder() {
-        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
-        Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WeightReminderReceiver.class);
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent intent = new Intent(this, WeightReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 200, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        java.util.Calendar calendar = java.util.Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 7);
-        calendar.set(java.util.Calendar.MINUTE, 0);
-        calendar.set(java.util.Calendar.SECOND, 0);
+        calendar.set(Calendar.HOUR_OF_DAY, 7);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
 
         if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
-            calendar.add(java.util.Calendar.DAY_OF_YEAR, 1);
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
         }
 
         if (alarmManager != null) {
             alarmManager.setRepeating(
-                    android.app.AlarmManager.RTC_WAKEUP,
+                    AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
-                    android.app.AlarmManager.INTERVAL_DAY,
+                    AlarmManager.INTERVAL_DAY,
                     pendingIntent
             );
         }

@@ -18,8 +18,7 @@ public class FitnessCalculator {
 
     // WORKOUT PLAN IDs (hard-coded theo Supabase)
     // Giảm mỡ
-//    public static final String PLAN_LOSE_BEGINNER     = "7266ec21-85a2-4295-9f14-3232b5d26864"; // Advanced/HIIT
-//    public static final String PLAN_LOSE_INTERMEDIATE = "7266ec21-85a2-4295-9f14-3232b5d26864";
+    // call func
     // Tăng cơ
     public static final String PLAN_GAIN_BEGINNER     = "554fb805-1136-4976-b39b-e196bcf5a3af";
     public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480"; // PPL
@@ -88,9 +87,6 @@ public class FitnessCalculator {
             boolean isMale = "Male".equalsIgnoreCase(gender);
             double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
-
-//            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
-
         } else {
             // ---- TĂNG CƠ ----
             double weightDiff    = targetWeight - currentWeight;

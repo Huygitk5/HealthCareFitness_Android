@@ -1,6 +1,7 @@
 package com.hcmute.edu.vn.activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -9,6 +10,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.textfield.TextInputLayout;
 import com.hcmute.edu.vn.R;
@@ -17,6 +19,7 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.SignInRequest;
 import com.hcmute.edu.vn.model.SignInResponse;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.util.SupabaseSessionManager;
 
 import java.util.List;
 
@@ -35,7 +38,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login);
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         edtUser = findViewById(R.id.edtUsername);
@@ -82,12 +85,18 @@ public class LoginActivity extends AppCompatActivity {
                                     btnSignIn.setText("Sign In");
 
                                     if (loginResponse.isSuccessful() && loginResponse.body() != null) {
-                                        android.content.SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                                        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                                        String accessToken = loginResponse.body().getAccessToken();
 
                                         pref.edit()
                                                 .putString("KEY_USER", username)
                                                 .putString("KEY_USER_ID", currentUser.getId())
                                                 .apply();
+
+                                        SupabaseSessionManager.saveAccessToken(
+                                                LoginActivity.this,
+                                                accessToken != null ? accessToken : ""
+                                        );
 
                                         Intent intent;
                                         // 3. KIỂM TRA: Nếu tên trống HOẶC chưa có chiều cao/cân nặng thì đi setup
