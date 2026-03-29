@@ -1,7 +1,6 @@
 package com.hcmute.edu.vn.activity;
 
 import android.Manifest;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -85,7 +84,8 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.profile);
 
-        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(),
+                getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
@@ -120,8 +120,9 @@ public class ProfileActivity extends AppCompatActivity {
 
             if (isChecked) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+                    if (checkSelfPermission(
+                            Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, 101);
                     }
                 }
                 setupWaterReminder(true);
@@ -142,8 +143,9 @@ public class ProfileActivity extends AppCompatActivity {
 
             if (isChecked) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 102);
+                    if (checkSelfPermission(
+                            Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, 102);
                     }
                 }
                 setupWorkoutReminder(true);
@@ -197,7 +199,8 @@ public class ProfileActivity extends AppCompatActivity {
         int selectedIndex = 0;
         for (int i = 0; i < fitnessGoalList.size(); i++) {
             goalNames.add(fitnessGoalList.get(i).getName());
-            if (fitnessGoalList.get(i).getId() == currentGoalId) selectedIndex = i;
+            if (fitnessGoalList.get(i).getId() == currentGoalId)
+                selectedIndex = i;
         }
         ArrayAdapter<String> goalAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, goalNames);
         goalAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -359,14 +362,6 @@ public class ProfileActivity extends AppCompatActivity {
                     currentWeight != null ? currentWeight : 60,
                     targetW, tdee, currentGender, isUserBeginner);
 
-            // Build update payload
-            User updateData = new User();
-            updateData.setFitnessGoalId(newGoalId);
-            updateData.setTarget(newTarget);
-            updateData.setCurrentDailyCalories(result.dailyCalories);
-            updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
-            if (result.targetDate != null) updateData.setTargetDate(result.targetDate);
-
             // Lưu activity index vào SharedPrefs
             getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
                     .putInt("ACTIVITY_INDEX", newActivityIndex)
@@ -414,7 +409,8 @@ public class ProfileActivity extends AppCompatActivity {
                                                 .putBoolean("TARGET_CHANGED", true)
                                                 .apply();
 
-                                Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!",
+                                                Toast.LENGTH_SHORT).show();
 
                                         currentGoalId = finalNewGoalId;
                                         currentExperienceId = finalNewExpId;
@@ -438,13 +434,14 @@ public class ProfileActivity extends AppCompatActivity {
                             });
                         }
 
-                @Override
-                public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
-                    Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT).show();
-                    btnSave.setText("LƯU");
-                    btnSave.setEnabled(true);
-                }
-            });
+                        @Override
+                        public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
+                            Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT)
+                                    .show();
+                            btnSave.setText("LƯU");
+                            btnSave.setEnabled(true);
+                        }
+                    });
         });
 
         dialog.show();
@@ -497,7 +494,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupWaterReminder(boolean isEnable) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WaterReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 100, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -531,7 +528,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         if (alarmManager != null) {
             alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
+                    android.app.AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
                     intervalMillis,
                     pendingIntent);
@@ -539,7 +536,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupWorkoutReminder(boolean isEnable) {
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(this, com.hcmute.edu.vn.receiver.WorkoutReminderReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 102, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -567,9 +564,9 @@ public class ProfileActivity extends AppCompatActivity {
         // Lặp lại mỗi ngày (INTERVAL_DAY)
         if (alarmManager != null) {
             alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
+                    android.app.AlarmManager.RTC_WAKEUP,
                     calendar.getTimeInMillis(),
-                    AlarmManager.INTERVAL_DAY,
+                    android.app.AlarmManager.INTERVAL_DAY,
                     pendingIntent);
         }
     }
@@ -654,7 +651,8 @@ public class ProfileActivity extends AppCompatActivity {
                                 currentConditionIds.add(mc.getId());
                                 String type = mc.getType();
 
-                                if (type != null && (type.toLowerCase().contains("allergy") || type.toLowerCase().contains("dị ứng"))) {
+                                if (type != null && (type.toLowerCase().contains("allergy")
+                                        || type.toLowerCase().contains("dị ứng"))) {
                                     allergyList.add(mc.getName());
                                 } else {
                                     historyList.add(mc.getName());
@@ -679,7 +677,8 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    private void setupCardDisplay(List<String> dataList, TextView textView, MaterialCardView cardView, String dialogTitle) {
+    private void setupCardDisplay(List<String> dataList, TextView textView, MaterialCardView cardView,
+            String dialogTitle) {
         if (dataList.isEmpty()) {
             textView.setText("Không có");
             cardView.setOnClickListener(null);
@@ -801,18 +800,18 @@ public class ProfileActivity extends AppCompatActivity {
                         boolean isAllergy = "allergy".equals(condition.getType());
                         if (isAllergy) {
                             tvType.setText("DỊ ỨNG");
-                            tvType.setTextColor(Color.parseColor("#FF7043"));
+                            tvType.setTextColor(android.graphics.Color.parseColor("#FF7043"));
                             llAllergiesContainer.addView(itemView);
                         } else {
                             tvType.setText("BỆNH LÝ");
-                            tvType.setTextColor(Color.parseColor("#26A69A"));
+                            tvType.setTextColor(android.graphics.Color.parseColor("#26A69A"));
                             llDiseasesContainer.addView(itemView);
                         }
 
                         if (currentConditionIds.contains(condition.getId())) {
                             checkBox.setChecked(true);
-                            cardView.setStrokeColor(Color.parseColor("#009688"));
-                            cardView.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
+                            cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
+                            cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
                         }
 
                         cardView.setOnClickListener(v -> {
@@ -820,11 +819,11 @@ public class ProfileActivity extends AppCompatActivity {
                             checkBox.setChecked(isChecked);
 
                             if (isChecked) {
-                                cardView.setStrokeColor(Color.parseColor("#009688"));
-                                cardView.setCardBackgroundColor(Color.parseColor("#E0F2F1"));
+                                cardView.setStrokeColor(android.graphics.Color.parseColor("#009688"));
+                                cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#E0F2F1"));
                             } else {
-                                cardView.setStrokeColor(Color.parseColor("#E0E0E0"));
-                                cardView.setCardBackgroundColor(Color.parseColor("#F8FAFB"));
+                                cardView.setStrokeColor(android.graphics.Color.parseColor("#E0E0E0"));
+                                cardView.setCardBackgroundColor(android.graphics.Color.parseColor("#F8FAFB"));
                             }
                         });
 
@@ -887,7 +886,8 @@ public class ProfileActivity extends AppCompatActivity {
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
                             Toast.makeText(ProfileActivity.this, "Cập nhật thành công!", Toast.LENGTH_SHORT).show();
-                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("ALLERGY_DIRTY", true).apply();
+                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit().putBoolean("ALLERGY_DIRTY", true)
+                                    .apply();
                             loadUserProfile();
                         } else {
                             try {
