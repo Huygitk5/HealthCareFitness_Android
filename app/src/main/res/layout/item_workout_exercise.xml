@@ -42,6 +42,19 @@
         app:layout_constraintTop_toBottomOf="@id/tvExerciseName"
         app:layout_constraintBottom_toBottomOf="@id/imgExercise"/>
 
+    <ImageView
+        android:id="@+id/btnSwap"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:src="@drawable/ic_swap_horiz_gray"
+        android:visibility="gone"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/imgExercise"
+        app:layout_constraintBottom_toBottomOf="@id/imgExercise" />
+
     <View
         android:id="@+id/lineSeparator"
         android:layout_width="0dp"

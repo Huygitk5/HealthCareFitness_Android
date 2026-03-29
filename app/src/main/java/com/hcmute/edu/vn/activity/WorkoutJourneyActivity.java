@@ -26,6 +26,7 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.model.ConditionRestrictedMuscle;
 import com.hcmute.edu.vn.model.Exercise;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserDailyWorkout;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
 import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
@@ -35,6 +36,8 @@ import com.hcmute.edu.vn.model.WorkoutPlan;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -203,10 +206,55 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     WorkoutPlan plan = response.body().get(0);
-                    filterAndReplaceExercises(plan);
+                    fetchPersonalizedDetails(plan);
                 }
             }
             @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {}
+        });
+    }
+
+    private void fetchPersonalizedDetails(WorkoutPlan plan) {
+        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+        api.getUserDailyWorkoutsByPlan("eq." + userId, "eq." + plan.getId(), "*,exercises(*)").enqueue(new Callback<List<UserDailyWorkout>>() {
+            @Override
+            public void onResponse(Call<List<UserDailyWorkout>> call, Response<List<UserDailyWorkout>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    List<UserDailyWorkout> personalRecords = response.body();
+                    
+                    // Sắp xếp bài tập theo thứ tự (exercise_order)
+                    Collections.sort(personalRecords, (o1, o2) -> {
+                        int order1 = o1.getExerciseOrder() != null ? o1.getExerciseOrder() : 0;
+                        int order2 = o2.getExerciseOrder() != null ? o2.getExerciseOrder() : 0;
+                        return Integer.compare(order1, order2);
+                    });
+
+                    java.util.Map<String, List<WorkoutDayExercise>> dayMap = new java.util.HashMap<>();
+                    for (UserDailyWorkout udw : personalRecords) {
+                        if (udw.getDayId() != null && udw.getExercise() != null) {
+                            if (!dayMap.containsKey(udw.getDayId())) dayMap.put(udw.getDayId(), new ArrayList<>());
+                            
+                            // Constructor 4 tham số
+                            WorkoutDayExercise wde = new WorkoutDayExercise(
+                                udw.getExercise(),
+                                udw.getSets(),
+                                udw.getReps(),
+                                udw.getRestTimeSeconds()
+                            );
+                            dayMap.get(udw.getDayId()).add(wde);
+                        }
+                    }
+
+                    if (plan.getDays() != null) {
+                        for (WorkoutDay day : plan.getDays()) {
+                            if (dayMap.containsKey(day.getId())) day.setExercises(dayMap.get(day.getId()));
+                        }
+                    }
+                    setupPlanUI(plan);
+                } else {
+                    filterAndReplaceExercises(plan);
+                }
+            }
+            @Override public void onFailure(Call<List<UserDailyWorkout>> call, Throwable t) { filterAndReplaceExercises(plan); }
         });
     }
 
@@ -416,6 +464,7 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         intent.putExtra("EXTRA_PLAN_ID", currentPlanId);
         intent.putExtra("EXTRA_DAY_ID", day.getId());
         intent.putExtra("EXTRA_DAY_TITLE", dayNameFromDb);
+        intent.putExtra("EXTRA_DAY_ORDER", day.getDayOrder());
 
         ArrayList<Exercise> exercisesToPass = new ArrayList<>();
         if (day.getExercises() != null) {

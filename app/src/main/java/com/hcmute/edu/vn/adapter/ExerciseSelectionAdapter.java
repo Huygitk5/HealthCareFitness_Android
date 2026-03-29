@@ -1,17 +1,16 @@
 package com.hcmute.edu.vn.adapter;
 
-import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RadioButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.card.MaterialCardView;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.model.Exercise;
 
@@ -19,22 +18,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelectionAdapter.ViewHolder> {
-
-    private List<Exercise> exercises;
-    private List<Exercise> selectedExercises = new ArrayList<>();
+    private List<Exercise> exerciseList;
+    private int selectedPosition = -1;
     private OnSelectionChangedListener listener;
 
     public interface OnSelectionChangedListener {
-        void onSelectionChanged(int selectedCount);
+        void onSelectionChanged(int count);
     }
 
-    public ExerciseSelectionAdapter(List<Exercise> exercises, OnSelectionChangedListener listener) {
-        this.exercises = exercises;
+    public ExerciseSelectionAdapter(List<Exercise> exerciseList, OnSelectionChangedListener listener) {
+        this.exerciseList = exerciseList;
         this.listener = listener;
-    }
-
-    public ArrayList<Exercise> getSelectedExercises() {
-        return (ArrayList<Exercise>) selectedExercises;
     }
 
     @NonNull
@@ -46,91 +40,51 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        // 1. QUAN TRỌNG: Đặt lại scale về 100% mỗi khi vẽ View để không bị lỗi tái sử dụng
-        holder.itemView.setScaleX(1f);
-        holder.itemView.setScaleY(1f);
+        Exercise exercise = exerciseList.get(position);
+        holder.tvName.setText(exercise.getName());
+        holder.rbSelect.setChecked(position == selectedPosition);
 
-        Exercise exercise = exercises.get(position);
-        holder.tvExerciseName.setText(exercise.getName());
-
-        String info = (exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "00:30") + " • Cường độ cao";
-        holder.tvExerciseInfo.setText(info);
-
-        // Cập nhật load ảnh bằng Glide
-        String imageUrl = exercise.getImageUrl();
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            if (imageUrl.startsWith("http")) {
-                // Nếu là đường link từ mạng (Supabase)
-                Glide.with(holder.itemView.getContext())
-                        .load(imageUrl)
-                        .placeholder(R.drawable.workout_1) // Ảnh chờ
-                        .error(R.drawable.workout_1)       // Ảnh nếu lỗi
-                        .into(holder.ivExerciseImage);
-            } else {
-                // Nếu là dữ liệu mẫu cũ
-                try {
-                    int imageRes = Integer.parseInt(imageUrl);
-                    holder.ivExerciseImage.setImageResource(imageRes);
-                } catch (Exception e) {
-                    holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
-                }
-            }
-        } else {
-            // Nếu Supabase không có ảnh
-            holder.ivExerciseImage.setImageResource(R.drawable.workout_1);
-        }
-
-        boolean isSelected = selectedExercises.contains(exercise);
-
-        // LOGIC HIỂN THỊ TRẠNG THÁI CHỌN
-        if (isSelected) {
-            holder.cardContainer.setStrokeWidth(4);
-            holder.cardContainer.setStrokeColor(Color.parseColor("#589A8D"));
-            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#F1F8F7"));
-            holder.tvExerciseName.setTextColor(Color.parseColor("#589A8D"));
-        } else {
-            holder.cardContainer.setStrokeWidth(0);
-            holder.cardContainer.setCardBackgroundColor(Color.WHITE);
-            holder.tvExerciseName.setTextColor(Color.BLACK);
-        }
+        Glide.with(holder.itemView.getContext())
+                .load(exercise.getImageUrl())
+                .placeholder(R.drawable.ic_image_gray)
+                .into(holder.ivThumb);
 
         holder.itemView.setOnClickListener(v -> {
-            // Thu nhỏ xuống 96%
-            v.animate().scaleX(0.96f).scaleY(0.96f).setDuration(100).withEndAction(() -> {
+            selectedPosition = holder.getAdapterPosition();
+            notifyDataSetChanged();
+            if (listener != null) listener.onSelectionChanged(1);
+        });
 
-                // Nảy trở lại 100%
-                v.animate().scaleX(1f).scaleY(1f).setDuration(100).withEndAction(() -> {
-
-                    // 2. Đợi nảy lại hoàn toàn (EndAction) rồi mới đổi trạng thái và Notify
-                    // Dùng selectedExercises.contains() thay vì isSelected để tránh lỗi khi click quá nhanh
-                    if (selectedExercises.contains(exercise)) {
-                        selectedExercises.remove(exercise);
-                    } else {
-                        selectedExercises.add(exercise);
-                    }
-                    notifyItemChanged(position);
-                    listener.onSelectionChanged(selectedExercises.size());
-
-                }).start();
-
-            }).start();
+        holder.rbSelect.setOnClickListener(v -> {
+            selectedPosition = holder.getAdapterPosition();
+            notifyDataSetChanged();
+            if (listener != null) listener.onSelectionChanged(1);
         });
     }
 
     @Override
-    public int getItemCount() { return exercises.size(); }
+    public int getItemCount() {
+        return exerciseList.size();
+    }
+
+    public ArrayList<Exercise> getSelectedExercises() {
+        ArrayList<Exercise> selected = new ArrayList<>();
+        if (selectedPosition != -1 && selectedPosition < exerciseList.size()) {
+            selected.add(exerciseList.get(selectedPosition));
+        }
+        return selected;
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        MaterialCardView cardContainer;
-        ImageView ivExerciseImage;
-        TextView tvExerciseName, tvExerciseInfo;
+        ImageView ivThumb;
+        TextView tvName;
+        RadioButton rbSelect;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardContainer = (MaterialCardView) itemView.findViewById(R.id.layoutContainerCard);
-            ivExerciseImage = itemView.findViewById(R.id.ivExerciseImage);
-            tvExerciseName = itemView.findViewById(R.id.tvExerciseName);
-            tvExerciseInfo = itemView.findViewById(R.id.tvExerciseInfo);
+            ivThumb = itemView.findViewById(R.id.imgExercise);
+            tvName = itemView.findViewById(R.id.tvExerciseName);
+            rbSelect = itemView.findViewById(R.id.rbSelect);
         }
     }
 }
