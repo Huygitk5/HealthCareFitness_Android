@@ -228,8 +228,7 @@ protected void onResume() {
             @Override
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    WorkoutPlan plan = response.body().get(0);
-                    fetchPersonalizedDetails(plan);
+                    fetchPersonalizedDetails(response.body().get(0));
                 }
             }
             @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {}
