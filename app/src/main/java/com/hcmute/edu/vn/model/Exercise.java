@@ -13,7 +13,6 @@ public class Exercise implements Serializable {
     @SerializedName("description")
     private String description;
     @SerializedName("muscle_group_id")
-
     private Integer muscleGroupId;
     @SerializedName("difficulty_level_id")
     private Integer difficultyLevelId;

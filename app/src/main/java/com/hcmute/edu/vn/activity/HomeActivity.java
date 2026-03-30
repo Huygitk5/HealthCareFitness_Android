@@ -224,6 +224,10 @@ public class HomeActivity extends AppCompatActivity {
                     double weightKg = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
                     int age = calculateAge(currentUser.getDateOfBirth());
 
+                    getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                            .putFloat("USER_WEIGHT", (float) weightKg)
+                            .apply();
+
                     if (heightCm > 0 && weightKg > 0) {
                         tvCurrentHeight.setText(heightCm + " cm");
                         tvCurrentWeight.setText(weightKg + " kg");
@@ -590,6 +594,10 @@ public class HomeActivity extends AppCompatActivity {
             try {
                 double newWeight = Double.parseDouble(wStr);
                 double newHeight = Double.parseDouble(hStr);
+
+                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                        .putFloat("USER_WEIGHT", (float) newWeight)
+                        .apply();
 
                 User updateData = new User();
                 updateData.setWeight(newWeight);

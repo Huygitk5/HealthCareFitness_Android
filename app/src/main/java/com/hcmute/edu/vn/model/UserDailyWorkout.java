@@ -43,6 +43,7 @@ public class UserDailyWorkout implements Serializable {
     public UserDailyWorkout() {}
 
     public UserDailyWorkout(String userId, String date, String exerciseId, Integer sets, String reps, Integer restTimeSeconds, Integer exerciseOrder, String planId) {
+        this.id = java.util.UUID.randomUUID().toString();
         this.userId = userId;
         this.date = date;
         this.exerciseId = exerciseId;

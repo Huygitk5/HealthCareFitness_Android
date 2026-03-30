@@ -50,7 +50,11 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         Exercise item = exerciseList.get(position);
 
         holder.tvName.setText(item.getName());
-        holder.tvDuration.setText(item.getBaseRecommendedReps());
+        int sets = item.getBaseRecommendedSets() != null ? item.getBaseRecommendedSets() : 3;
+        String reps = item.getBaseRecommendedReps() != null ? item.getBaseRecommendedReps() : "12";
+
+        // Cập nhật lên UI (Ví dụ: "3 Hiệp x 12")
+        holder.tvDuration.setText(sets + " Hiệp x " + reps);
 
         // ==========================================
         // XỬ LÝ ẢNH: HỖ TRỢ CẢ LINK WEB (HTTPS) VÀ LOCAL (DRAWABLE)

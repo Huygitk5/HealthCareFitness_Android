@@ -15,13 +15,17 @@ public class FitnessCalculator {
             "Vận động rất nhiều (2 lần/ngày)"     // 1.9
     };
     public static final double[] ACTIVITY_MULTIPLIERS = {1.2, 1.375, 1.55, 1.725, 1.9};
+    public static final double MET_GYM = 5.0;      // exercise_type_id = 1
+    public static final double MET_CARDIO = 3.5;   // exercise_type_id = 2
+    public static final double MET_HIIT = 8.0;     // exercise_type_id = 3
 
     // WORKOUT PLAN IDs (hard-coded theo Supabase)
     // Giảm mỡ
-    // call func
+    public static final String PLAN_LOSE_BEGINNER     = "a0000000-0000-0000-0000-000000000001";
+    public static final String PLAN_LOSE_INTERMEDIATE = "a0000000-0000-0000-0000-000000000002";
     // Tăng cơ
     public static final String PLAN_GAIN_BEGINNER     = "554fb805-1136-4976-b39b-e196bcf5a3af";
-    public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480"; // PPL
+    public static final String PLAN_GAIN_INTERMEDIATE = "c70b2bb2-a370-4393-96dd-854fa35a4480";
     // Giữ dáng
     public static final String PLAN_MAINTAIN_BEGINNER         = "7266ec21-85a2-4295-9f14-3232b5d26864";
     public static final String PLAN_MAINTAIN_INTERMEDIATE     = "22d13d52-3461-4da0-9bd8-f4be811cb25f";
@@ -87,6 +91,8 @@ public class FitnessCalculator {
             boolean isMale = "Male".equalsIgnoreCase(gender);
             double minCalories = isMale ? 1500 : 1200;
             r.dailyCalories = Math.max(r.dailyCalories, minCalories);
+
+            r.workoutPlanId      = isBeginner ? PLAN_LOSE_BEGINNER : PLAN_LOSE_INTERMEDIATE;
         } else {
             // ---- TĂNG CƠ ----
             double weightDiff    = targetWeight - currentWeight;
@@ -197,5 +203,43 @@ public class FitnessCalculator {
         }
 
         return Math.max(newCalories, minCalories);
+    }
+
+
+    // HÀM TÍNH THỜI GIAN TẬP (PHÚT) DỰA TRÊN CALO CẦN ĐỐT, CÂN NẶNG & LOẠI BÀI
+    /**
+     * @param caloriesToBurn Lượng calo mục tiêu cần đốt trong ngày (kcal)
+     * @param weightKg Cân nặng hiện tại của người dùng (kg)
+     * @param exerciseTypeId ID loại bài tập (1: GYM, 2: CARDIO, 3: HIIT)
+     * @return Tổng số phút cần tập (int)
+     */
+    public static int calculateWorkoutDurationMinutes(double caloriesToBurn, double weightKg, int exerciseTypeId) {
+        // Nếu không cần đốt calo hoặc chưa có cân nặng thì trả về 0 phút
+        if (caloriesToBurn <= 0 || weightKg <= 0) {
+            return 0;
+        }
+
+        // 1. Xác định chỉ số MET dựa vào exerciseTypeId
+        double metValue;
+        switch (exerciseTypeId) {
+            case 2:
+                metValue = MET_CARDIO; // 3.5
+                break;
+            case 3:
+                metValue = MET_HIIT; // 8.0
+                break;
+            case 1:
+            default:
+                metValue = MET_GYM; // 5.0 (Mặc định là nâng tạ)
+                break;
+        }
+
+        // 2. Tính số giờ cần tập: Thời gian (giờ) = Kcal / (MET * Cân nặng)
+        double durationInHours = caloriesToBurn / (metValue * weightKg);
+
+        // 3. Đổi ra phút và làm tròn lên (Math.ceil) để đảm bảo người dùng tập đủ chỉ tiêu
+        int durationInMinutes = (int) Math.ceil(durationInHours * 60);
+
+        return durationInMinutes;
     }
 }

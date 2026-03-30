@@ -32,6 +32,8 @@ import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.model.WorkoutDay;
 import com.hcmute.edu.vn.model.WorkoutDayExercise;
 import com.hcmute.edu.vn.model.WorkoutPlan;
+import com.hcmute.edu.vn.util.FitnessCalculator;
+import com.hcmute.edu.vn.util.WorkoutGenerator;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -82,12 +84,33 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         loadUserJourney();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+@Override
+protected void onResume() {
+    super.onResume();
+    SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+    boolean workoutUpdateNeeded = pref.getBoolean("WORKOUT_UPDATE_NEEDED", false);
+
+    if (workoutUpdateNeeded) {
+        // Tắt cờ đi để không bị lặp lại
+        pref.edit().putBoolean("WORKOUT_UPDATE_NEEDED", false).apply();
+
+        Toast.makeText(this, "Đang thiết lập lại lộ trình tập luyện...", Toast.LENGTH_SHORT).show();
+        // Lấy User và kích hoạt bộ não AI sinh lịch tập mới
+        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+        api.getUserByUsername("eq." + username, "*,user_medical_conditions(*)").enqueue(new Callback<List<User>>() {
+            @Override
+            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    generateAndSavePersonalizedWorkout(response.body().get(0));
+                }
+            }
+            @Override public void onFailure(Call<List<User>> call, Throwable t) {}
+        });
+    } else {
         currentUserConditionIds.clear();
         loadUserJourney();
     }
+}
 
     private void initViews() {
         tvStreak = findViewById(R.id.tvStreak);
@@ -205,12 +228,72 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    WorkoutPlan plan = response.body().get(0);
-                    fetchPersonalizedDetails(plan);
+                    fetchPersonalizedDetails(response.body().get(0));
                 }
             }
             @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {}
         });
+    }
+
+    private void setupPlanUI(WorkoutPlan plan) {
+        if (plan.getDays() != null && !plan.getDays().isEmpty()) {
+            allDays = plan.getDays();
+            java.util.Collections.sort(allDays, (a, b) -> Integer.compare(a.getDayOrder() != null ? a.getDayOrder() : 0, b.getDayOrder() != null ? b.getDayOrder() : 0));
+
+            totalPlanDays = allDays.size();
+
+            // 1. TÌM INDEX CHO TIMELINE (Bài tập tiếp theo chưa làm)
+            int nextIncompleteIndex = 0;
+            for (int i = 0; i < allDays.size(); i++) {
+                if (!completedDayIds.contains(allDays.get(i).getId())) {
+                    nextIncompleteIndex = i;
+                    break;
+                }
+            }
+            if (nextIncompleteIndex == 0 && !allDays.isEmpty() && completedDayIds.contains(allDays.get(0).getId())) {
+                nextIncompleteIndex = allDays.size() - 1;
+            }
+
+            // 2. TÌM INDEX CHO MISSION CARD (Ưu tiên bài đã tập xong HÔM NAY)
+            int missionIndex = nextIncompleteIndex;
+            if (lastCompletedDayIdToday != null) {
+                for (int i = 0; i < allDays.size(); i++) {
+                    if (allDays.get(i).getId().equals(lastCompletedDayIdToday)) {
+                        missionIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            todayWorkoutDay = allDays.get(missionIndex);
+
+            tvTodaySub.setText("NGÀY " + (todayWorkoutDay.getDayOrder() != null ? todayWorkoutDay.getDayOrder() : (missionIndex + 1)));
+            tvTodayName.setText(todayWorkoutDay.getName() != null ? todayWorkoutDay.getName() : "Ngày tập");
+
+            String todayDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
+            int currentProgress = getSharedPreferences("WorkoutProgress", MODE_PRIVATE)
+                    .getInt("PROGRESS_" + userId + "_" + todayDateStr, 0);
+
+            // LOGIC HIỂN THỊ TRẠNG THÁI HOÀN THÀNH
+            boolean showAsFinished = (lastCompletedDayIdToday != null && todayWorkoutDay != null && todayWorkoutDay.getId() != null && todayWorkoutDay.getId().equals(lastCompletedDayIdToday)) || (currentProgress == 100);
+
+            if (showAsFinished) {
+                tvTodayPercent.setText("100%");
+                animateProgress(pbTodayCircular, 100, 1000);
+                btnTodayAction.setText("BẮT ĐẦU LẠI");
+                btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
+            } else {
+                tvTodayPercent.setText(currentProgress + "%");
+                animateProgress(pbTodayCircular, currentProgress, 1000);
+                btnTodayAction.setText("BẮT ĐẦU");
+                btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#4DAA9A")));
+            }
+
+            tvProgressFraction.setText(completedDayIds.size() + " / " + totalPlanDays + " ngày hoàn thành");
+            animateProgress(pbOverallProgress, totalPlanDays > 0 ? (int) ((completedDayIds.size() * 100.0) / totalPlanDays) : 0, 1200);
+            
+            setupTimeline(nextIncompleteIndex);
+        }
     }
 
     private void fetchPersonalizedDetails(WorkoutPlan plan) {
@@ -220,25 +303,19 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             public void onResponse(Call<List<UserDailyWorkout>> call, Response<List<UserDailyWorkout>> response) {
                 if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                     List<UserDailyWorkout> personalRecords = response.body();
-                    
-                    // Sắp xếp bài tập theo thứ tự (exercise_order)
-                    Collections.sort(personalRecords, (o1, o2) -> {
-                        int order1 = o1.getExerciseOrder() != null ? o1.getExerciseOrder() : 0;
-                        int order2 = o2.getExerciseOrder() != null ? o2.getExerciseOrder() : 0;
-                        return Integer.compare(order1, order2);
-                    });
+                    Collections.sort(personalRecords, (o1, o2) -> Integer.compare(
+                            o1.getExerciseOrder() != null ? o1.getExerciseOrder() : 0,
+                            o2.getExerciseOrder() != null ? o2.getExerciseOrder() : 0)
+                    );
 
                     java.util.Map<String, List<WorkoutDayExercise>> dayMap = new java.util.HashMap<>();
                     for (UserDailyWorkout udw : personalRecords) {
                         if (udw.getDayId() != null && udw.getExercise() != null) {
                             if (!dayMap.containsKey(udw.getDayId())) dayMap.put(udw.getDayId(), new ArrayList<>());
-                            
-                            // Constructor 4 tham số
                             WorkoutDayExercise wde = new WorkoutDayExercise(
-                                udw.getExercise(),
-                                udw.getSets(),
-                                udw.getReps(),
-                                udw.getRestTimeSeconds()
+                                    udw.getExercise(), udw.getSets(),
+                                    udw.getReps() != null ? udw.getReps() : "12",
+                                    udw.getRestTimeSeconds() != null ? udw.getRestTimeSeconds() : 60
                             );
                             dayMap.get(udw.getDayId()).add(wde);
                         }
@@ -246,7 +323,12 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
 
                     if (plan.getDays() != null) {
                         for (WorkoutDay day : plan.getDays()) {
-                            if (dayMap.containsKey(day.getId())) day.setExercises(dayMap.get(day.getId()));
+                            if (dayMap.containsKey(day.getId())) {
+                                day.setExercises(dayMap.get(day.getId()));
+                            } else {
+                                // Xóa sạch để biến nó thành Ngày nghỉ (Rest Day)
+                                day.setExercises(new ArrayList<>());
+                            }
                         }
                     }
                     setupPlanUI(plan);
@@ -376,75 +458,6 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         });
     }
 
-    private void setupPlanUI(WorkoutPlan plan) {
-        if (plan.getDays() != null && !plan.getDays().isEmpty()) {
-            allDays = plan.getDays();
-            java.util.Collections.sort(allDays, (a, b) -> Integer.compare(a.getDayOrder() != null ? a.getDayOrder() : 0, b.getDayOrder() != null ? b.getDayOrder() : 0));
-
-            totalPlanDays = allDays.size();
-
-            // 1. TÌM INDEX CHO TIMELINE (Bài tập tiếp theo chưa làm)
-            int nextIncompleteIndex = 0;
-            for (int i = 0; i < allDays.size(); i++) {
-                if (!completedDayIds.contains(allDays.get(i).getId())) {
-                    nextIncompleteIndex = i;
-                    break;
-                }
-            }
-            if (nextIncompleteIndex == 0 && !allDays.isEmpty() && completedDayIds.contains(allDays.get(0).getId())) {
-                nextIncompleteIndex = allDays.size() - 1;
-            }
-
-            // 2. TÌM INDEX CHO MISSION CARD (Ưu tiên bài đã tập xong HÔM NAY)
-            int missionIndex = nextIncompleteIndex;
-            if (lastCompletedDayIdToday != null) {
-                for (int i = 0; i < allDays.size(); i++) {
-                    if (allDays.get(i).getId().equals(lastCompletedDayIdToday)) {
-                        missionIndex = i;
-                        break;
-                    }
-                }
-            }
-
-            todayWorkoutDay = allDays.get(missionIndex);
-            
-            // Bài này được coi là hoàn thành nếu nằm trong tập bài đã tập xong của cả Journey
-            boolean isMissionDone = completedDayIds.contains(todayWorkoutDay.getId());
-
-            // Hiển thị Card Mission
-            tvTodaySub.setText("NGÀY " + (todayWorkoutDay.getDayOrder() != null ? todayWorkoutDay.getDayOrder() : (missionIndex + 1)));
-            tvTodayName.setText(todayWorkoutDay.getName() != null ? todayWorkoutDay.getName() : "Ngày tập");
-
-            String todayDateStr = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(new java.util.Date());
-            int currentProgress = getSharedPreferences("WorkoutProgress", MODE_PRIVATE)
-                    .getInt("PROGRESS_" + userId + "_" + todayDateStr, 0);
-
-            // LOGIC HIỂN THỊ TRẠNG THÁI HOÀN THÀNH
-            // Một bài được coi là xong 100% trên card nếu: 
-            // - Nó chính là bài đã hoàn thành hôm nay (lastCompletedDayIdToday)
-            // - HOẶC progress trong máy đang báo 100%
-            boolean showAsFinished = (lastCompletedDayIdToday != null && todayWorkoutDay.getId().equals(lastCompletedDayIdToday)) || (currentProgress == 100);
-
-            if (showAsFinished) {
-                tvTodayPercent.setText("100%");
-                animateProgress(pbTodayCircular, 100, 1000);
-                btnTodayAction.setText("BẮT ĐẦU LẠI");
-                btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#9E9E9E")));
-            } else {
-                tvTodayPercent.setText(currentProgress + "%");
-                animateProgress(pbTodayCircular, currentProgress, 1000);
-                btnTodayAction.setText("BẮT ĐẦU");
-                btnTodayAction.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#4DAA9A")));
-            }
-
-            tvProgressFraction.setText(completedDayIds.size() + " / " + totalPlanDays + " ngày hoàn thành");
-            animateProgress(pbOverallProgress, totalPlanDays > 0 ? (int) ((completedDayIds.size() * 100.0) / totalPlanDays) : 0, 1200);
-            
-            // HIGHLIGHT TIMELINE: Luôn trỏ tới bài tiếp theo chưa làm
-            setupTimeline(nextIncompleteIndex);
-        }
-    }
-
     private void openDayExercises(WorkoutDay day) {
         if (day == null) return;
 
@@ -522,5 +535,175 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         if (navHistory != null) {
             navHistory.setOnClickListener(v -> startActivity(new Intent(this, WorkoutHistoryActivity.class)));
         }
+    }
+
+    // =====================================================================
+    // HÀM KÍCH HOẠT: TẠO LỊCH TẬP MỚI
+    // =====================================================================
+    private void generateAndSavePersonalizedWorkout(User currentUser) {
+        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+
+        List<Integer> conditionIds = new ArrayList<>();
+        if (currentUser.getUserMedicalConditions() != null) {
+            for (UserMedicalCondition mc : currentUser.getUserMedicalConditions()) {
+                if (mc.getConditionId() != null) conditionIds.add(mc.getConditionId());
+            }
+        }
+
+        if (conditionIds.isEmpty()) {
+            handlePlanGeneration(api, currentUser, new ArrayList<>());
+        } else {
+            StringBuilder inQuery = new StringBuilder("in.(");
+            for (int i = 0; i < conditionIds.size(); i++) {
+                inQuery.append(conditionIds.get(i)).append(i == conditionIds.size() - 1 ? "" : ",");
+            }
+            inQuery.append(")");
+
+            api.getBannedMuscles(inQuery.toString(), "*").enqueue(new Callback<List<ConditionRestrictedMuscle>>() {
+                @Override
+                public void onResponse(Call<List<ConditionRestrictedMuscle>> call, Response<List<ConditionRestrictedMuscle>> response) {
+                    List<Integer> bannedIds = new ArrayList<>();
+                    if (response.isSuccessful() && response.body() != null) {
+                        for (ConditionRestrictedMuscle rm : response.body()) bannedIds.add(rm.getMuscleGroupId());
+                    }
+                    handlePlanGeneration(api, currentUser, bannedIds);
+                }
+                @Override
+                public void onFailure(Call<List<ConditionRestrictedMuscle>> call, Throwable t) {
+                    handlePlanGeneration(api, currentUser, new ArrayList<>());
+                }
+            });
+        }
+    }
+
+    // =====================================================================
+    // HÀM XỬ LÝ CHÍNH: PHÂN NHÁNH GIỮA "GIẢM MỠ" VÀ "TĂNG CƠ/GIỮ DÁNG"
+    // =====================================================================
+    private void handlePlanGeneration(SupabaseApiService api, User currentUser, List<Integer> bannedMuscleIds) {
+        int age = calculateAge(currentUser.getDateOfBirth());
+        boolean isBeginner = (currentUser.getUserExperienceId() != null && currentUser.getUserExperienceId() == 1);
+        double weight = currentUser.getWeight() != null ? currentUser.getWeight() : 0.0;
+        double height = currentUser.getHeight() != null ? currentUser.getHeight() : 0.0;
+        String gender = currentUser.getGender() != null ? currentUser.getGender() : "Male";
+        int activityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("ACTIVITY_INDEX", 2);
+
+        double bmr = FitnessCalculator.calcBMR(weight, height, age, gender);
+        double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
+
+        int goalId = currentUser.getFitnessGoalId() != null ? currentUser.getFitnessGoalId() : 3;
+        String goalName = goalId == 1 ? "giảm mỡ" : (goalId == 2 ? "tăng cơ" : "giữ dáng");
+
+        FitnessCalculator.FitnessResult result =
+                FitnessCalculator.calculate(goalName, weight, currentUser.getTarget() != null ? currentUser.getTarget() : weight, tdee, gender, isBeginner);
+
+        Date startDate = new Date();
+
+        String currentPlanId = currentUser.getCurrentWorkoutPlanId();
+        if (currentPlanId == null || currentPlanId.isEmpty()) {
+            currentPlanId = result.workoutPlanId;
+        }
+
+        final String finalPlanId = currentPlanId;
+
+        // Xóa lịch tập cũ của Plan này trước khi tạo mới
+        api.deleteUserDailyWorkoutsByPlan("eq." + currentUser.getId(), "eq." + finalPlanId)
+                .enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(Call<Void> call, Response<Void> response) {
+                        generateAndInsert(api, currentUser, finalPlanId, goalId, startDate, bannedMuscleIds, isBeginner, result.dailyCaloriesToBurn, weight);
+                    }
+                    @Override
+                    public void onFailure(Call<Void> call, Throwable t) {
+                        generateAndInsert(api, currentUser, finalPlanId, goalId, startDate, bannedMuscleIds, isBeginner, result.dailyCaloriesToBurn, weight);
+                    }
+                });
+    }
+
+    // =====================================================================
+    // HÀM CHÈN DỮ LIỆU
+    // =====================================================================
+    private void generateAndInsert(SupabaseApiService api, User currentUser, String planId, int goalId, Date startDate, List<Integer> bannedMuscleIds, boolean isBeginner, double dailyCaloriesToBurn, double weight) {
+
+        // BƯỚC 1: LUÔN TẢI KHUNG GÓI TẬP VỀ TRƯỚC ĐỂ LẤY DAY_ID HỢP LỆ
+        String selectStr = "*,workout_days(*, workout_day_exercises(*, exercise:exercises(*)))";
+        api.getWorkoutPlanById("eq." + planId, selectStr).enqueue(new Callback<List<WorkoutPlan>>() {
+            @Override
+            public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    WorkoutPlan basePlan = response.body().get(0);
+
+                    if (goalId == 1) {
+                        // GIẢM MỠ: DÙNG AI TỰ ĐỘNG SINH VÀ LẮP VÀO KHUNG CỦA BẢN GỐC
+                        api.getAllExercises("*").enqueue(new Callback<List<Exercise>>() {
+                            @Override
+                            public void onResponse(Call<List<Exercise>> call, Response<List<Exercise>> exResponse) {
+                                if (exResponse.isSuccessful() && exResponse.body() != null) {
+                                    List<UserDailyWorkout> generatedWorkouts =
+                                            WorkoutGenerator.generateWeeklyWeightLossWorkouts(
+                                                    currentUser.getId(), basePlan, startDate, exResponse.body(), bannedMuscleIds, isBeginner, dailyCaloriesToBurn, weight
+                                            );
+                                    if (!generatedWorkouts.isEmpty()) {
+                                        insertNewWorkouts(api, generatedWorkouts);
+                                    } else {
+                                        Toast.makeText(WorkoutJourneyActivity.this, "Lỗi: Không tạo được bài tập", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }
+                            @Override public void onFailure(Call<List<Exercise>> call, Throwable t) {}
+                        });
+                    } else {
+                        // TĂNG CƠ / GIỮ DÁNG: COPY TỪ PLAN CỨNG
+                        List<UserDailyWorkout> copiedWorkouts = WorkoutGenerator.copyStaticPlanToDailyWorkouts(currentUser.getId(), startDate, basePlan);
+                        if (!copiedWorkouts.isEmpty()) insertNewWorkouts(api, copiedWorkouts);
+                    }
+                } else {
+                    Toast.makeText(WorkoutJourneyActivity.this, "Lỗi: Không tìm thấy gói tập mẫu trên DB", Toast.LENGTH_SHORT).show();
+                }
+            }
+            @Override public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {}
+        });
+    }
+    private void insertNewWorkouts(SupabaseApiService api, List<UserDailyWorkout> workouts) {
+        api.addUserDailyWorkouts(workouts).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getApplicationContext(), "🎉 Đã thiết lập xong lộ trình tập luyện!", Toast.LENGTH_SHORT).show();
+                    tvHeroTitle.setText("Đang tải lộ trình mới...");
+                    loadUserJourney();
+                } else {
+                    // IN LỖI CHI TIẾT TỪ SUPABASE ĐỂ DEBUG
+                    String errorMsg = "Lỗi không xác định";
+                    try {
+                        if (response.errorBody() != null) {
+                            errorMsg = response.errorBody().string();
+                        }
+                    } catch (Exception e) {}
+
+                    Toast.makeText(getApplicationContext(), "Supabase Error: " + errorMsg, Toast.LENGTH_LONG).show();
+                    android.util.Log.e("SUPABASE_ERROR", "Lỗi Insert: " + errorMsg);
+                }
+            }
+            @Override public void onFailure(Call<Void> call, Throwable t) {
+                Toast.makeText(getApplicationContext(), "Lỗi mạng: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private int calculateAge(String dobString) {
+        if (dobString == null || dobString.isEmpty()) return 0;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date birthDate = sdf.parse(dobString);
+            if (birthDate == null) return 0;
+            Calendar dob = Calendar.getInstance(); dob.setTime(birthDate);
+            Calendar today = Calendar.getInstance();
+            int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+            if (today.get(Calendar.MONTH) < dob.get(Calendar.MONTH) ||
+                    (today.get(Calendar.MONTH) == dob.get(Calendar.MONTH) && today.get(Calendar.DAY_OF_MONTH) < dob.get(Calendar.DAY_OF_MONTH))) {
+                age--;
+            }
+            return age;
+        } catch (Exception e) { return 0; }
     }
 }
