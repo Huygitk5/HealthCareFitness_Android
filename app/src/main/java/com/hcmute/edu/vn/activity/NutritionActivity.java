@@ -85,7 +85,6 @@ public class NutritionActivity extends AppCompatActivity {
     private List<String> currentAllergies = new ArrayList<>();
 
     private double targetCalories = 0.0;
-    private double targetCaloriesToBurn = 0.0; // kcal cần đốt qua tập (giảm mỡ)
     private String currentGoalName = ""; // "giảm" / "tăng" / "giữ"
     private double targetCarb = 0.0;
     private double targetProtein = 0.0;
