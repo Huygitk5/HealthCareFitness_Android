@@ -47,40 +47,14 @@
         tools:text="1 / 11" />
 
     <ImageButton
-        android:id="@+id/icSetting"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_workout_setting"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="10dp"
-        android:background="#FFFFFF"
-        />
-
-    <ImageButton
-        android:id="@+id/icfullscreen"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_workout_fullscreen"
-        app:layout_constraintTop_toBottomOf="@id/icSetting"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
-        android:background="#FFFFFF"
-        />
-
-    <ImageButton
         android:id="@+id/icWorkoutMusic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_workout_music"
-        app:layout_constraintTop_toBottomOf="@id/icfullscreen"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="10dp"
+        android:layout_marginEnd="16dp"
         android:background="#FFFFFF"
-        />
+        android:src="@drawable/ic_workout_music"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:layout_editor_absoluteY="55dp" />
 
     <ImageView
         android:id="@+id/ivExercise"
