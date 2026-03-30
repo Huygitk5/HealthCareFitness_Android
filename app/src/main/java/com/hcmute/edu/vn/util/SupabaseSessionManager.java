@@ -35,15 +35,4 @@ public final class SupabaseSessionManager {
                 .getString(KEY_ACCESS_TOKEN, "");
     }
 
-    public static void clearAccessToken(Context context) {
-        if (context == null) {
-            return;
-        }
-
-        context.getApplicationContext()
-                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                .edit()
-                .remove(KEY_ACCESS_TOKEN)
-                .apply();
-    }
 }
