@@ -687,10 +687,6 @@ public class HomeActivity extends AppCompatActivity {
 
                     updateData.setCurrentDailyCalories(result.dailyCalories);
 
-                    // Bật cờ để tạo thực đơn lần đầu
-                    getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                            .putBoolean("CALORIES_CHANGED", true)
-                            .apply();
                 }
 
                 // Gọi api lưu vào supa
