@@ -659,10 +659,6 @@ public class HomeActivity extends AppCompatActivity {
                                             Toast.LENGTH_LONG).show();
                                 }
 
-                                // Đánh cờ báo hiệu cho NutritionActivity sinh lại thực đơn
-                                getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                                        .putBoolean("CALORIES_CHANGED", true)
-                                        .apply();
                             }
                         }
                     } catch (Exception e) {
