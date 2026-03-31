@@ -67,8 +67,6 @@ public class ExerciseActivity extends AppCompatActivity {
         }
     };
 
-    // ======================= Lifecycle =======================
-
     @Override
     @SuppressWarnings("unchecked")
     protected void onCreate(Bundle savedInstanceState) {
@@ -245,7 +243,7 @@ public class ExerciseActivity extends AppCompatActivity {
                 }
 
                 startActivity(intent);
-                finish(); // Đóng luôn màn hình tập hiện tại
+                finish();
             }
         });
 

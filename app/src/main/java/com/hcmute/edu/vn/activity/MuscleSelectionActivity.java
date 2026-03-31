@@ -100,9 +100,7 @@ public class MuscleSelectionActivity extends AppCompatActivity {
     }
 
     private void setupUI() {
-//        TextView tvStepCount = findViewById(R.id.tvStepCount);
         TextView tvStepTitle = findViewById(R.id.tvStepTitle);
-//        tvStepCount.setText("BƯỚC 2/3");
         tvStepTitle.setText("Hôm nay bạn muốn tập nhóm cơ nào?");
 
         rvSelection.setLayoutManager(new LinearLayoutManager(this));

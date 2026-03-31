@@ -472,10 +472,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
         } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
     }
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
     private void selectFirstGoalContaining(String keyword) {
         for (int i = 0; i < fitnessGoalList.size(); i++) {
             if (fitnessGoalList.get(i).getName().toLowerCase().contains(keyword)) {

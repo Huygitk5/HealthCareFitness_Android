@@ -27,10 +27,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.hcmute.edu.vn.R;
 import com.hcmute.edu.vn.database.SupabaseApiService;
@@ -59,6 +61,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -96,7 +99,6 @@ public class HomeActivity extends AppCompatActivity {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         username = pref.getString("KEY_USER", null);
 
-        // 2. Ánh xạ các View từ XML
         tvGreeting = findViewById(R.id.tvGreeting);
         tvCurrentWeight = findViewById(R.id.tvCurrentWeight);
         tvCurrentHeight = findViewById(R.id.tvCurrentHeight);
@@ -142,19 +144,13 @@ public class HomeActivity extends AppCompatActivity {
         rvActivities.setAdapter(activityAdapter);
         updateActivityHistoryState();
 
-        // =========================================================
-        // SETUP RECYCLER VIEW CHO NEWS (Tin tức - Đã xóa dummy data)
-        // =========================================================
         LinearLayoutManager newsLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvNews.setLayoutManager(newsLayoutManager);
 
         // Gắn Adapter tạm thời rỗng, sẽ đổ data vào sau khi gọi API
-        newsAdapter = new NewsAdapter(currentNewsList); // Chú ý: NewsAdapter dùng constructor 1 tham số
+        newsAdapter = new NewsAdapter(currentNewsList);
         rvNews.setAdapter(newsAdapter);
 
-        // =========================================================
-        // XỬ LÝ CLICK BOTTOM NAVIGATION
-        // =========================================================
 
         LinearLayout navWorkout = findViewById(R.id.nav_workout);
         navWorkout.setOnClickListener(new View.OnClickListener() {
@@ -268,9 +264,7 @@ public class HomeActivity extends AppCompatActivity {
                     fetchBmiHistory(currentUser.getId(), "DAY");
                     loadWorkoutExerciseHistory();
 
-                    // =======================================================
-                    // 3. GỌI API LẤY BÀI BÁO CÁ NHÂN HÓA (DÒNG MỚI THÊM)
-                    // =======================================================
+                    // 3. GỌI API LẤY BÀI BÁO CÁ NHÂN HÓA
                     List<Integer> conditionIds = new ArrayList<>();
                     if (currentUser.getUserMedicalConditions() != null) {
                         for (UserMedicalCondition umc : currentUser.getUserMedicalConditions()) {
@@ -296,9 +290,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================
     // HÀM GỌI API BÀI BÁO THEO BỆNH LÝ
-    // =========================================================
     private void fetchNewsByConditions(SupabaseApiService api, List<Integer> conditionIds) {
         StringBuilder query = new StringBuilder("in.(");
         for (int i = 0; i < conditionIds.size(); i++) {
@@ -322,9 +314,7 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================
     // HÀM GỌI API BÀI BÁO CHUNG (NGẪU NHIÊN 10 BÀI)
-    // =========================================================
     private void fetchGeneralNews(SupabaseApiService api) {
         api.getGeneralNews("*", 10).enqueue(new Callback<List<News>>() {
             @Override
@@ -592,9 +582,7 @@ public class HomeActivity extends AppCompatActivity {
         tvEmptyActivities.setVisibility(hasHistory ? View.GONE : View.VISIBLE);
     }
 
-    // =========================================================
     // HÀM LẤY LỊCH SỬ BMI TỪ SUPABASE THEO KHOẢNG THỜI GIAN
-    // =========================================================
     private void fetchBmiHistory(String userId, String period) {
         if (userId == null || userId.isEmpty()) return;
 
@@ -763,9 +751,9 @@ public class HomeActivity extends AppCompatActivity {
 
         XAxis xAxis = lineChartBMI.getXAxis();
         xAxis.setGranularity(1f);
-        xAxis.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+        xAxis.setValueFormatter(new ValueFormatter() {
             @Override
-            public String getAxisLabel(float value, com.github.mikephil.charting.components.AxisBase axis) {
+            public String getAxisLabel(float value, AxisBase axis) {
                 int idx = (int) value;
                 if (idx >= 0 && idx < labels.size()) {
                     return labels.get(idx);
@@ -783,7 +771,7 @@ public class HomeActivity extends AppCompatActivity {
         dataSet.setValueTextSize(11f);
         dataSet.setValueTextColor(Color.parseColor("#212121"));
 
-        dataSet.setValueFormatter(new com.github.mikephil.charting.formatter.ValueFormatter() {
+        dataSet.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
                 return String.format(Locale.getDefault(), "%.1f", value);
@@ -867,7 +855,7 @@ public class HomeActivity extends AppCompatActivity {
                             if (currentBmiLogs.get(i).getRecordedAt() == null) continue;
 
                             Date logDate = sdf.parse(currentBmiLogs.get(i).getRecordedAt());
-                            long diffInDays = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(now.getTime() - logDate.getTime());
+                            long diffInDays = TimeUnit.MILLISECONDS.toDays(now.getTime() - logDate.getTime());
 
                             // Lấy mốc cách đây từ 6 đến 8 ngày
                             if (diffInDays >= 6 && diffInDays <= 8) {
@@ -887,11 +875,11 @@ public class HomeActivity extends AppCompatActivity {
                             int age = calculateAge(currentUser.getDateOfBirth());
                             int activityIndex = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("ACTIVITY_INDEX", 2);
 
-                            // Tính BMR và TDEE dựa trên cân nặng cũ (hoặc mới tùy bạn, ở đây lấy cũ cho chuẩn 1 tuần trước)
+                            // Tính BMR và TDEE dựa trên cân nặng cũ
                             double bmr = FitnessCalculator.calcBMR(oldWeight, newHeight, age, gender);
                             double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
 
-                            // GỌI THUẬT TOÁN ĐIỀU CHỈNH (trong FitnessCalculator)
+                            // GỌI THUẬT TOÁN ĐIỀU CHỈNH
                             double adjustedCalo = adjustCaloriesWeekly(oldCalo, tdee, goalId, oldWeight, newWeight, gender);
 
                             // Nếu Calo bị thay đổi do kết quả tăng/giảm cân không đạt KPI
@@ -922,14 +910,12 @@ public class HomeActivity extends AppCompatActivity {
                     String goalName = goalId == 1 ? "giảm mỡ" : (goalId == 2 ? "tăng cơ" : "giữ dáng");
                     boolean isBeginner = (currentUser.getUserExperienceId() != null && currentUser.getUserExperienceId() == 1);
 
-                    double bmr = com.hcmute.edu.vn.util.FitnessCalculator.calcBMR(newWeight, newHeight, age, gender);
-                    double tdee = com.hcmute.edu.vn.util.FitnessCalculator.calcTDEE(bmr, activityIndex);
+                    double bmr = FitnessCalculator.calcBMR(newWeight, newHeight, age, gender);
+                    double tdee = FitnessCalculator.calcTDEE(bmr, activityIndex);
 
-                    com.hcmute.edu.vn.util.FitnessCalculator.FitnessResult result =
-                            com.hcmute.edu.vn.util.FitnessCalculator.calculate(goalName, newWeight, currentUser.getTarget(), tdee, gender, isBeginner);
+                    FitnessCalculator.FitnessResult result = FitnessCalculator.calculate(goalName, newWeight, currentUser.getTarget(), tdee, gender, isBeginner);
 
                     updateData.setCurrentDailyCalories(result.dailyCalories);
-
                 }
 
                 // Gọi api lưu vào supa
@@ -942,8 +928,6 @@ public class HomeActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<Void> call, Response<Void> response) {
                         if (response.isSuccessful()) {
-
-                            // LƯU LỊCH SỬ BMI NHƯ BÌNH THƯỜNG
                             double heightM = newHeight / 100.0;
                             double newBmi = newWeight / (heightM * heightM);
                             String currentDateFull = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());

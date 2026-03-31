@@ -161,7 +161,6 @@ public class NutritionActivity extends AppCompatActivity {
         AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
         Intent intent = new Intent(this, MealNotificationReceiver.class);
 
-        // FLAG_IMMUTABLE là bắt buộc trên Android 12+ vì lý do bảo mật
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this, 100, intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
@@ -176,16 +175,15 @@ public class NutritionActivity extends AppCompatActivity {
         }
 
         // KIỂM TRA PHIÊN BẢN VÀ QUYỀN TRƯỚC KHI SET ALARM
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) { // Từ Android 12 trở lên
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
-                // Có quyền -> Kích hoạt đúng boong từng giây
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
             } else {
                 // KHÔNG có quyền -> Lùi về dùng báo thức linh hoạt (chấp nhận trễ 5-10 phút)
                 alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), AlarmManager.INTERVAL_DAY, pendingIntent);
                 Toast.makeText(this, "Hệ thống có thể báo thức trễ vài phút để tiết kiệm pin", Toast.LENGTH_SHORT).show();
             }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) { // Android 6 đến 11
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
         } else {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
@@ -833,11 +831,6 @@ public class NutritionActivity extends AppCompatActivity {
             }
         });
     }
-
-
-    // -----------------------------------------------------------------------
-    // FILTER SAFE FOODS
-    // -----------------------------------------------------------------------
 
     private List<Food> filterSafeFoods(List<Food> allFoods) {
         List<Food> safeFoods = new ArrayList<>();

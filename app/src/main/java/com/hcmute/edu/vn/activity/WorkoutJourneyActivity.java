@@ -84,33 +84,33 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
         loadUserJourney();
     }
 
-@Override
-protected void onResume() {
-    super.onResume();
-    SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-    boolean workoutUpdateNeeded = pref.getBoolean("WORKOUT_UPDATE_NEEDED", false);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean workoutUpdateNeeded = pref.getBoolean("WORKOUT_UPDATE_NEEDED", false);
 
-    if (workoutUpdateNeeded) {
-        // Tắt cờ đi để không bị lặp lại
-        pref.edit().putBoolean("WORKOUT_UPDATE_NEEDED", false).apply();
+        if (workoutUpdateNeeded) {
+            // Tắt cờ đi để không bị lặp lại
+            pref.edit().putBoolean("WORKOUT_UPDATE_NEEDED", false).apply();
 
-        Toast.makeText(this, "Đang thiết lập lại lộ trình tập luyện...", Toast.LENGTH_SHORT).show();
-        // Lấy User và kích hoạt bộ não AI sinh lịch tập mới
-        SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
-        api.getUserByUsername("eq." + username, "*,user_medical_conditions(*)").enqueue(new Callback<List<User>>() {
-            @Override
-            public void onResponse(Call<List<User>> call, Response<List<User>> response) {
-                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                    generateAndSavePersonalizedWorkout(response.body().get(0));
+            Toast.makeText(this, "Đang thiết lập lại lộ trình tập luyện...", Toast.LENGTH_SHORT).show();
+            // Lấy User và kích hoạt bộ não AI sinh lịch tập mới
+            SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
+            api.getUserByUsername("eq." + username, "*,user_medical_conditions(*)").enqueue(new Callback<List<User>>() {
+                @Override
+                public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                    if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                        generateAndSavePersonalizedWorkout(response.body().get(0));
+                    }
                 }
-            }
-            @Override public void onFailure(Call<List<User>> call, Throwable t) {}
-        });
-    } else {
-        currentUserConditionIds.clear();
-        loadUserJourney();
+                @Override public void onFailure(Call<List<User>> call, Throwable t) {}
+            });
+        } else {
+            currentUserConditionIds.clear();
+            loadUserJourney();
+        }
     }
-}
 
     private void initViews() {
         tvStreak = findViewById(R.id.tvStreak);
@@ -537,9 +537,7 @@ protected void onResume() {
         }
     }
 
-    // =====================================================================
     // HÀM KÍCH HOẠT: TẠO LỊCH TẬP MỚI
-    // =====================================================================
     private void generateAndSavePersonalizedWorkout(User currentUser) {
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
 
@@ -576,9 +574,7 @@ protected void onResume() {
         }
     }
 
-    // =====================================================================
     // HÀM XỬ LÝ CHÍNH: PHÂN NHÁNH GIỮA "GIẢM MỠ" VÀ "TĂNG CƠ/GIỮ DÁNG"
-    // =====================================================================
     private void handlePlanGeneration(SupabaseApiService api, User currentUser, List<Integer> bannedMuscleIds) {
         int age = calculateAge(currentUser.getDateOfBirth());
         boolean isBeginner = (currentUser.getUserExperienceId() != null && currentUser.getUserExperienceId() == 1);
@@ -619,9 +615,7 @@ protected void onResume() {
                 });
     }
 
-    // =====================================================================
     // HÀM CHÈN DỮ LIỆU
-    // =====================================================================
     private void generateAndInsert(SupabaseApiService api, User currentUser, String planId, int goalId, Date startDate, List<Integer> bannedMuscleIds, boolean isBeginner, double dailyCaloriesToBurn, double weight) {
 
         // BƯỚC 1: LUÔN TẢI KHUNG GÓI TẬP VỀ TRƯỚC ĐỂ LẤY DAY_ID HỢP LỆ
@@ -652,7 +646,6 @@ protected void onResume() {
                             @Override public void onFailure(Call<List<Exercise>> call, Throwable t) {}
                         });
                     } else {
-                        // TĂNG CƠ / GIỮ DÁNG: COPY TỪ PLAN CỨNG
                         List<UserDailyWorkout> copiedWorkouts = WorkoutGenerator.copyStaticPlanToDailyWorkouts(currentUser.getId(), startDate, basePlan);
                         if (!copiedWorkouts.isEmpty()) insertNewWorkouts(api, copiedWorkouts);
                     }

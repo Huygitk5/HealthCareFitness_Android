@@ -60,16 +60,9 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
 
     private static final String TAG = "MusicBottomSheet";
 
-    // ── Binder từ ExerciseActivity ────────────────────────────────────────────
     private MusicService.MusicBinder musicBinder;
-
-    // ── System service ─────────────────────────────────────────────────────────
     private AudioManager audioManager;
-
-    // ── User info (lấy từ SharedPreferences) ──────────────────────────────────
     private String userId;
-
-    // ── Views — Mini Player ────────────────────────────────────────────────────
     private LinearLayout rootSheetLayout;
     private TextView     tvSheetTitle;
     private ImageView    ivAlbumArt, ivArrowState;
@@ -77,31 +70,22 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
     private ImageButton  btnPlayPause, btnMusicNext, btnMusicPrevious;
     private ImageButton  btnPlaylist, btnRepeat;
     private SwitchCompat switchMusic;
-
-    // ── Views — Volume ─────────────────────────────────────────────────────────
     private LinearLayout layoutVolume;
     private SeekBar      seekBarVolume;
-
-    // ── Views — Full Player ────────────────────────────────────────────────────
     private LinearLayout layoutSeekbar;
     private LinearLayout layoutSongList;
     private SeekBar      seekBarMusic;
     private TextView     tvSeekStart, tvSeekEnd;
     private RecyclerView rvSongList;
     private SongAdapter  songAdapter;
-
-    // ── Views — Upload ─────────────────────────────────────────────────────────
-    private ImageButton  btnAddMusic;      // Nút "+" thêm nhạc
-    private ProgressBar progressUpload;   // Hiện khi đang upload
-
-    // ── State ──────────────────────────────────────────────────────────────────
+    private ImageButton  btnAddMusic;
+    private ProgressBar progressUpload;
     private boolean isFullPlayer       = false;
     private boolean userIsSeeking      = false;
     private int lastKnownSongIndex     = Integer.MIN_VALUE;
     private int lastKnownRepeatMode    = Integer.MIN_VALUE;
     private boolean lastKnownPlaying   = false;
 
-    // ── Handler cập nhật SeekBar ───────────────────────────────────────────────
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable seekBarRunnable = new Runnable() {
         @Override public void run() {
@@ -110,12 +94,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         }
     };
 
-    // ── File Picker Launcher ───────────────────────────────────────────────────
     private ActivityResultLauncher<String> pickAudioLauncher;
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Factory
-    // ══════════════════════════════════════════════════════════════════════════
 
     public static MusicBottomSheetFragment newInstance(MusicService.MusicBinder binder) {
         MusicBottomSheetFragment f = new MusicBottomSheetFragment();
@@ -123,9 +102,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         return f;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // Lifecycle
-    // ══════════════════════════════════════════════════════════════════════════
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -182,10 +158,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         handler.removeCallbacks(seekBarRunnable);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // View Binding
-    // ══════════════════════════════════════════════════════════════════════════
-
     private void bindViews(View v) {
         rootSheetLayout    = v.findViewById(R.id.rootSheetLayout);
         tvSheetTitle       = v.findViewById(R.id.tvSheetTitle);
@@ -209,15 +181,10 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         tvSeekStart        = v.findViewById(R.id.tvSeekStart);
         tvSeekEnd          = v.findViewById(R.id.tvSeekEnd);
         rvSongList         = v.findViewById(R.id.rvSongList);
-
-        // Nút thêm nhạc và ProgressBar upload
         btnAddMusic        = v.findViewById(R.id.btnAddMusic);
         progressUpload     = v.findViewById(R.id.progressUpload);
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // RecyclerView
-    // ══════════════════════════════════════════════════════════════════════════
 
     private void setupRecyclerView() {
         MusicService service = getService();
@@ -234,10 +201,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         rvSongList.setAdapter(songAdapter);
         rvSongList.setHasFixedSize(false); // false vì list có thể thay đổi khi thêm nhạc
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Load User Songs từ Supabase
-    // ══════════════════════════════════════════════════════════════════════════
 
     /**
      * Gọi API lấy danh sách nhạc user đã upload, ghép vào cuối danh sách nhạc mặc định.
@@ -292,20 +255,12 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                 });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // File Picker
-    // ══════════════════════════════════════════════════════════════════════════
-
     /** Mở file picker chỉ cho phép chọn file audio. Với GetContent, hệ thống cấp URI permission tạm thời. */
     private void openFilePicker() {
         if (pickAudioLauncher != null) {
             pickAudioLauncher.launch("audio/*");
         }
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Upload Logic
-    // ══════════════════════════════════════════════════════════════════════════
 
     /**
      * Xử lý file audio user vừa chọn:
@@ -367,7 +322,7 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
                 if (response.isSuccessful() && response.body() != null
                         && !response.body().isEmpty()) {
                     Song insertedSong = response.body().get(0);
-                    // Tiếp theo: liên kết bài hát này với user
+                    // liên kết bài hát này với user
                     linkSongToUser(insertedSong, storageFileName, uploader);
                 } else {
                     setUploadingState(false);
@@ -444,10 +399,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
             rvSongList.smoothScrollToPosition(newPosition);
         }
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Helpers
-    // ══════════════════════════════════════════════════════════════════════════
 
     /** Lấy tên file gốc từ URI (ví dụ: "my_song.mp3") */
     private String getFileNameFromUri(Uri uri) {
@@ -599,10 +550,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         return isAdded() && getView() != null;
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // Listeners
-    // ══════════════════════════════════════════════════════════════════════════
-
     private void setupListeners() {
         requireView().findViewById(R.id.btnCloseSheet).setOnClickListener(v -> {
             if (isFullPlayer) switchToMiniPlayer();
@@ -645,7 +592,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         });
         btnRepeat.setAlpha(0.4f);
 
-        // Nút thêm nhạc
         if (btnAddMusic != null) {
             btnAddMusic.setOnClickListener(v -> openFilePicker());
         }
@@ -663,10 +609,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         });
     }
 
-    // ══════════════════════════════════════════════════════════════════════════
-    // Volume Control
-    // ══════════════════════════════════════════════════════════════════════════
-
     private void setupVolumeControl() {
         if (audioManager == null) return;
         int maxVol     = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -682,10 +624,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // State Switching
-    // ══════════════════════════════════════════════════════════════════════════
 
     private void switchToFullPlayer() {
         if (isFullPlayer) return;
@@ -717,10 +655,6 @@ public class MusicBottomSheetFragment extends BottomSheetDialogFragment {
         BottomSheetBehavior<?> behavior = ((BottomSheetDialog) requireDialog()).getBehavior();
         behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // UI Update
-    // ══════════════════════════════════════════════════════════════════════════
 
     private void refreshUI() {
         MusicService svc = getService();

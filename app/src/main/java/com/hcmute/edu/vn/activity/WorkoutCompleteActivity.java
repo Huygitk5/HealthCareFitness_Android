@@ -111,7 +111,6 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                         }
                     });
         } else if (startMillis > 0) {
-            // Quick/single exercise launches should finish cleanly without persisting a full session.
             wpPref.edit().remove(sessionKey).apply();
         }
 

@@ -72,7 +72,6 @@ public class FoodListActivity extends AppCompatActivity {
         edtSearchFood = findViewById(R.id.edtSearchFood);
         rvFullFoodList = findViewById(R.id.rvFullFoodList);
 
-        // Khởi tạo mảng rỗng để không bị NullPointerException khi nhét vào Adapter
         allFoods = new ArrayList<>();
         displayFoods = new ArrayList<>();
     }
@@ -90,16 +89,11 @@ public class FoodListActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<Food>> call, Response<List<Food>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Xóa dữ liệu cũ (nếu có)
                     allFoods.clear();
-                    // Thêm dữ liệu từ API về
                     allFoods.addAll(response.body());
 
-                    // Cập nhật lại danh sách hiển thị
                     displayFoods.clear();
                     displayFoods.addAll(allFoods);
-
-                    // Báo cho Adapter biết là có data mới để vẽ ra màn hình
                     if (adapter != null) {
                         adapter.notifyDataSetChanged();
                     }
@@ -116,10 +110,7 @@ public class FoodListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        // Truyền displayFoods vào Adapter.
-        adapter = new FoodVerticalAdapter(displayFoods, selectedCount -> {
-            // Callback khi user tick chọn món (nếu cần)
-        });
+        adapter = new FoodVerticalAdapter(displayFoods, selectedCount -> {});
 
         rvFullFoodList.setLayoutManager(new LinearLayoutManager(this));
         rvFullFoodList.setAdapter(adapter);
@@ -129,9 +120,6 @@ public class FoodListActivity extends AppCompatActivity {
         // Nút Back
         btnBackFromList.setOnClickListener(v -> {
 
-            // =======================================================
-            // ĐÃ SỬA: Gọi hàm getSelectedFoodsMap() thay vì hàm cũ
-            // =======================================================
             java.util.Map<Food, Double> selectedMap = adapter.getSelectedFoodsMap();
 
             // Kiểm tra xem user có chọn món nào không
@@ -154,7 +142,7 @@ public class FoodListActivity extends AppCompatActivity {
 
                 setResult(RESULT_OK, resultIntent); // Xác nhận gửi thành công
             }
-            finish(); // Đóng màn hình
+            finish();
         });
 
         // Thanh Tìm Kiếm (Real-time Filter)
@@ -164,7 +152,6 @@ public class FoodListActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // Mỗi khi gõ 1 chữ, lập tức lọc danh sách
                 filterFood(s.toString());
             }
 

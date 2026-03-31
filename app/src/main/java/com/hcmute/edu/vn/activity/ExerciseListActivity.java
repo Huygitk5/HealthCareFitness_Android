@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -109,7 +110,7 @@ public class ExerciseListActivity extends AppCompatActivity {
 
         if (getIntent().hasExtra("EXTRA_EXERCISE_LIST") && !getIntent().hasExtra("EXTRA_DAY_ID")) {
             // Trường hợp tập tự do hoặc đã có list (Thường từ Journey chuyển qua)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 exercises = getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST", ArrayList.class);
             } else {
                 exercises = (ArrayList<Exercise>) getIntent().getSerializableExtra("EXTRA_EXERCISE_LIST");
@@ -472,7 +473,6 @@ public class ExerciseListActivity extends AppCompatActivity {
         rvItems.setLayoutManager(new LinearLayoutManager(this));
 
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
-        // Lọc bài tập tương tự: Cùng nhóm cơ, cùng độ khó (hoặc chênh lệch 1)
         api.getReplacementExercises("eq." + oldEx.getMuscleGroupId(), "eq." + oldEx.getDifficultyLevelId(), "*").enqueue(new Callback<List<Exercise>>() {
             @Override
             public void onResponse(Call<List<Exercise>> call, Response<List<Exercise>> response) {
@@ -508,7 +508,7 @@ public class ExerciseListActivity extends AppCompatActivity {
         
         UserDailyWorkout record = userDailyWorkoutIds.get(position);
         record.setExerciseId(newEx.getId());
-        record.setExercise(null); // Clear joined object for update
+        record.setExercise(null);
 
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
         api.updateUserDailyWorkout("eq." + record.getId(), record).enqueue(new Callback<Void>() {

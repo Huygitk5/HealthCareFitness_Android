@@ -46,7 +46,7 @@ public class WorkoutGenerator {
      */
     public static List<UserDailyWorkout> generateWeeklyWeightLossWorkouts(
             String userId,
-            WorkoutPlan basePlan, // <--- SỬA THÀNH ĐỐI TƯỢNG PLAN ĐỂ LẤY ID THẬT
+            WorkoutPlan basePlan,
             Date startDate,
             List<Exercise> allExercises,
             List<Integer> restrictedMuscleIds,
