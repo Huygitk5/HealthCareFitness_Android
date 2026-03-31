@@ -19,7 +19,7 @@ import java.util.List;
 
 public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelectionAdapter.ViewHolder> {
     private List<Exercise> exerciseList;
-    private int selectedPosition = -1;
+    private java.util.Set<Integer> selectedPositions = new java.util.HashSet<>();
     private OnSelectionChangedListener listener;
 
     public interface OnSelectionChangedListener {
@@ -42,24 +42,29 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Exercise exercise = exerciseList.get(position);
         holder.tvName.setText(exercise.getName());
-        holder.rbSelect.setChecked(position == selectedPosition);
-
+        
+        boolean isSelected = selectedPositions.contains(position);
+        holder.cbSelect.setChecked(isSelected);
+        
+        // Highlight background if selected
+        holder.itemView.setAlpha(isSelected ? 1.0f : 0.9f);
+        
         Glide.with(holder.itemView.getContext())
                 .load(exercise.getImageUrl())
                 .placeholder(R.drawable.ic_image_gray)
                 .into(holder.ivThumb);
 
-        holder.itemView.setOnClickListener(v -> {
-            selectedPosition = holder.getAdapterPosition();
-            notifyDataSetChanged();
-            if (listener != null) listener.onSelectionChanged(1);
-        });
+        holder.itemView.setOnClickListener(v -> toggleSelection(holder.getAdapterPosition()));
+    }
 
-        holder.rbSelect.setOnClickListener(v -> {
-            selectedPosition = holder.getAdapterPosition();
-            notifyDataSetChanged();
-            if (listener != null) listener.onSelectionChanged(1);
-        });
+    private void toggleSelection(int position) {
+        if (selectedPositions.contains(position)) {
+            selectedPositions.remove(position);
+        } else {
+            selectedPositions.add(position);
+        }
+        notifyItemChanged(position);
+        if (listener != null) listener.onSelectionChanged(selectedPositions.size());
     }
 
     @Override
@@ -69,8 +74,10 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
 
     public ArrayList<Exercise> getSelectedExercises() {
         ArrayList<Exercise> selected = new ArrayList<>();
-        if (selectedPosition != -1 && selectedPosition < exerciseList.size()) {
-            selected.add(exerciseList.get(selectedPosition));
+        for (Integer pos : selectedPositions) {
+            if (pos >= 0 && pos < exerciseList.size()) {
+                selected.add(exerciseList.get(pos));
+            }
         }
         return selected;
     }
@@ -78,13 +85,13 @@ public class ExerciseSelectionAdapter extends RecyclerView.Adapter<ExerciseSelec
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView ivThumb;
         TextView tvName;
-        RadioButton rbSelect;
+        android.widget.CheckBox cbSelect;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivThumb = itemView.findViewById(R.id.imgExercise);
             tvName = itemView.findViewById(R.id.tvExerciseName);
-            rbSelect = itemView.findViewById(R.id.rbSelect);
+            cbSelect = itemView.findViewById(R.id.cbSelect);
         }
     }
-}
+}

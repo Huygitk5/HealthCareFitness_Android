@@ -147,6 +147,10 @@ public class WorkoutJourneyActivity extends AppCompatActivity {
             if (currentPlanId != null && !currentPlanId.isEmpty()) {
                 Intent intent = new Intent(this, WorkoutDetailActivity.class);
                 intent.putExtra("PLAN_ID", currentPlanId);
+                String userGoalName = tvHeroTitle.getText().toString().replace("Your Journey:\n", "").trim();
+                intent.putExtra("GOAL_NAME", userGoalName);
+                java.util.ArrayList<String> completedList = new java.util.ArrayList<>(completedDayIds);
+                intent.putStringArrayListExtra("COMPLETED_DAY_IDS", completedList);
                 startActivity(intent);
             }
         });
