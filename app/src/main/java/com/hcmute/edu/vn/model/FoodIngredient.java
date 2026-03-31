@@ -30,9 +30,14 @@ public class FoodIngredient {
 
     // Hàm tiện ích: Trả về chuỗi đẹp. VD: "100 g", "2 muỗng"
     public String getFormattedQuantity() {
-        String qtyString = (quantity == Math.floor(quantity))
-                ? String.valueOf((int) quantity)
-                : String.valueOf(quantity);
+        return getFormattedQuantity(1.0);
+    }
+
+    public String getFormattedQuantity(double multiplier) {
+        double scaledQuantity = quantity * multiplier;
+        String qtyString = (scaledQuantity == Math.floor(scaledQuantity))
+                ? String.valueOf((int) scaledQuantity)
+                : String.valueOf(scaledQuantity);
         return qtyString + " " + (unit != null ? unit : "g");
     }
 }
