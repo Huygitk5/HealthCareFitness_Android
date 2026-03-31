@@ -39,7 +39,7 @@ public class ExerciseActivity extends AppCompatActivity {
     private long currentExerciseStartTime;
     private long[] exerciseDurations;
     private ImageView ivExercise;
-    private TextView tvExerciseName, tvTimer, tvExerciseProgress;
+    private TextView tvExerciseName, tvExerciseMeta, tvTimer, tvExerciseProgress;
     private ImageButton btnNext, btnPrevious, btnClose, icWorkoutMusic;
     private Button btnPause;
     private ActivityResultLauncher<Intent> restActivityLauncher;
@@ -177,6 +177,7 @@ public class ExerciseActivity extends AppCompatActivity {
     private void initViews() {
         ivExercise = findViewById(R.id.ivExercise);
         tvExerciseName = findViewById(R.id.tvExerciseName);
+        tvExerciseMeta = findViewById(R.id.tvExerciseMeta);
         tvTimer = findViewById(R.id.tvTimer);
         tvExerciseProgress = findViewById(R.id.tvExerciseProgress);
         btnNext = findViewById(R.id.btnNext);
@@ -335,9 +336,16 @@ public class ExerciseActivity extends AppCompatActivity {
         }
 
         // 2. Xử lý hiển thị Reps/Thời gian và Nút Pause
+        int sets = currentExercise.getBaseRecommendedSets() != null ? currentExercise.getBaseRecommendedSets() : 1;
+        tvExerciseMeta.setText(getString(R.string.exercise_sets_value, sets));
+
         if (currentExercise.getBaseRecommendedReps() != null) {
             String repsData = currentExercise.getBaseRecommendedReps();
-            tvTimer.setText(repsData);
+            if (repsData.contains(":")) {
+                tvTimer.setText(repsData);
+            } else {
+                tvTimer.setText(getString(R.string.exercise_reps_value, repsData));
+            }
 
             // Kiểm tra: Nếu chuỗi có chứa dấu ":" (ví dụ 00:30) thì là đếm giờ -> Hiện nút Pause
             // Ngược lại (ví dụ 15, 12) thì là đếm số lần (Reps) -> Ẩn nút Pause
@@ -348,6 +356,7 @@ public class ExerciseActivity extends AppCompatActivity {
             }
         } else {
             // Đề phòng trường hợp dữ liệu null
+            tvTimer.setText("--");
             btnPause.setVisibility(View.INVISIBLE);
         }
 

@@ -4,4 +4,6 @@
     <string name="home_exercise_history_empty">Chưa có lịch sử bài tập đã tập</string>
     <string name="exercise_history_reps_value">Rep: %1$s</string>
     <string name="exercise_history_default_name">Bài tập</string>
+    <string name="exercise_sets_value">%1$d hiệp</string>
+    <string name="exercise_reps_value">%1$s reps</string>
 </resources>
