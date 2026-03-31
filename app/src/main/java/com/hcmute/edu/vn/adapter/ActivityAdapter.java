@@ -10,17 +10,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.hcmute.edu.vn.R;
-import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.ExerciseHistoryItem;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
-    private Context context;
-    private ArrayList<Exercise> activityList;
+    private final Context context;
+    private final ArrayList<ExerciseHistoryItem> activityList;
 
-    public ActivityAdapter(Context context, ArrayList<Exercise> activityList) {
+    public ActivityAdapter(Context context, ArrayList<ExerciseHistoryItem> activityList) {
         this.context = context;
         this.activityList = activityList;
     }
@@ -34,18 +36,30 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        Exercise activity = activityList.get(position);
+        ExerciseHistoryItem activity = activityList.get(position);
 
         holder.tvActivityName.setText(activity.getName());
+        holder.tvActivityReps.setText(
+                context.getString(R.string.exercise_history_reps_value, activity.getRepsText())
+        );
+        holder.tvActivityKcal.setText(
+                String.format(Locale.getDefault(), "%.1f kcal", activity.getBurnedKcal())
+        );
 
-        if (activity.getImageUrl() != null && !activity.getImageUrl().isEmpty()) {
+        Object imageSource = R.drawable.workout_1;
+        if (activity.getImageUrl() != null && !activity.getImageUrl().trim().isEmpty()) {
             try {
-                int imageResId = Integer.parseInt(activity.getImageUrl());
-                holder.imgActivity.setImageResource(imageResId);
+                imageSource = Integer.parseInt(activity.getImageUrl());
             } catch (NumberFormatException e) {
-                holder.imgActivity.setImageResource(R.mipmap.ic_launcher);
+                imageSource = activity.getImageUrl();
             }
         }
+
+        Glide.with(context)
+                .load(imageSource)
+                .placeholder(R.drawable.workout_1)
+                .error(R.drawable.workout_1)
+                .into(holder.imgActivity);
     }
 
     @Override
@@ -56,11 +70,15 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imgActivity;
         TextView tvActivityName;
+        TextView tvActivityReps;
+        TextView tvActivityKcal;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imgActivity = itemView.findViewById(R.id.imgActivity);
             tvActivityName = itemView.findViewById(R.id.tvActivityName);
+            tvActivityReps = itemView.findViewById(R.id.tvActivityReps);
+            tvActivityKcal = itemView.findViewById(R.id.tvActivityKcal);
         }
     }
 }

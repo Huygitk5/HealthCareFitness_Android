@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">App</string>
+    <string name="home_exercise_history_title">Lịch sử bài tập</string>
+    <string name="home_exercise_history_empty">Chưa có lịch sử bài tập đã tập</string>
+    <string name="exercise_history_reps_value">Rep: %1$s</string>
+    <string name="exercise_history_default_name">Bài tập</string>
 </resources>

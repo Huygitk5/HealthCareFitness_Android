@@ -38,10 +38,13 @@ import com.hcmute.edu.vn.database.SupabaseClient;
 import com.hcmute.edu.vn.adapter.ActivityAdapter;
 import com.hcmute.edu.vn.model.BmiLog;
 import com.hcmute.edu.vn.model.Exercise;
+import com.hcmute.edu.vn.model.ExerciseHistoryItem;
 import com.hcmute.edu.vn.model.News;
 import com.hcmute.edu.vn.adapter.NewsAdapter;
 import com.hcmute.edu.vn.model.User;
+import com.hcmute.edu.vn.model.UserDailyWorkout;
 import com.hcmute.edu.vn.model.UserMedicalCondition;
+import com.hcmute.edu.vn.model.UserWorkoutSession;
 import com.hcmute.edu.vn.receiver.WeightReminderReceiver;
 import com.hcmute.edu.vn.util.ChatbotHelper;
 import com.hcmute.edu.vn.util.FitnessCalculator;
@@ -49,6 +52,7 @@ import com.hcmute.edu.vn.util.FitnessCalculator;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +65,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
+    private static final int MAX_ACTIVITY_HISTORY_ITEMS = 10;
+    private static final int MAX_ACTIVITY_HISTORY_SESSIONS = 10;
 
     TextView tvGreeting, tvCurrentWeight, tvCurrentHeight, tvCurrentAge, tvBMIValue, tvBMIStatus;
     ImageView btnNotification;
@@ -75,6 +81,9 @@ public class HomeActivity extends AppCompatActivity {
 
     private NewsAdapter newsAdapter;
     private List<News> currentNewsList = new ArrayList<>();
+    private final ArrayList<ExerciseHistoryItem> activityHistoryList = new ArrayList<>();
+    private ActivityAdapter activityAdapter;
+    private TextView tvEmptyActivities;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +105,7 @@ public class HomeActivity extends AppCompatActivity {
         tvBMIStatus = findViewById(R.id.tvBMIStatus);
         btnNotification = findViewById(R.id.btnNotification);
         rvActivities = findViewById(R.id.rvActivities);
+        tvEmptyActivities = findViewById(R.id.tvEmptyActivities);
         rvNews = findViewById(R.id.rvNews);
         btnChartDay = findViewById(R.id.btnChartDay);
         btnChartWeek = findViewById(R.id.btnChartWeek);
@@ -126,19 +136,11 @@ public class HomeActivity extends AppCompatActivity {
 
         ChatbotHelper.setupChatbotFAB(this, fabChatbot);
 
-        // =========================================================
-        // SETUP RECYCLER VIEW CHO ACTIVITIES (Bài tập)
-        // =========================================================
-        ArrayList<Exercise> activityList = new ArrayList<>();
-
-        activityList.add(new Exercise(UUID.randomUUID().toString(), "Giảm Mỡ Thừa ⚡⚡", "Bài tập giúp đốt mỡ", 1, 1, 3, "20 mins", "", String.valueOf(R.drawable.workout_1), null));
-        activityList.add(new Exercise(UUID.randomUUID().toString(), "Tăng Cơ 💪", "Xây dựng sức mạnh", 2, 2, 4, "30 mins", "", String.valueOf(R.drawable.workout_2), null));
-        activityList.add(new Exercise(UUID.randomUUID().toString(), "Yoga Buổi Sáng 🧘", "Thư giãn tinh thần", 3, 1, 1, "15 mins", "", String.valueOf(R.drawable.workout_3), null));
-
-        ActivityAdapter activityAdapter = new ActivityAdapter(this, activityList);
+        activityAdapter = new ActivityAdapter(this, activityHistoryList);
         LinearLayoutManager activityLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvActivities.setLayoutManager(activityLayoutManager);
         rvActivities.setAdapter(activityAdapter);
+        updateActivityHistoryState();
 
         // =========================================================
         // SETUP RECYCLER VIEW CHO NEWS (Tin tức - Đã xóa dummy data)
@@ -264,6 +266,7 @@ public class HomeActivity extends AppCompatActivity {
 
                     // 2. GỌI API LẤY LỊCH SỬ BMI
                     fetchBmiHistory(currentUser.getId(), "DAY");
+                    loadWorkoutExerciseHistory();
 
                     // =======================================================
                     // 3. GỌI API LẤY BÀI BÁO CÁ NHÂN HÓA (DÒNG MỚI THÊM)
@@ -343,6 +346,221 @@ public class HomeActivity extends AppCompatActivity {
         } else {
             newsAdapter.notifyDataSetChanged();
         }
+    }
+
+    private void loadWorkoutExerciseHistory() {
+        if (currentUser == null || currentUser.getId() == null || currentUser.getId().isEmpty()) {
+            showEmptyWorkoutHistory();
+            return;
+        }
+
+        SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
+        apiService.getSessionsByUser(
+                "eq." + currentUser.getId(),
+                "id,day_id,started_at,finished_at",
+                "started_at.desc"
+        ).enqueue(new Callback<List<UserWorkoutSession>>() {
+            @Override
+            public void onResponse(Call<List<UserWorkoutSession>> call, Response<List<UserWorkoutSession>> response) {
+                if (!response.isSuccessful() || response.body() == null || response.body().isEmpty()) {
+                    showEmptyWorkoutHistory();
+                    return;
+                }
+
+                List<UserWorkoutSession> sessions = new ArrayList<>();
+                for (UserWorkoutSession session : response.body()) {
+                    if (session.getDayId() != null && !session.getDayId().isEmpty()) {
+                        sessions.add(session);
+                    }
+                }
+
+                if (sessions.isEmpty()) {
+                    showEmptyWorkoutHistory();
+                    return;
+                }
+
+                loadWorkoutHistoryFromSessions(apiService, sessions, 0, new ArrayList<>());
+            }
+
+            @Override
+            public void onFailure(Call<List<UserWorkoutSession>> call, Throwable t) {
+                showEmptyWorkoutHistory();
+            }
+        });
+    }
+
+    private void loadWorkoutHistoryFromSessions(
+            SupabaseApiService apiService,
+            List<UserWorkoutSession> sessions,
+            int sessionIndex,
+            ArrayList<ExerciseHistoryItem> collectedItems
+    ) {
+        if (sessionIndex >= sessions.size()
+                || sessionIndex >= MAX_ACTIVITY_HISTORY_SESSIONS
+                || collectedItems.size() >= MAX_ACTIVITY_HISTORY_ITEMS) {
+            updateActivityHistory(collectedItems);
+            return;
+        }
+
+        UserWorkoutSession session = sessions.get(sessionIndex);
+        if (session.getDayId() == null || session.getDayId().isEmpty()) {
+            loadWorkoutHistoryFromSessions(apiService, sessions, sessionIndex + 1, collectedItems);
+            return;
+        }
+
+        apiService.getUserDailyWorkoutsByDay(
+                "eq." + currentUser.getId(),
+                "eq." + session.getDayId(),
+                "*,exercises(*)"
+        ).enqueue(new Callback<List<UserDailyWorkout>>() {
+            @Override
+            public void onResponse(Call<List<UserDailyWorkout>> call, Response<List<UserDailyWorkout>> response) {
+                if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
+                    List<UserDailyWorkout> workoutItems = new ArrayList<>(response.body());
+                    Collections.sort(workoutItems, (first, second) ->
+                            Integer.compare(
+                                    first.getExerciseOrder() != null ? first.getExerciseOrder() : 0,
+                                    second.getExerciseOrder() != null ? second.getExerciseOrder() : 0
+                            )
+                    );
+
+                    for (UserDailyWorkout workout : workoutItems) {
+                        ExerciseHistoryItem item = mapToExerciseHistoryItem(workout);
+                        if (item != null) {
+                            collectedItems.add(item);
+                        }
+                        if (collectedItems.size() >= MAX_ACTIVITY_HISTORY_ITEMS) {
+                            break;
+                        }
+                    }
+                }
+
+                loadWorkoutHistoryFromSessions(apiService, sessions, sessionIndex + 1, collectedItems);
+            }
+
+            @Override
+            public void onFailure(Call<List<UserDailyWorkout>> call, Throwable t) {
+                loadWorkoutHistoryFromSessions(apiService, sessions, sessionIndex + 1, collectedItems);
+            }
+        });
+    }
+
+    private ExerciseHistoryItem mapToExerciseHistoryItem(UserDailyWorkout workout) {
+        if (workout == null || workout.getExercise() == null) {
+            return null;
+        }
+
+        Exercise exercise = workout.getExercise();
+        String repsText = workout.getReps();
+        if (repsText == null || repsText.trim().isEmpty()) {
+            repsText = exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "--";
+        }
+
+        return new ExerciseHistoryItem(
+                exercise.getImageUrl(),
+                exercise.getName() != null ? exercise.getName() : getString(R.string.exercise_history_default_name),
+                repsText,
+                calculateExerciseCalories(workout, exercise)
+        );
+    }
+
+    private double calculateExerciseCalories(UserDailyWorkout workout, Exercise exercise) {
+        if (exercise == null) {
+            return 0.0;
+        }
+
+        int sets = workout.getSets() != null
+                ? workout.getSets()
+                : (exercise.getBaseRecommendedSets() != null ? exercise.getBaseRecommendedSets() : 1);
+        int restSeconds = workout.getRestTimeSeconds() != null ? workout.getRestTimeSeconds() : 60;
+        String repsText = workout.getReps() != null ? workout.getReps() : exercise.getBaseRecommendedReps();
+
+        int activeSeconds;
+        if (isTimeBasedReps(repsText)) {
+            activeSeconds = sets * parseDurationToSeconds(repsText);
+        } else {
+            int reps = parseRepCount(repsText);
+            int timePerRep = exercise.getTimePerRep() != null ? exercise.getTimePerRep() : 3;
+            activeSeconds = sets * reps * timePerRep;
+        }
+
+        int totalSeconds = activeSeconds + (Math.max(sets - 1, 0) * restSeconds);
+        double weightKg = currentUser != null && currentUser.getWeight() != null ? currentUser.getWeight() : 65.0;
+        double metValue = getMetValue(exercise);
+
+        return metValue * weightKg * (totalSeconds / 3600.0);
+    }
+
+    private double getMetValue(Exercise exercise) {
+        if (exercise == null || exercise.getExerciseTypeId() == null) {
+            return 5.0;
+        }
+
+        if (exercise.getExerciseTypeId() == 2) {
+            return 3.5;
+        }
+        if (exercise.getExerciseTypeId() == 3) {
+            return 8.0;
+        }
+        return 5.0;
+    }
+
+    private boolean isTimeBasedReps(String repsText) {
+        return repsText != null && repsText.contains(":");
+    }
+
+    private int parseDurationToSeconds(String durationText) {
+        if (durationText == null || durationText.trim().isEmpty()) {
+            return 0;
+        }
+
+        String[] parts = durationText.trim().split(":");
+        try {
+            if (parts.length == 2) {
+                return (Integer.parseInt(parts[0]) * 60) + Integer.parseInt(parts[1]);
+            }
+            if (parts.length == 3) {
+                return (Integer.parseInt(parts[0]) * 3600)
+                        + (Integer.parseInt(parts[1]) * 60)
+                        + Integer.parseInt(parts[2]);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return 0;
+    }
+
+    private int parseRepCount(String repsText) {
+        if (repsText == null || repsText.trim().isEmpty()) {
+            return 12;
+        }
+
+        String numberOnly = repsText.replaceAll("[^0-9]", "");
+        if (numberOnly.isEmpty()) {
+            return 12;
+        }
+
+        try {
+            return Integer.parseInt(numberOnly);
+        } catch (NumberFormatException ignored) {
+            return 12;
+        }
+    }
+
+    private void updateActivityHistory(List<ExerciseHistoryItem> items) {
+        activityHistoryList.clear();
+        activityHistoryList.addAll(items);
+        activityAdapter.notifyDataSetChanged();
+        updateActivityHistoryState();
+    }
+
+    private void showEmptyWorkoutHistory() {
+        updateActivityHistory(new ArrayList<>());
+    }
+
+    private void updateActivityHistoryState() {
+        boolean hasHistory = !activityHistoryList.isEmpty();
+        rvActivities.setVisibility(hasHistory ? View.VISIBLE : View.GONE);
+        tvEmptyActivities.setVisibility(hasHistory ? View.GONE : View.VISIBLE);
     }
 
     // =========================================================

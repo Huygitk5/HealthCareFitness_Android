@@ -528,7 +528,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Activities"
+                        android:text="@string/home_exercise_history_title"
                         android:textColor="#212121"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -537,7 +537,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:text="See all"
+                        android:visibility="gone"
                         android:textColor="#4DAA9A"
                         android:textSize="14sp"
                         android:textStyle="bold" />
@@ -549,6 +549,17 @@
                     android:layout_height="wrap_content"
                     android:clipToPadding="false"
                     android:orientation="horizontal" />
+
+                <TextView
+                    android:id="@+id/tvEmptyActivities"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:text="@string/home_exercise_history_empty"
+                    android:textColor="#757575"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
