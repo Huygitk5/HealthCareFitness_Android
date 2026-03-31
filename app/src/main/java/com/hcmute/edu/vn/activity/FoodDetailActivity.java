@@ -121,7 +121,7 @@ public class FoodDetailActivity extends AppCompatActivity {
         }
 
         if (food.getFoodIngredients() != null && !food.getFoodIngredients().isEmpty()) {
-            IngredientAdapter adapter = new IngredientAdapter(food.getFoodIngredients());
+            IngredientAdapter adapter = new IngredientAdapter(food.getFoodIngredients(), displayQuantity);
             rvIngredients.setAdapter(adapter);
         }
     }
