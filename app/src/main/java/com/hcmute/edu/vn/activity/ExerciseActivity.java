@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class ExerciseActivity extends AppCompatActivity {
+    private static final String EXTRA_WORKOUT_CONTEXT_KEY = "WORKOUT_CONTEXT_KEY";
 
     private ArrayList<Exercise> exerciseList;
     private int currentIndex = 0;
@@ -112,18 +113,18 @@ public class ExerciseActivity extends AppCompatActivity {
 
             SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
 
-            String sessionKey = "SESSION_START_" + currentUserId + "_" + todayDate;
+            String sessionKey = "SESSION_START_" + getWorkoutProgressKeySuffix(currentUserId);
             if (pref.getLong(sessionKey, 0) == 0) {
                 pref.edit().putLong(sessionKey, System.currentTimeMillis()).apply();
             }
 
-            currentIndex = pref.getInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0);
+            currentIndex = pref.getInt("CURRENT_INDEX_" + getWorkoutProgressKeySuffix(currentUserId), 0);
 
             if (currentIndex >= exerciseList.size()) {
                 currentIndex = 0;
                 pref.edit()
-                        .putInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, 0)
-                        .putInt("PROGRESS_" + currentUserId + "_" + todayDate, 0)
+                        .putInt("CURRENT_INDEX_" + getWorkoutProgressKeySuffix(currentUserId), 0)
+                        .putInt("PROGRESS_" + getWorkoutProgressKeySuffix(currentUserId), 0)
                         .apply();
             }
             updateExerciseUI();
@@ -231,6 +232,15 @@ public class ExerciseActivity extends AppCompatActivity {
                 }
                 if (getIntent().hasExtra("EXTRA_DAY_ID")) {
                     intent.putExtra("EXTRA_DAY_ID", getIntent().getStringExtra("EXTRA_DAY_ID"));
+                }
+                if (getIntent().hasExtra("SKIP_SAVE_WORKOUT_SESSION")) {
+                    intent.putExtra("SKIP_SAVE_WORKOUT_SESSION", getIntent().getBooleanExtra("SKIP_SAVE_WORKOUT_SESSION", false));
+                }
+                if (getIntent().hasExtra("RETURN_TO_HOME_ACTIVITY")) {
+                    intent.putExtra("RETURN_TO_HOME_ACTIVITY", getIntent().getBooleanExtra("RETURN_TO_HOME_ACTIVITY", false));
+                }
+                if (getIntent().hasExtra(EXTRA_WORKOUT_CONTEXT_KEY)) {
+                    intent.putExtra(EXTRA_WORKOUT_CONTEXT_KEY, getIntent().getStringExtra(EXTRA_WORKOUT_CONTEXT_KEY));
                 }
 
                 startActivity(intent);
@@ -366,20 +376,29 @@ public class ExerciseActivity extends AppCompatActivity {
         // Lấy userId hiện tại
         String currentUserId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
 
+        String progressKeySuffix = getWorkoutProgressKeySuffix(currentUserId);
         SharedPreferences pref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
 
         // 1. Lưu lại Index có gắn UserID
-        editor.putInt("CURRENT_INDEX_" + currentUserId + "_" + todayDate, completedExercises);
+        editor.putInt("CURRENT_INDEX_" + progressKeySuffix, completedExercises);
 
         // 2. Tính và lưu phần trăm có gắn UserID
         int progressPercent = (int) (((float) completedExercises / exerciseList.size()) * 100);
-        int currentSavedPercent = pref.getInt("PROGRESS_" + currentUserId + "_" + todayDate, 0);
+        int currentSavedPercent = pref.getInt("PROGRESS_" + progressKeySuffix, 0);
 
         if (progressPercent > currentSavedPercent) {
-            editor.putInt("PROGRESS_" + currentUserId + "_" + todayDate, progressPercent);
+            editor.putInt("PROGRESS_" + progressKeySuffix, progressPercent);
         }
 
         editor.apply();
+    }
+
+    private String getWorkoutProgressKeySuffix(String userId) {
+        String customContextKey = getIntent().getStringExtra(EXTRA_WORKOUT_CONTEXT_KEY);
+        if (customContextKey != null && !customContextKey.trim().isEmpty()) {
+            return customContextKey;
+        }
+        return userId + "_" + todayDate;
     }
 }

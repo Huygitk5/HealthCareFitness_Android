@@ -19,12 +19,18 @@ import java.util.Locale;
 
 public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHolder> {
 
+    public interface OnActivityClickListener {
+        void onActivityClick(ExerciseHistoryItem item);
+    }
+
     private final Context context;
     private final ArrayList<ExerciseHistoryItem> activityList;
+    private final OnActivityClickListener onActivityClickListener;
 
-    public ActivityAdapter(Context context, ArrayList<ExerciseHistoryItem> activityList) {
+    public ActivityAdapter(Context context, ArrayList<ExerciseHistoryItem> activityList, OnActivityClickListener onActivityClickListener) {
         this.context = context;
         this.activityList = activityList;
+        this.onActivityClickListener = onActivityClickListener;
     }
 
     @NonNull
@@ -60,6 +66,12 @@ public class ActivityAdapter extends RecyclerView.Adapter<ActivityAdapter.ViewHo
                 .placeholder(R.drawable.workout_1)
                 .error(R.drawable.workout_1)
                 .into(holder.imgActivity);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (onActivityClickListener != null) {
+                onActivityClickListener.onActivityClick(activity);
+            }
+        });
     }
 
     @Override

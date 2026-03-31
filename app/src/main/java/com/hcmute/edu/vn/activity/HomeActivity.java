@@ -136,7 +136,7 @@ public class HomeActivity extends AppCompatActivity {
 
         ChatbotHelper.setupChatbotFAB(this, fabChatbot);
 
-        activityAdapter = new ActivityAdapter(this, activityHistoryList);
+        activityAdapter = new ActivityAdapter(this, activityHistoryList, this::openExerciseFromHistory);
         LinearLayoutManager activityLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         rvActivities.setLayoutManager(activityLayoutManager);
         rvActivities.setAdapter(activityAdapter);
@@ -456,7 +456,15 @@ public class HomeActivity extends AppCompatActivity {
             repsText = exercise.getBaseRecommendedReps() != null ? exercise.getBaseRecommendedReps() : "--";
         }
 
+        if (exercise.getBaseRecommendedReps() == null || !exercise.getBaseRecommendedReps().equals(repsText)) {
+            exercise.setBaseRecommendedReps(repsText);
+        }
+        if (workout.getSets() != null) {
+            exercise.setBaseRecommendedSets(workout.getSets());
+        }
+
         return new ExerciseHistoryItem(
+                exercise,
                 exercise.getImageUrl(),
                 exercise.getName() != null ? exercise.getName() : getString(R.string.exercise_history_default_name),
                 repsText,
@@ -555,6 +563,27 @@ public class HomeActivity extends AppCompatActivity {
 
     private void showEmptyWorkoutHistory() {
         updateActivityHistory(new ArrayList<>());
+    }
+
+    private void openExerciseFromHistory(ExerciseHistoryItem item) {
+        if (item == null || item.getExercise() == null) {
+            Toast.makeText(this, "Không tìm thấy bài tập để mở.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        ArrayList<Exercise> singleExerciseList = new ArrayList<>();
+        singleExerciseList.add(item.getExercise());
+
+        Intent intent = new Intent(this, ExerciseActivity.class);
+        intent.putExtra("EXTRA_EXERCISE_LIST", singleExerciseList);
+        intent.putExtra("SKIP_SAVE_WORKOUT_SESSION", true);
+        intent.putExtra("RETURN_TO_HOME_ACTIVITY", true);
+        intent.putExtra(
+                "WORKOUT_CONTEXT_KEY",
+                "history_" + (item.getExercise().getId() != null ? item.getExercise().getId() : "exercise")
+                        + "_" + System.currentTimeMillis()
+        );
+        startActivity(intent);
     }
 
     private void updateActivityHistoryState() {
