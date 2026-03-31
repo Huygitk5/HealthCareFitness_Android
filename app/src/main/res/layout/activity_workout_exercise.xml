@@ -54,6 +54,8 @@
         android:background="#FFFFFF"
         android:src="@drawable/ic_workout_music"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="25dp"
         tools:layout_editor_absoluteY="55dp" />
 
     <ImageView

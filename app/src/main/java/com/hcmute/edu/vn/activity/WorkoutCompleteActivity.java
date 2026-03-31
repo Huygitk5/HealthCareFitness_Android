@@ -37,7 +37,8 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_workout_complete);
 
-        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(),
+                getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(false);
 
         TextView tvTotalExercises = findViewById(R.id.tvTotalExercises);
@@ -52,15 +53,13 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
         String workoutContextKey = getIntent().getStringExtra(EXTRA_WORKOUT_CONTEXT_KEY);
 
         SharedPreferences wpPref = getSharedPreferences("WorkoutProgress", MODE_PRIVATE);
-        String sessionKey = "SESSION_START_" + (
-                workoutContextKey != null && !workoutContextKey.trim().isEmpty()
-                        ? workoutContextKey
-                        : userId + "_" + todayDate
-        );
+        String sessionKey = "SESSION_START_" + (workoutContextKey != null && !workoutContextKey.trim().isEmpty()
+                ? workoutContextKey
+                : userId + "_" + todayDate);
         long startMillis = wpPref.getLong(sessionKey, 0);
         long endMillis = System.currentTimeMillis();
 
-        if (!skipSaveWorkoutSession && startMillis > 0 && planId != null && dayId != null) {
+        if (!skipSaveWorkoutSession && startMillis > 0) {
             SimpleDateFormat isoFmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
             UserWorkoutSession session = new UserWorkoutSession(
                     UUID.randomUUID().toString(),
@@ -69,8 +68,7 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                     dayId,
                     isoFmt.format(new Date(startMillis)),
                     isoFmt.format(new Date(endMillis)),
-                    null
-            );
+                    null);
 
             SupabaseClient.getClient().create(SupabaseApiService.class)
                     .saveWorkoutSession(session)
@@ -79,11 +77,6 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                         public void onResponse(Call<Void> call, Response<Void> response) {
                             if (response.isSuccessful()) {
                                 wpPref.edit().remove(sessionKey).apply();
-                                android.widget.Toast.makeText(
-                                        WorkoutCompleteActivity.this,
-                                        "Đã đẩy phiên tập lên Supabase!",
-                                        android.widget.Toast.LENGTH_SHORT
-                                ).show();
                             } else {
                                 try {
                                     String errorBody = response.errorBody() != null
@@ -93,8 +86,7 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                                     android.widget.Toast.makeText(
                                             WorkoutCompleteActivity.this,
                                             "Lỗi API: " + errorBody,
-                                            android.widget.Toast.LENGTH_LONG
-                                    ).show();
+                                            android.widget.Toast.LENGTH_LONG).show();
                                 } catch (Exception ignored) {
                                 }
                             }
@@ -106,12 +98,10 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
                             android.widget.Toast.makeText(
                                     WorkoutCompleteActivity.this,
                                     "Lỗi mạng: " + t.getMessage(),
-                                    android.widget.Toast.LENGTH_LONG
-                            ).show();
+                                    android.widget.Toast.LENGTH_LONG).show();
                         }
                     });
         } else if (startMillis > 0) {
-            // Quick/single exercise launches should finish cleanly without persisting a full session.
             wpPref.edit().remove(sessionKey).apply();
         }
 
@@ -142,8 +132,7 @@ public class WorkoutCompleteActivity extends AppCompatActivity {
         btnBackToHome.setOnClickListener(v -> {
             Intent homeIntent = new Intent(
                     WorkoutCompleteActivity.this,
-                    returnToHomeActivity ? HomeActivity.class : WorkoutJourneyActivity.class
-            );
+                    returnToHomeActivity ? HomeActivity.class : WorkoutJourneyActivity.class);
             homeIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(homeIntent);
             finish();

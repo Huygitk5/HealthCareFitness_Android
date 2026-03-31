@@ -9,10 +9,21 @@ public class Equipment implements Serializable {
     private Integer id;
     @SerializedName("name")
     private String name;
+    @SerializedName("image_url")
+    private String imageUrl;
 
-    public Equipment(Integer id, String name) {
+    public Equipment(Integer id, String name, String imageUrl) {
         this.id = id;
         this.name = name;
+        this.imageUrl = imageUrl;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public Integer getId() {
