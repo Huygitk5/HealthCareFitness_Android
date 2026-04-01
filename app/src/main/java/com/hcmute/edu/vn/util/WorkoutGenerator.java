@@ -105,7 +105,6 @@ public class WorkoutGenerator {
         cal.setTime(startDate);
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
-        // LẤY CÁC NGÀY THẬT (REAL DAY IDS) TỪ DATABASE ĐỂ ĐÁP ỨNG KHÓA NGOẠI
         List<WorkoutDay> validDays = new ArrayList<>(basePlan.getDays());
         Collections.sort(validDays, (d1, d2) -> Integer.compare(
                 d1.getDayOrder() != null ? d1.getDayOrder() : 0,
@@ -139,7 +138,7 @@ public class WorkoutGenerator {
 
                     UserDailyWorkout udw = new UserDailyWorkout(
                             userId, dateStr, ex.getId(), sets, String.valueOf(reps), restTimeSeconds, exerciseOrder++, planId,
-                            realDayId // <--- GÁN KHÓA NGOẠI HỢP LỆ VÀO ĐÂY ĐỂ TRÁNH LỖI LƯU
+                            realDayId
                     );
                     weeklyWorkouts.add(udw);
                     currentDayActiveSeconds += calculateTotalExerciseDurationInSeconds(ex, reps, restTimeSeconds);
