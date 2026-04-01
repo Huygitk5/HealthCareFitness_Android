@@ -39,10 +39,10 @@ public class RestDayCompleteActivity extends AppCompatActivity {
 
         // Lấy dữ liệu từ Intent và SharedPreferences
         planId = getIntent().getStringExtra("EXTRA_PLAN_ID");
-        dayId  = getIntent().getStringExtra("EXTRA_DAY_ID");
+        dayId = getIntent().getStringExtra("EXTRA_DAY_ID");
         userId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getString("KEY_USER_ID", "");
 
-        btnBack     = findViewById(R.id.btnBack);
+        btnBack = findViewById(R.id.btnBack);
         btnComplete = findViewById(R.id.btnComplete);
 
         btnBack.setOnClickListener(v -> finish());
@@ -70,8 +70,7 @@ public class RestDayCompleteActivity extends AppCompatActivity {
                 dayId,
                 now,
                 now,
-                null
-        );
+                null);
 
         SupabaseApiService api = SupabaseClient.getClient().create(SupabaseApiService.class);
         api.saveWorkoutSession(session).enqueue(new Callback<Void>() {

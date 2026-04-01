@@ -52,6 +52,14 @@ public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSel
         Equipment eq = equipmentList.get(position);
         holder.tvEqName.setText(eq.getName());
 
+        if (eq.getImageUrl() != null && !eq.getImageUrl().isEmpty()) {
+            com.bumptech.glide.Glide.with(holder.itemView.getContext())
+                    .load(eq.getImageUrl())
+                    .into(holder.ivEquipment);
+        } else {
+            holder.ivEquipment.setImageResource(0);
+        }
+
         boolean isSelected = selectedIds.contains(eq.getId());
 
         if (isSelected) {

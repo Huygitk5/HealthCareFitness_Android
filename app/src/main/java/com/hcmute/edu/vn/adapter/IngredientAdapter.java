@@ -16,9 +16,15 @@ import java.util.List;
 public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.ViewHolder> {
 
     private List<FoodIngredient> ingredientList;
+    private double multiplier = 1.0;
 
     public IngredientAdapter(List<FoodIngredient> ingredientList) {
         this.ingredientList = ingredientList;
+    }
+
+    public IngredientAdapter(List<FoodIngredient> ingredientList, double multiplier) {
+        this.ingredientList = ingredientList;
+        this.multiplier = multiplier;
     }
 
     @NonNull
@@ -38,11 +44,11 @@ public class IngredientAdapter extends RecyclerView.Adapter<IngredientAdapter.Vi
         }
 
         // ==========================================================
-        // ĐÃ SỬA Ở ĐÂY: Dùng hàm getFormattedQuantity() thay thế
-        // Nó sẽ tự động in ra chuỗi đẹp kiểu "100 g" hoặc "2 muỗng"
+        // Dùng hàm getFormattedQuantity(multiplier)
+        // Nó sẽ tự động nhân theo số phần
         // ==========================================================
-        if (item.getFormattedQuantity() != null) {
-            holder.tvQuantity.setText(item.getFormattedQuantity());
+        if (item.getIngredient() != null) {
+            holder.tvQuantity.setText(item.getFormattedQuantity(multiplier));
         } else {
             holder.tvQuantity.setText("Tùy khẩu vị");
         }

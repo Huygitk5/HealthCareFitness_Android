@@ -405,6 +405,10 @@ public class ProfileSetupActivity extends AppCompatActivity {
             if (result.targetDate != null)
                 updateData.setTargetDate(result.targetDate);
 
+            if (result.workoutPlanId != null) {
+                updateData.setCurrentWorkoutPlanId(result.workoutPlanId);
+            }
+
             btnComplete.setEnabled(false);
             btnComplete.setText("Đang lưu...");
 
@@ -417,63 +421,46 @@ public class ProfileSetupActivity extends AppCompatActivity {
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
                         String userId = response.body().get(0).getId();
-
-                        // TÌM GÓI TẬP BẰNG CẢ 2 KHÓA NGOẠI: GOAL VÀ EXPERIENCE
-                        apiService.getWorkoutPlanByGoalAndExperience("eq." + selectedGoalId, "eq." + finalExperienceId,
-                                "*").enqueue(new Callback<List<WorkoutPlan>>() {
+                        
+                            apiService.updateUserProfile("eq." + receivedUsername, updateData)
+                                .enqueue(new Callback<Void>() {
                                     @Override
-                                    public void onResponse(Call<List<WorkoutPlan>> planCall,
-                                            Response<List<WorkoutPlan>> planResponse) {
-                                        if (planResponse.isSuccessful() && planResponse.body() != null
-                                                && !planResponse.body().isEmpty()) {
-                                            updateData.setCurrentWorkoutPlanId(planResponse.body().get(0).getId());
+                                    public void onResponse(Call<Void> call, Response<Void> profileResponse) {
+                                        if (profileResponse.isSuccessful()) {
+
+                                            // BẬT CỜ CHO WORKOUT JOURNEY VÀ NUTRITION
+                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
+                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
+                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
+                                                    .putBoolean("IS_BEGINNER", isUserBeginner)
+                                                    .putBoolean("TARGET_CHANGED", true)
+                                                    .putBoolean("WORKOUT_UPDATE_NEEDED", true)
+                                                    .apply();
+
+                                            double bmiVal = finalWeight / Math.pow(finalHeight / 100.0, 2);
+                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).format(new Date());
+                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
+                                                    userId, finalWeight, finalHeight, bmiVal, now);
+
+                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
+                                                @Override
+                                                public void onResponse(Call<Void> call, Response<Void> logResponse) {
+                                                    goToHome(userId);
+                                                }
+
+                                                @Override
+                                                public void onFailure(Call<Void> call, Throwable t) {
+                                                    goToHome(userId);
+                                                }
+                                            });
+                                        } else {
+                                            showError("Lỗi cập nhật!");
                                         }
-
-                                        apiService.updateUserProfile("eq." + receivedUsername, updateData)
-                                                .enqueue(new Callback<Void>() {
-                                                    @Override
-                                                    public void onResponse(Call<Void> call,
-                                                            Response<Void> profileResponse) {
-                                                        if (profileResponse.isSuccessful()) {
-
-                                                            getSharedPreferences("UserPrefs", MODE_PRIVATE).edit()
-                                                                    .putInt("USER_FITNESS_GOAL_ID", selectedGoalId)
-                                                                    .putInt("USER_EXPERIENCE_ID", finalExperienceId)
-                                                                    .apply();
-
-                                                            double bmiVal = finalWeight
-                                                                    / Math.pow(finalHeight / 100.0, 2);
-                                                            String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",
-                                                                    Locale.getDefault()).format(new Date());
-                                                            BmiLog log = new BmiLog(UUID.randomUUID().toString(),
-                                                                    userId, finalWeight, finalHeight, bmiVal, now);
-                                                            apiService.saveBmiLog(log).enqueue(new Callback<Void>() {
-                                                                @Override
-                                                                public void onResponse(Call<Void> call,
-                                                                        Response<Void> logResponse) {
-                                                                    goToHome(userId);
-                                                                }
-
-                                                                @Override
-                                                                public void onFailure(Call<Void> call, Throwable t) {
-                                                                    goToHome(userId);
-                                                                }
-                                                            });
-                                                        } else {
-                                                            showError("Lỗi cập nhật!");
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onFailure(Call<Void> call, Throwable t) {
-                                                        showError("Lỗi mạng!");
-                                                    }
-                                                });
                                     }
 
                                     @Override
-                                    public void onFailure(Call<List<WorkoutPlan>> planCall, Throwable t) {
-                                        showError("Lỗi lấy kế hoạch tập!");
+                                    public void onFailure(Call<Void> call, Throwable t) {
+                                        showError("Lỗi mạng!");
                                     }
                                 });
                     }
@@ -484,10 +471,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
             });
         } catch (NumberFormatException e) { showError("Chiều cao, cân nặng phải là số!"); }
     }
-
-    // =========================================================
-    // HELPERS
-    // =========================================================
 
     private void selectFirstGoalContaining(String keyword) {
         for (int i = 0; i < fitnessGoalList.size(); i++) {

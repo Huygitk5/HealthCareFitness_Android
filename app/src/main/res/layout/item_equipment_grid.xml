@@ -20,8 +20,9 @@
 
         <ImageView
             android:id="@+id/ivEquipment"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
             android:layout_marginBottom="12dp"
             android:src="@drawable/gym_tmp"
             app:layout_constraintBottom_toTopOf="@id/tvEqName"

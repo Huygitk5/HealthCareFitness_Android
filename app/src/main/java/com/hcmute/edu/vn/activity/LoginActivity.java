@@ -69,14 +69,9 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<List<User>> call, retrofit2.Response<List<User>> response) {
                         if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-
-                            // Lấy email thành công
                             String userEmail = response.body().get(0).getEmail();
-
-                            // Lấy object User hiện tại
                             User currentUser = response.body().get(0);
 
-                            // TIẾN HÀNH ĐĂNG NHẬP AUTH BẰNG EMAIL + PASSWORD
                             SignInRequest loginRequest = new SignInRequest(userEmail, password);
                             apiService.signInAuth(loginRequest).enqueue(new retrofit2.Callback<SignInResponse>() {
                                 @Override
@@ -99,7 +94,6 @@ public class LoginActivity extends AppCompatActivity {
                                         );
 
                                         Intent intent;
-                                        // 3. KIỂM TRA: Nếu tên trống HOẶC chưa có chiều cao/cân nặng thì đi setup
                                         if (currentUser.getName() == null || currentUser.getName().isEmpty() ||
                                                 currentUser.getHeight() == null || currentUser.getHeight() <= 0) {
 
@@ -107,7 +101,6 @@ public class LoginActivity extends AppCompatActivity {
                                             intent.putExtra("KEY_REGISTER_USER", username);
                                             Toast.makeText(LoginActivity.this, "Vui lòng hoàn tất thông tin cá nhân!", Toast.LENGTH_SHORT).show();
                                         } else {
-                                            // Nếu đã có đủ thông tin thì vào thẳng Home
                                             intent = new Intent(LoginActivity.this, HomeActivity.class);
                                             Toast.makeText(LoginActivity.this, "Chào mừng quay trở lại!", Toast.LENGTH_SHORT).show();
                                         }
@@ -127,7 +120,6 @@ public class LoginActivity extends AppCompatActivity {
                             });
 
                         } else {
-                            // Không tìm thấy username trong database
                             btnSignIn.setEnabled(true);
                             btnSignIn.setText("Sign In");
                             tilPassword.setError("Tài khoản không tồn tại!");
@@ -147,7 +139,6 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterLink.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Tạo Intent: Từ Login -> sang Register
                 Intent i = new Intent(LoginActivity.this, RegisterActivity.class);
                 startActivity(i);
             }

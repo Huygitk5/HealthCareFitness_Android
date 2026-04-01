@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.view.ViewCompat;
@@ -70,7 +71,7 @@ public class ChatbotActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             // Lấy kích thước của cả System Bars (thanh trạng thái) VÀ Bàn phím (ime)
-            androidx.core.graphics.Insets insetsToApply = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+            Insets insetsToApply = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
 
             if (topBar != null) {
                 // Né camera (tai thỏ) ở phía trên
@@ -89,7 +90,7 @@ public class ChatbotActivity extends AppCompatActivity {
             return insets;
         });
 
-        androidx.core.view.WindowInsetsControllerCompat controller = new androidx.core.view.WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
         controller.setAppearanceLightStatusBars(true);
 
         initViews();
@@ -97,8 +98,16 @@ public class ChatbotActivity extends AppCompatActivity {
         setupRetrofit();
         setupClickListeners();
 
-        // Initial greeting
-        addBotMessage("Hi! I'm your AI Fitness Coach. How can I help you today? You can ask me questions or tap a shortcut below.");
+        // Check for survey text
+        if (getIntent().hasExtra("EXTRA_SURVEY_TEXT")) {
+            String surveyText = getIntent().getStringExtra("EXTRA_SURVEY_TEXT");
+            if (surveyText != null && !surveyText.trim().isEmpty()) {
+                sendMessageToGemini(PromptBuilder.SYSTEM_HEALTH_COACH, surveyText.trim(), false);
+            }
+        } else {
+            // Initial greeting
+            addBotMessage("Hi! I'm your AI Fitness Coach. How can I help you today? You can ask me questions or tap a shortcut below.");
+        }
     }
 
     private void initViews() {
@@ -209,13 +218,6 @@ public class ChatbotActivity extends AppCompatActivity {
                 }
             });
         });
-
-//        chipMeals.setOnClickListener(v -> {
-//            addUserMessage("Gợi ý bữa ăn");
-//            // Giả sử mục tiêu là Giảm cân (có thể lấy từ database user sau này), lượng calo 1500
-//            String prompt = PromptBuilder.buildMealPrompt("Giảm cân, mỡ thừa", "Bình thường", 1500);
-//            sendMessageToGemini(PromptBuilder.SYSTEM_MEAL_PLANNER, prompt, true);
-//        });
 
         chipMotivate.setOnClickListener(v -> {
             addUserMessage("Truyền động lực cho tôi");

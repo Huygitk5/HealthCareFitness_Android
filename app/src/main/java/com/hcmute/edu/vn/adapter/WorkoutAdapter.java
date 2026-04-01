@@ -21,10 +21,14 @@ import java.util.List;
 public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHolder> {
     private List<WorkoutDay> mList;
     private String planId;
+    private java.util.Set<String> completedDayIds;
+    private int currentDayIndex;
 
-    public WorkoutAdapter(List<WorkoutDay> list, String planId) {
+    public WorkoutAdapter(List<WorkoutDay> list, String planId, java.util.Set<String> completedDayIds, int currentDayIndex) {
         this.mList = list;
         this.planId = planId;
+        this.completedDayIds = completedDayIds != null ? completedDayIds : new java.util.HashSet<>();
+        this.currentDayIndex = currentDayIndex;
     }
 
     @NonNull
@@ -37,22 +41,30 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         WorkoutDay item = mList.get(position);
-        if (item == null) return;
+        if (item == null)
+            return;
 
         int dayOrder = item.getDayOrder() != null ? item.getDayOrder() : (position + 1);
         String displayTitle = "Ngày " + dayOrder;
         holder.tvTitle.setText(displayTitle);
 
-        if (position == 0) {
+        boolean isCompleted = completedDayIds.contains(item.getId());
+        boolean isToday = (position == currentDayIndex);
+
+        if (isToday) {
             holder.cardView.setCardBackgroundColor(Color.parseColor("#B5D3C9"));
             holder.tvTitle.setTextColor(Color.parseColor("#3E665D"));
+        } else if (isCompleted) {
+            holder.cardView.setCardBackgroundColor(Color.parseColor("#E0E0E0"));
+            holder.tvTitle.setTextColor(Color.parseColor("#9E9E9E"));
         } else {
             holder.cardView.setCardBackgroundColor(Color.parseColor("#D1E4DE"));
             holder.tvTitle.setTextColor(Color.parseColor("#4A7A6F"));
         }
 
         String originalName = item.getName() != null ? item.getName() : "";
-        boolean isRestDay = originalName.toLowerCase().contains("nghỉ") || item.getExercises() == null || item.getExercises().isEmpty();
+        boolean isRestDay = originalName.toLowerCase().contains("nghỉ") || item.getExercises() == null
+                || item.getExercises().isEmpty();
 
         if (isRestDay) {
             holder.tvSub.setText("Nghỉ ngơi");
@@ -61,6 +73,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             holder.itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(v.getContext(), com.hcmute.edu.vn.activity.RestDayCompleteActivity.class);
                 intent.putExtra("EXTRA_DAY_ID", item.getId());
+                intent.putExtra("EXTRA_DAY_ORDER", item.getDayOrder());
                 intent.putExtra("EXTRA_PLAN_ID", planId);
                 v.getContext().startActivity(intent);
             });
@@ -71,6 +84,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
             View.OnClickListener clickListener = v -> {
                 Intent intent = new Intent(v.getContext(), ExerciseListActivity.class);
                 intent.putExtra("EXTRA_DAY_ID", item.getId());
+                intent.putExtra("EXTRA_DAY_ORDER", item.getDayOrder());
                 intent.putExtra("EXTRA_PLAN_ID", planId);
                 intent.putExtra("EXTRA_DAY_TITLE", displayTitle);
                 v.getContext().startActivity(intent);
@@ -78,7 +92,7 @@ public class WorkoutAdapter extends RecyclerView.Adapter<WorkoutAdapter.ViewHold
 
             holder.itemView.setOnClickListener(clickListener);
 
-            if (position == 0) {
+            if (isToday) {
                 holder.btnStart.setVisibility(View.VISIBLE);
                 holder.btnStart.setOnClickListener(clickListener);
             } else {

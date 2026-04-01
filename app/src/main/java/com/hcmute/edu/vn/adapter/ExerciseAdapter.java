@@ -18,9 +18,24 @@ import java.util.List;
 
 public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHolder> {
     private List<Exercise> exerciseList;
+    private boolean isEditMode = false;
+    private OnSwapClickListener swapListener;
+
+    public interface OnSwapClickListener {
+        void onSwapClick(Exercise exercise, int position);
+    }
 
     public ExerciseAdapter(List<Exercise> exerciseList) {
         this.exerciseList = exerciseList;
+    }
+
+    public void setOnSwapClickListener(OnSwapClickListener listener) {
+        this.swapListener = listener;
+    }
+
+    public void setEditMode(boolean editMode) {
+        isEditMode = editMode;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -35,7 +50,11 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
         Exercise item = exerciseList.get(position);
 
         holder.tvName.setText(item.getName());
-        holder.tvDuration.setText(item.getBaseRecommendedReps());
+        int sets = item.getBaseRecommendedSets() != null ? item.getBaseRecommendedSets() : 3;
+        String reps = item.getBaseRecommendedReps() != null ? item.getBaseRecommendedReps() : "12";
+
+        // Cập nhật lên UI (Ví dụ: "3 Hiệp x 12")
+        holder.tvDuration.setText(sets + " Hiệp x " + reps);
 
         // ==========================================
         // XỬ LÝ ẢNH: HỖ TRỢ CẢ LINK WEB (HTTPS) VÀ LOCAL (DRAWABLE)
@@ -81,6 +100,15 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
             }
         }
 
+        if (holder.btnSwap != null) {
+            holder.btnSwap.setVisibility(isEditMode ? View.VISIBLE : View.GONE);
+            holder.btnSwap.setOnClickListener(v -> {
+                if (swapListener != null) {
+                    swapListener.onSwapClick(item, position);
+                }
+            });
+        }
+
         if (position == exerciseList.size() - 1) {
             holder.lineSeparator.setVisibility(View.GONE);
         } else {
@@ -94,7 +122,7 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivThumb;
+        ImageView ivThumb, btnSwap;
         TextView tvName, tvDuration;
         View lineSeparator;
 
@@ -103,6 +131,7 @@ public class ExerciseAdapter extends RecyclerView.Adapter<ExerciseAdapter.ViewHo
             ivThumb = itemView.findViewById(R.id.imgExercise);
             tvName = itemView.findViewById(R.id.tvExerciseName);
             tvDuration = itemView.findViewById(R.id.tvDuration);
+            btnSwap = itemView.findViewById(R.id.btnSwap);
             lineSeparator = itemView.findViewById(R.id.lineSeparator);
         }
     }

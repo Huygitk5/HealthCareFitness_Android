@@ -14,21 +14,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.hcmute.edu.vn.R;
+import com.hcmute.edu.vn.activity.FoodDetailActivity;
 import com.hcmute.edu.vn.model.UserDailyMeal;
 
 import java.util.List;
 
 public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.ViewHolder> {
 
-    private Context context;
+    private final Context context;
     private List<UserDailyMeal> mealList;
-    private OnMealItemListener listener; // Đổi tên biến
+    private final OnMealItemListener listener;
+    private boolean isMealLogged;
 
-    // Interface để báo cho Activity biết user muốn xóa món nào
-    // ĐÃ SỬA: Gom chung sự kiện Xóa và Thay đổi vào 1 Interface
     public interface OnMealItemListener {
         void onDeleteClick(UserDailyMeal meal);
-        void onSwapClick(UserDailyMeal meal); // Thêm dòng này
+        void onSwapClick(UserDailyMeal meal);
     }
 
     public DailyMealAdapter(Context context, List<UserDailyMeal> mealList, OnMealItemListener listener) {
@@ -44,17 +44,23 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
         return new ViewHolder(view);
     }
 
+    public void setMealLogged(boolean logged) {
+        this.isMealLogged = logged;
+        notifyDataSetChanged();
+    }
+
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UserDailyMeal meal = mealList.get(position);
+        double quantity = meal.getQuantityMultiplier();
 
-        // Đảm bảo dữ liệu Food không bị null (do Join từ bảng)
         if (meal.getFood() != null) {
             holder.tvMealFoodName.setText(meal.getFood().getName());
-
-            // ĐÃ SỬA: Dùng getQuantityMultiplier() thay cho getQuantity()
-            double totalCalo = meal.getFood().getCalories() * meal.getQuantityMultiplier();
-            holder.tvMealFoodCalo.setText(String.valueOf(Math.round(totalCalo)));
+            holder.tvMealFoodQuantity.setText(getQuantityText(quantity) + " phần");
+            holder.tvMealFoodCalo.setText(String.valueOf(Math.round(getValue(meal.getFood().getCalories()) * quantity)));
+            holder.tvMealFoodMacroP.setText("P: " + Math.round(getValue(meal.getFood().getProteinG()) * quantity) + "g");
+            holder.tvMealFoodMacroC.setText("C: " + Math.round(getValue(meal.getFood().getCarbG()) * quantity) + "g");
+            holder.tvMealFoodMacroF.setText("F: " + Math.round(getValue(meal.getFood().getFatG()) * quantity) + "g");
 
             Glide.with(context)
                     .load(meal.getFood().getImageUrl())
@@ -63,36 +69,32 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
                     .into(holder.imgMealFood);
         } else {
             holder.tvMealFoodName.setText("Món ăn không xác định");
+            holder.tvMealFoodQuantity.setText(getQuantityText(quantity) + " phần");
             holder.tvMealFoodCalo.setText("0");
+            holder.tvMealFoodMacroP.setText("P: 0g");
+            holder.tvMealFoodMacroC.setText("C: 0g");
+            holder.tvMealFoodMacroF.setText("F: 0g");
+            holder.imgMealFood.setImageResource(R.mipmap.ic_launcher_round);
         }
 
-        // =======================================================
-        // 1. Ép kiểu sang số nguyên (int) để làm tròn số phần ăn
-        // =======================================================
-        double qty = meal.getQuantityMultiplier();
-        String quantityText = (qty == Math.floor(qty))
-                ? String.valueOf((int)qty)
-                : String.valueOf(qty);
-        holder.tvMealFoodQuantity.setText(quantityText + " phần");
+        holder.itemView.setAlpha(isMealLogged ? 0.55f : 1.0f);
 
-        // Sự kiện xóa món ăn (Giữ nguyên)
         holder.btnDeleteMealFood.setOnClickListener(v -> {
-            if (listener != null) listener.onDeleteClick(meal);
+            if (listener != null) {
+                listener.onDeleteClick(meal);
+            }
         });
 
-        // =======================================================
-        // SỰ KIỆN MỚI: Bấm nút Thay đổi món
-        // =======================================================
         holder.btnSwapMealFood.setOnClickListener(v -> {
-            if (listener != null) listener.onSwapClick(meal);
+            if (listener != null) {
+                listener.onSwapClick(meal);
+            }
         });
 
-        // =======================================================
-        // 2. SỰ KIỆN MỚI: Bấm vào thẻ món ăn để xem chi tiết
-        // =======================================================
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, com.hcmute.edu.vn.activity.FoodDetailActivity.class);
+            Intent intent = new Intent(context, FoodDetailActivity.class);
             intent.putExtra("FOOD_ID", meal.getFoodId());
+            intent.putExtra("EXTRA_QUANTITY", quantity);
             context.startActivity(intent);
         });
     }
@@ -107,16 +109,33 @@ public class DailyMealAdapter extends RecyclerView.Adapter<DailyMealAdapter.View
         notifyDataSetChanged();
     }
 
+    private double getValue(Double value) {
+        return value != null ? value : 0.0;
+    }
+
+    private String getQuantityText(double quantity) {
+        return quantity == Math.floor(quantity) ? String.valueOf((int) quantity) : String.valueOf(quantity);
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
         ShapeableImageView imgMealFood;
-        TextView tvMealFoodName, tvMealFoodQuantity, tvMealFoodCalo;
-        ImageButton btnDeleteMealFood, btnSwapMealFood;
+        TextView tvMealFoodName;
+        TextView tvMealFoodQuantity;
+        TextView tvMealFoodMacroP;
+        TextView tvMealFoodMacroC;
+        TextView tvMealFoodMacroF;
+        TextView tvMealFoodCalo;
+        ImageButton btnDeleteMealFood;
+        ImageButton btnSwapMealFood;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             imgMealFood = itemView.findViewById(R.id.imgMealFood);
             tvMealFoodName = itemView.findViewById(R.id.tvMealFoodName);
             tvMealFoodQuantity = itemView.findViewById(R.id.tvMealFoodQuantity);
+            tvMealFoodMacroP = itemView.findViewById(R.id.tvMealFoodMacroP);
+            tvMealFoodMacroC = itemView.findViewById(R.id.tvMealFoodMacroC);
+            tvMealFoodMacroF = itemView.findViewById(R.id.tvMealFoodMacroF);
             tvMealFoodCalo = itemView.findViewById(R.id.tvMealFoodCalo);
             btnDeleteMealFood = itemView.findViewById(R.id.btnDeleteMealFood);
             btnSwapMealFood = itemView.findViewById(R.id.btnSwapMealFood);

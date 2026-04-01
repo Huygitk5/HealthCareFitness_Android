@@ -379,14 +379,15 @@ public class ProfileActivity extends AppCompatActivity {
             final int finalNewExpId = newExpId; // BIẾN MỚI LƯU KINH NGHIỆM
 
             SupabaseApiService apiService = SupabaseClient.getClient().create(SupabaseApiService.class);
-            // TÌM GÓI TẬP BẰNG CẢ MỤC TIÊU VÀ KINH NGHIỆM
+
+            // TÌM GÓI TẬP THẬT TRÊN DATABASE ĐỂ LẤY KHÓA NGOẠI CHUẨN
             apiService.getWorkoutPlanByGoalAndExperience("eq." + finalNewGoalId, "eq." + finalNewExpId, "*")
                     .enqueue(new Callback<List<WorkoutPlan>>() {
                         @Override
                         public void onResponse(Call<List<WorkoutPlan>> call, Response<List<WorkoutPlan>> response) {
-                            String newPlanId = null;
+                            String realPlanId = null;
                             if (response.isSuccessful() && response.body() != null && !response.body().isEmpty()) {
-                                newPlanId = response.body().get(0).getId();
+                                realPlanId = response.body().get(0).getId();
                             }
 
                             User updateData = new User();
@@ -394,8 +395,8 @@ public class ProfileActivity extends AppCompatActivity {
                             updateData.setUserExperienceId(finalNewExpId);
                             updateData.setTarget(finalNewTarget);
                             updateData.setCurrentDailyCalories(finalNewDailyCalories);
-                            if (newPlanId != null) {
-                                updateData.setCurrentWorkoutPlanId(newPlanId);
+                            if (realPlanId != null) {
+                                updateData.setCurrentWorkoutPlanId(realPlanId);
                             }
 
                             apiService.updateUserProfile("eq." + username, updateData).enqueue(new Callback<Void>() {
@@ -407,10 +408,10 @@ public class ProfileActivity extends AppCompatActivity {
                                                 .putInt("USER_EXPERIENCE_ID", finalNewExpId)
                                                 .putBoolean("IS_BEGINNER", finalNewExpId == 1)
                                                 .putBoolean("TARGET_CHANGED", true)
+                                                .putBoolean("WORKOUT_UPDATE_NEEDED", true) // KÍCH HOẠT AI GENERATE
                                                 .apply();
 
-                                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu!",
-                                                Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(ProfileActivity.this, "Đã cập nhật mục tiêu! Đang thiết lập lộ trình...", Toast.LENGTH_LONG).show();
 
                                         currentGoalId = finalNewGoalId;
                                         currentExperienceId = finalNewExpId;
@@ -418,8 +419,7 @@ public class ProfileActivity extends AppCompatActivity {
                                         loadUserProfile();
                                         dialog.dismiss();
                                     } else {
-                                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT)
-                                                .show();
+                                        Toast.makeText(ProfileActivity.this, "Lỗi cập nhật!", Toast.LENGTH_SHORT).show();
                                         btnSave.setText("LƯU");
                                         btnSave.setEnabled(true);
                                     }
@@ -427,7 +427,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                                 @Override
                                 public void onFailure(Call<Void> call2, Throwable t) {
-                                    Toast.makeText(ProfileActivity.this, "Lỗi mạng!", Toast.LENGTH_SHORT).show();
                                     btnSave.setText("LƯU");
                                     btnSave.setEnabled(true);
                                 }
@@ -436,8 +435,6 @@ public class ProfileActivity extends AppCompatActivity {
 
                         @Override
                         public void onFailure(Call<List<WorkoutPlan>> call, Throwable t) {
-                            Toast.makeText(ProfileActivity.this, "Lỗi kết nối khi tải plan!", Toast.LENGTH_SHORT)
-                                    .show();
                             btnSave.setText("LƯU");
                             btnSave.setEnabled(true);
                         }

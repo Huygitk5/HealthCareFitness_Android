@@ -2,7 +2,6 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FAFAFA">
@@ -30,7 +29,6 @@
                     android:scaleType="centerCrop"
                     android:src="@mipmap/ic_launcher" />
 
-
                 <ImageButton
                     android:id="@+id/btnBackDetail"
                     android:layout_width="48dp"
@@ -53,10 +51,19 @@
                     android:id="@+id/tvDetailName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Tên Món Ăn"
+                    android:text="Tên món ăn"
                     android:textColor="#212121"
                     android:textSize="24sp"
                     android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDetailServing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="1 phần (100g)"
+                    android:textColor="#757575"
+                    android:textSize="14sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -73,35 +80,98 @@
                         android:layout_weight="1"
                         android:gravity="center"
                         android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Calo" android:textColor="#9E9E9E" android:textSize="12sp" />
-                        <TextView android:id="@+id/tvDetailCalo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0" android:textColor="#4DAA9A" android:textSize="16sp" android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Calo"
+                            android:textColor="#9E9E9E"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvDetailCalo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0"
+                            android:textColor="#4DAA9A"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:gravity="center"
                         android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Protein" android:textColor="#9E9E9E" android:textSize="12sp" />
-                        <TextView android:id="@+id/tvDetailPro" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0g" android:textColor="#42A5F5" android:textSize="16sp" android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Protein"
+                            android:textColor="#9E9E9E"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvDetailPro"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0g"
+                            android:textColor="#42A5F5"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:gravity="center"
                         android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Carb" android:textColor="#9E9E9E" android:textSize="12sp" />
-                        <TextView android:id="@+id/tvDetailCarb" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0g" android:textColor="#4DAA9A" android:textSize="16sp" android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Carb"
+                            android:textColor="#9E9E9E"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvDetailCarb"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0g"
+                            android:textColor="#4DAA9A"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:gravity="center"
                         android:orientation="vertical">
-                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Fat" android:textColor="#9E9E9E" android:textSize="12sp" />
-                        <TextView android:id="@+id/tvDetailFat" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="0g" android:textColor="#EF5350" android:textSize="16sp" android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Fat"
+                            android:textColor="#9E9E9E"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvDetailFat"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="0g"
+                            android:textColor="#EF5350"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -109,7 +179,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="Nguyên Liệu"
+                    android:text="Nguyên liệu"
                     android:textColor="#212121"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -125,7 +195,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="Cách Chế Biến"
+                    android:text="Cách chế biến"
                     android:textColor="#212121"
                     android:textSize="18sp"
                     android:textStyle="bold" />
