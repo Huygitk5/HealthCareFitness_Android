@@ -19,7 +19,8 @@ public class WorkoutGenerator {
 
     // Trích xuất số Reps từ chuỗi trên DB (VD: "12-15" -> 12, "30 secs" -> 30)
     private static int parseReps(String repsStr) {
-        if (repsStr == null || repsStr.isEmpty()) return 12;
+        if (repsStr == null || repsStr.isEmpty())
+            return 12;
         try {
             String numberOnly = repsStr.replaceAll("[^0-9]", "");
             return numberOnly.isEmpty() ? 12 : Integer.parseInt(numberOnly);
@@ -42,7 +43,8 @@ public class WorkoutGenerator {
     }
 
     /**
-     * Hàm sinh lịch tập Giảm Mỡ 7 ngày cá nhân hóa, lưu vào bảng user_daily_workouts
+     * Hàm sinh lịch tập Giảm Mỡ 7 ngày cá nhân hóa, lưu vào bảng
+     * user_daily_workouts
      */
     public static List<UserDailyWorkout> generateWeeklyWeightLossWorkouts(
             String userId,
@@ -55,7 +57,8 @@ public class WorkoutGenerator {
             double weightKg) {
 
         List<UserDailyWorkout> weeklyWorkouts = new ArrayList<>();
-        if (dailyCaloriesToBurn <= 0 || basePlan == null || basePlan.getDays() == null) return weeklyWorkouts;
+        if (dailyCaloriesToBurn <= 0 || basePlan == null || basePlan.getDays() == null)
+            return weeklyWorkouts;
 
         String planId = basePlan.getId();
 
@@ -72,21 +75,30 @@ public class WorkoutGenerator {
             boolean isRestricted = restrictedMuscleIds.contains(muscleId);
             boolean isAllowed = false;
 
-            if (isRestricted) { if (diff == 1) isAllowed = true; }
-            else {
-                if (isBeginner && (diff == 1 || diff == 2)) isAllowed = true;
-                if (!isBeginner && (diff == 2 || diff == 3)) isAllowed = true;
+            if (isRestricted) {
+                if (diff == 1)
+                    isAllowed = true;
+            } else {
+                if (isBeginner && (diff == 1 || diff == 2))
+                    isAllowed = true;
+                if (!isBeginner && (diff == 2 || diff == 3))
+                    isAllowed = true;
             }
 
             if (isAllowed) {
-                if (type == 1) gymPool.add(ex);
-                else if (type == 2) cardioPool.add(ex);
-                else if (type == 3) hiitPool.add(ex);
+                if (type == 1)
+                    gymPool.add(ex);
+                else if (type == 2)
+                    cardioPool.add(ex);
+                else if (type == 3)
+                    hiitPool.add(ex);
             }
         }
 
-        if (cardioPool.isEmpty()) cardioPool.addAll(gymPool);
-        if (hiitPool.isEmpty()) hiitPool.addAll(cardioPool);
+        if (cardioPool.isEmpty())
+            cardioPool.addAll(gymPool);
+        if (hiitPool.isEmpty())
+            hiitPool.addAll(cardioPool);
 
         // 2. Tính Calo/Giây
         double weeklyBurnTarget = dailyCaloriesToBurn * 7.0;
@@ -97,9 +109,8 @@ public class WorkoutGenerator {
         int cardioTargetSeconds = (int) ((burnPerSession / (FitnessCalculator.MET_CARDIO * weightKg)) * 3600);
         int hiitTargetSeconds = (int) ((burnPerSession / (FitnessCalculator.MET_HIIT * weightKg)) * 3600);
 
-        String[] schedule = isBeginner ?
-                new String[]{"GYM", "REST", "CARDIO", "REST", "GYM", "CARDIO", "REST"} :
-                new String[]{"GYM", "HIIT", "GYM", "REST", "GYM", "HIIT", "REST"};
+        String[] schedule = isBeginner ? new String[] { "GYM", "REST", "CARDIO", "REST", "GYM", "CARDIO", "REST" }
+                : new String[] { "GYM", "HIIT", "GYM", "REST", "GYM", "HIIT", "REST" };
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(startDate);
@@ -111,34 +122,48 @@ public class WorkoutGenerator {
                 d1.getDayOrder() != null ? d1.getDayOrder() : 0,
                 d2.getDayOrder() != null ? d2.getDayOrder() : 0));
 
-        for (int i = 0; i < 7; i++) {
-            String dateStr = sdf.format(cal.getTime());
-            String dayType = schedule[i];
+        int totalDaysCount = validDays.size();
 
-            // Trích xuất ID thật (Nếu gói có đủ 7 ngày)
-            String realDayId = (i < validDays.size()) ? validDays.get(i).getId() : null;
-            if (realDayId == null) continue; // Bỏ qua nếu ID không tồn tại
+        for (int i = 0; i < totalDaysCount; i++) {
+            String dateStr = sdf.format(cal.getTime());
+            String dayType = schedule[i % schedule.length];
+
+            // Trích xuất ID thật
+            String realDayId = validDays.get(i).getId();
+            if (realDayId == null) {
+                cal.add(Calendar.DAY_OF_YEAR, 1);
+                continue; // Bỏ qua nếu ID không tồn tại
+            }
 
             if (!dayType.equals("REST")) {
                 int targetSeconds = 0;
                 List<Exercise> currentPool = new ArrayList<>();
-                if (dayType.equals("GYM")) { targetSeconds = gymTargetSeconds; currentPool = new ArrayList<>(gymPool); }
-                else if (dayType.equals("CARDIO")) { targetSeconds = cardioTargetSeconds; currentPool = new ArrayList<>(cardioPool); }
-                else if (dayType.equals("HIIT")) { targetSeconds = hiitTargetSeconds; currentPool = new ArrayList<>(hiitPool); }
+                if (dayType.equals("GYM")) {
+                    targetSeconds = gymTargetSeconds;
+                    currentPool = new ArrayList<>(gymPool);
+                } else if (dayType.equals("CARDIO")) {
+                    targetSeconds = cardioTargetSeconds;
+                    currentPool = new ArrayList<>(cardioPool);
+                } else if (dayType.equals("HIIT")) {
+                    targetSeconds = hiitTargetSeconds;
+                    currentPool = new ArrayList<>(hiitPool);
+                }
 
                 Collections.shuffle(currentPool);
                 int currentDayActiveSeconds = 0;
                 int exerciseOrder = 0;
 
                 for (Exercise ex : currentPool) {
-                    if (currentDayActiveSeconds >= targetSeconds) break;
+                    if (currentDayActiveSeconds >= targetSeconds)
+                        break;
 
                     int sets = ex.getBaseRecommendedSets() != null ? ex.getBaseRecommendedSets() : 3;
                     int reps = parseReps(ex.getBaseRecommendedReps());
                     int restTimeSeconds = 60;
 
                     UserDailyWorkout udw = new UserDailyWorkout(
-                            userId, dateStr, ex.getId(), sets, String.valueOf(reps), restTimeSeconds, exerciseOrder++, planId,
+                            userId, dateStr, ex.getId(), sets, String.valueOf(reps), restTimeSeconds, exerciseOrder++,
+                            planId,
                             realDayId // <--- GÁN KHÓA NGOẠI HỢP LỆ VÀO ĐÂY ĐỂ TRÁNH LỖI LƯU
                     );
                     weeklyWorkouts.add(udw);
@@ -149,6 +174,7 @@ public class WorkoutGenerator {
         }
         return weeklyWorkouts;
     }
+
     // =====================================================================
     // HÀM COPY LỊCH TẬP TĨNH (TĂNG CƠ / GIỮ DÁNG) VÀO USER_DAILY_WORKOUTS
     // =====================================================================
@@ -156,7 +182,8 @@ public class WorkoutGenerator {
             String userId, Date startDate, WorkoutPlan staticPlan) {
 
         List<UserDailyWorkout> weeklyWorkouts = new ArrayList<>();
-        if (staticPlan == null || staticPlan.getDays() == null) return weeklyWorkouts;
+        if (staticPlan == null || staticPlan.getDays() == null)
+            return weeklyWorkouts;
 
         Calendar cal = Calendar.getInstance();
         cal.setTime(startDate);
@@ -164,8 +191,9 @@ public class WorkoutGenerator {
 
         // Đảm bảo các ngày được sắp xếp đúng thứ tự (Day 1 -> Day 7)
         List<WorkoutDay> days = new ArrayList<>();
-        for(WorkoutDay d : staticPlan.getDays()) {
-            if (d != null) days.add(d);
+        for (WorkoutDay d : staticPlan.getDays()) {
+            if (d != null)
+                days.add(d);
         }
 
         Collections.sort(days, (d1, d2) -> {
@@ -180,7 +208,8 @@ public class WorkoutGenerator {
             if (day.getExercises() != null && !day.getExercises().isEmpty()) {
                 int order = 0;
                 for (com.hcmute.edu.vn.model.WorkoutDayExercise wde : day.getExercises()) {
-                    if (wde == null) continue;
+                    if (wde == null)
+                        continue;
 
                     Integer sets = wde.getSets() != null ? wde.getSets() : 3;
                     String reps = wde.getReps() != null ? String.valueOf(wde.getReps()) : "12";
@@ -202,8 +231,7 @@ public class WorkoutGenerator {
                                 restTime,
                                 order++,
                                 staticPlan.getId(),
-                                day.getId()
-                        );
+                                day.getId());
                         weeklyWorkouts.add(udw);
                     }
                 }

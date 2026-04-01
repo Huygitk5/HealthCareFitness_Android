@@ -226,6 +226,12 @@ public class WorkoutDetailActivity extends AppCompatActivity {
                                 for (WorkoutDay day : plan.getDays()) {
                                     if (dayMap.containsKey(day.getId())) {
                                         day.setExercises(dayMap.get(day.getId()));
+                                    } else {
+                                        // Các mục tiêu Tăng cơ (2) / Giữ dáng (3) được giữ nguyên dữ liệu tĩnh của Base Plan
+                                        int goalId = getSharedPreferences("UserPrefs", MODE_PRIVATE).getInt("USER_FITNESS_GOAL_ID", 1);
+                                        if (goalId == 1) {
+                                            day.setExercises(new ArrayList<>());
+                                        }
                                     }
                                 }
                             }
